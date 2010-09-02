@@ -1,4 +1,4 @@
-// © Knug Industries 2009 all rights reserved 
+// © Knug Industries 2009 all rights reserved
 // GNU GENERAL PUBLIC LICENSE VERSION 3.0
 // Author bjarneh@ifi.uio.no
 
@@ -6,8 +6,10 @@ package gopt
 
 /*
 
-Not too happy with the flag package provided
-by the go-team, so this is another version.
+The flag package provided in the go standard
+library will only allow options before regular
+input arguments, which is not ideal. So this
+is another take on the old getopt.
 
 Most notable difference:
 
@@ -49,87 +51,90 @@ Usage:
 */
 
 
-import(
-    "strings";
-    "container/vector";
-    "fmt";
-    "os";
+import (
+    "strings"
+    "container/vector"
+    "fmt"
+    "os"
+    "log"
 )
 
-type GetOpt struct{
-    options *vector.Vector;
-    cache map[string]Option;
+type GetOpt struct {
+    options *vector.Vector
+    cache   map[string]Option
 }
 
-func New() *GetOpt{
-    g := new(GetOpt);
-    g.options = new(vector.Vector);
-    g.cache   = make(map[string]Option);
-    return g;
+func New() *GetOpt {
+    g := new(GetOpt)
+    g.options = new(vector.Vector)
+    g.cache = make(map[string]Option)
+    return g
 }
 
-func (g *GetOpt) isOption(o string) (Option) {
-    _, ok := g.cache[o];
+func (g *GetOpt) isOption(o string) Option {
+    _, ok := g.cache[o]
     if ok {
-        element, _ := g.cache[o];
-        return element;
+        element, _ := g.cache[o]
+        return element
     }
-    return nil;
+    return nil
 }
 
-func stop(msg string, format ...interface{}){
-    fmt.Fprintf(os.Stderr, msg, format);
-    os.Exit(1);
-}
+func (g *GetOpt) getStringOption(o string) *StringOption {
 
-func (g *GetOpt) getStringOption(o string) *StringOption{
-
-    opt := g.isOption(o);
+    opt := g.isOption(o)
 
     if opt != nil {
-        sopt, ok := opt.(*StringOption);
-        if ok{
-            return sopt;
-        }else{
-            stop("%s: is not a string option\n", o);
+        sopt, ok := opt.(*StringOption)
+        if ok {
+            return sopt
+        } else {
+            log.Exitf("%s: is not a string option\n", o)
         }
-    }else{
-        stop("%s: is not an option at all\n", o);
+    } else {
+        log.Exitf("%s: is not an option at all\n", o)
     }
 
-    return nil;
+    return nil
 }
 
-func (g *GetOpt) Get(o string) string{
+func (g *GetOpt) Get(o string) string {
 
-    sopt := g.getStringOption(o);
+    sopt := g.getStringOption(o)
 
     switch sopt.count {
-        case 0 : stop("%s: is not set\n", o);
-        case 1 : // fine do nothing
-        default:
-            fmt.Fprintf(os.Stderr,"[warning] option %s: has more arguments than 1\n", o);
+    case 0:
+        log.Exitf("%s: is not set\n", o)
+    case 1: // fine do nothing
+    default:
+        fmt.Fprintf(os.Stderr, "[WARNING] option %s: has more arguments than 1\n", o)
     }
-    return sopt.values[0];
+    return sopt.values[0]
 }
 
-func (g *GetOpt) GetMultiple(o string) []string{
-
-    sopt := g.getStringOption(o);
-
-    if sopt.count == 0{
-        stop("%s: is not set\n", o);
+func (g *GetOpt) Reset() {
+    for _, v := range g.cache {
+        v.reset()
     }
-
-    return sopt.values[0:sopt.count];
 }
 
-func (g *GetOpt) Parse(argv []string) (args []string){
+func (g *GetOpt) GetMultiple(o string) []string {
 
-    var count int = 0;
+    sopt := g.getStringOption(o)
+
+    if sopt.count == 0 {
+        log.Exitf("%s: is not set\n", o)
+    }
+
+    return sopt.values[0:sopt.count]
+}
+
+func (g *GetOpt) Parse(argv []string) (args []string) {
+
+    var count int = 0
     // args cannot be longer than argv, if no options
     // are given on the command line it is argv
-    args = make([]string, len(argv));
+    args = make([]string, len(argv))
 
     for i := 0; i < len(argv); i++ {
 
@@ -138,87 +143,89 @@ func (g *GetOpt) Parse(argv []string) (args []string){
         if opt != nil {
 
             switch opt.(type) {
-                case *BoolOption:
-                    bopt, _ := opt.(*BoolOption);
-                    bopt.setFlag();
-                case *StringOption:
-                    sopt, _ := opt.(*StringOption);
-                    if i + 1 >= len(argv){
-                        stop("missing argument for: %s\n",argv[i]);
-                    }else{
-                        sopt.addArgument(argv[i+1]);
-                        i++;
-                    }
+            case *BoolOption:
+                bopt, _ := opt.(*BoolOption)
+                bopt.setFlag()
+            case *StringOption:
+                sopt, _ := opt.(*StringOption)
+                if i+1 >= len(argv) {
+                    log.Exitf("missing argument for: %s\n", argv[i])
+                } else {
+                    sopt.addArgument(argv[i+1])
+                    i++
+                }
             }
 
-        }else{
+        } else {
 
             // arguments written next to options
-            start , ok := g.juxtaOption(argv[i]);
+            start, ok := g.juxtaOption(argv[i])
 
             if ok {
-                stropt := g.getStringOption(start);
-                stropt.addArgument(argv[i][len(start):]);
-            }else{
-                args[count] = argv[i];
-                count++;
+                stropt := g.getStringOption(start)
+                stropt.addArgument(argv[i][len(start):])
+            } else {
+                args[count] = argv[i]
+                count++
             }
         }
     }
 
-    return args[0:count];
+    return args[0:count]
 }
 
-func (g *GetOpt) juxtaOption(opt string)(string, bool){
+func (g *GetOpt) juxtaOption(opt string) (string, bool) {
 
-    var tmpmax string = "";
+    var tmpmax string = ""
+    var optlen int = g.options.Len();
 
-    for o := range g.options.Iter() {
 
-        sopt, ok := o.(*StringOption);
+    for i := 0; i < optlen; i++ {
+
+        sopt, ok := g.options.At(i).(*StringOption)
 
         if ok {
-            s := sopt.startsWith(opt);
+            s := sopt.startsWith(opt)
             if s != "" {
-                if len(s) > len(tmpmax){
-                    tmpmax = s;
+                if len(s) > len(tmpmax) {
+                    tmpmax = s
                 }
             }
         }
     }
 
-    if tmpmax != ""{
-        return tmpmax, true;
+    if tmpmax != "" {
+        return tmpmax, true
     }
 
-    return "", false;
+    return "", false
 }
 
-func (g *GetOpt) IsSet(o string) bool{
-    _, ok := g.cache[o];
+func (g *GetOpt) IsSet(o string) bool {
+    _, ok := g.cache[o]
     if ok {
-        element, _ := g.cache[o];
-        return element.isSet();
-    }else{
-        stop("%s not an option\n", o);
+        element, _ := g.cache[o]
+        return element.isSet()
+    } else {
+        log.Exitf("%s not an option\n", o)
     }
-    return false;
+    return false
 }
 
-func (g *GetOpt) BoolOption(optstr string){
-    ops := strings.Split(optstr, " ", -1);
-    boolopt := newBoolOption(ops);
+func (g *GetOpt) BoolOption(optstr string) {
+    ops := strings.Split(optstr, " ", -1)
+    boolopt := newBoolOption(ops)
     for i := range ops {
-        g.cache[ops[i]] = boolopt;
+        g.cache[ops[i]] = boolopt
     }
-    g.options.Push(boolopt);
+    g.options.Push(boolopt)
 }
 
-func (g *GetOpt) StringOption(optstr string){
-    ops := strings.Split(optstr, " ", -1);
-    stringopt := newStringOption(ops);
+func (g *GetOpt) StringOption(optstr string) {
+    ops := strings.Split(optstr, " ", -1)
+    stringopt := newStringOption(ops)
     for i := range ops {
-        g.cache[ops[i]] = stringopt;
+        g.cache[ops[i]] = stringopt
     }
-    g.options.Push(stringopt);
+    g.options.Push(stringopt)
 }

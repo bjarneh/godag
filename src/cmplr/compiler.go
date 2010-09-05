@@ -17,86 +17,62 @@ import (
 
 
 type Compiler struct {
-    root, arch, suffix, executable string
-    dryrun                         bool
-    includes                       []string
+    root, arch, suffix   string
+    executable, linker   string
+    dryrun               bool
+    includes             []string
 }
 
 func New(root, arch string, dryrun bool, include []string) *Compiler {
     c := new(Compiler)
     c.root = root
-    c.arch, c.suffix = archNsuffix(arch)
-    c.executable = findCompiler(c.arch)
     c.dryrun = dryrun
     c.includes = include
+    c.archDependantInfo( arch )
     return c
 }
 
-func findCompiler(arch string) string {
+func (c *Compiler) archDependantInfo(arch string) {
 
-    var lookingFor string
-    switch arch {
-    case "arm":
-        lookingFor = "5g"
-    case "amd64":
-        lookingFor = "6g"
-    case "386":
-        lookingFor = "8g"
-    }
-
-    fullPath := handy.Which(lookingFor)
-    if fullPath == "" {
-        log.Exit("[ERROR] could not find compiler\n")
-    }
-    return fullPath
-}
-
-func findLinker(arch string) string {
-
-    var lookingFor string
-    switch arch {
-    case "arm":
-        lookingFor = "5l"
-    case "amd64":
-        lookingFor = "6l"
-    case "386":
-        lookingFor = "8l"
-    }
-
-    fullPath := handy.Which(lookingFor)
-    if fullPath == "" {
-        log.Exit("[ERROR] could not find linker")
-    }
-    return fullPath
-}
-
-
-func archNsuffix(arch string) (a, s string) {
+    var A string // a:architecture
 
     if arch == "" {
-        a = os.Getenv("GOARCH")
+        A = os.Getenv("GOARCH")
     } else {
-        a = arch
+        A = arch
     }
 
-    switch a {
+    var S, C, L string // S:suffix, C:compiler, L:linker
+
+    switch A {
     case "arm":
-        s = ".5"
+        S = ".5"; C = "5g"; L = "5l"
     case "amd64":
-        s = ".6"
+        S = ".6"; C = "6g"; L = "6l"
     case "386":
-        s = ".8"
+        S = ".8"; C = "8g"; L = "8l"
     default:
-        log.Exitf("[ERROR] unknown architecture: %s\n", a)
+        log.Exitf("[ERROR] unknown architecture: %s\n", A)
     }
 
-    return a, s
+    pathCompiler := handy.Which( C )
+    pathLinker   := handy.Which( L )
+
+    if pathCompiler == "" {
+        log.Exit("[ERROR] could not find compiler")
+    }
+
+    if pathLinker == ""  {
+        log.Exit("[ERROR] could not find linker")
+    }
+
+    c.arch       = A
+    c.executable = pathCompiler
+    c.linker     = pathLinker
+    c.suffix     = S
+
 }
 
-func (c *Compiler) String() string {
-    s := "Compiler{ root=%s, arch=%s, suffix=%s, executable=%s }"
-    return fmt.Sprintf(s, c.root, c.arch, c.suffix, c.executable)
-}
 
 func (c *Compiler) CreateArgv(pkgs *vector.Vector) {
 
@@ -320,12 +296,11 @@ func (c *Compiler) ForkLink(pkgs *vector.Vector, output string, static bool) {
         staticXtra++
     }
 
-    linker := findLinker(c.arch)
     compiled := path.Join(c.root, mainPKG.Name) + c.suffix
 
     argv := make([]string, 6+(includeLen*2)+staticXtra)
     i := 0
-    argv[i] = linker
+    argv[i] = c.linker
     i++
     argv[i] = "-o"
     i++

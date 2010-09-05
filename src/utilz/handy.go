@@ -32,21 +32,21 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
             log.Stderrf("[ERROR] %s\n", err)
         }
         ok = false
+
     } else {
+
         wmsg, werr := os.Wait(pid, 0)
+
         if werr != nil || wmsg.WaitStatus != 0 {
 
-            if stopOnTrouble {
-                if werr != nil {
-                    log.Exitf("[ERROR] %s\n", werr)
-                }else{
-                    log.Exitf("[ERROR] failed to fork process:\n%s\n", strings.Join(argv, " "))
-                }
-            }else{
-                if werr != nil {
-                    log.Stderr("[ERROR] %s\n", werr)
-                }
+            if werr != nil {
+                log.Stderr("[ERROR] %s\n", werr)
             }
+
+            if stopOnTrouble {
+                os.Exit(1);
+            }
+
             ok = false
         }
     }

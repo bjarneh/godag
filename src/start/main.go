@@ -129,7 +129,7 @@ func main() {
     if ok {
         args = parseArgv(argv)
         if len(args) > 0 {
-            fmt.Fprintf(os.Stderr, "[WARNING] non-option arguments in config file\n")
+            log.Stderr("[WARNING] non-option arguments in config file\n")
         }
     }
 
@@ -139,7 +139,7 @@ func main() {
     if ok {
         args = parseArgv(argv)
         if len(args) > 0 {
-            fmt.Fprintf(os.Stderr, "[WARNING] non-option arguments in config file\n")
+            log.Stderr("[WARNING] non-option arguments in config file\n")
         }
     }
 
@@ -148,7 +148,7 @@ func main() {
 
     if len(args) > 0 {
         if len(args) > 1 {
-            fmt.Fprintf(os.Stderr, "[WARNING] len(input directories) > 1\n")
+            log.Stderr("[WARNING] len(input directories) > 1\n")
         }
         srcdir = args[0]
         if srcdir == "." {
@@ -214,7 +214,7 @@ func main() {
     dgrph.GraphBuilder(includes)
     sorted := dgrph.Topsort()
 
-    // print packages sorted, if that's what's desired
+    // print packages sorted
     if sortInfo {
         for i := 0; i < sorted.Len(); i++ {
             rpkg, _ := sorted.At(i).(*dag.Package)
@@ -241,7 +241,7 @@ func main() {
         kompiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
         if rmError != nil {
-            fmt.Fprintf(os.Stderr, "[ERROR] failed to remove testdir: %s\n", testDir)
+            log.Stderrf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
         testArgv := createTestArgv(gdtest, bmatch, match, testVerbose)
         if !dryrun {
@@ -253,7 +253,7 @@ func main() {
             ok = handy.StdExecve(testArgv, false)
             e = os.Remove(gdtest)
             if e != nil {
-                fmt.Fprintf(os.Stderr, "[ERROR] %s\n", e)
+                log.Stderrf("[ERROR] %s\n", e)
             }
             if !ok {
                 os.Exit(1)
@@ -294,8 +294,8 @@ func getConfigArgv(where string) (argv []string, ok bool) {
     b, e := ioutil.ReadFile(configFile)
 
     if e != nil {
-        fmt.Fprintf(os.Stderr, "[WARNING] failed to read config file\n")
-        fmt.Fprintf(os.Stderr, "[WARNING] %s \n", e)
+        log.Stderr("[WARNING] failed to read config file\n")
+        log.Stderrf("[WARNING] %s \n", e)
         return nil, false
     }
 
@@ -565,12 +565,16 @@ func rm865(srcdir string, dryrun bool) {
     compiled := walker.PathWalk(path.Clean(srcdir))
 
     for i := 0; i < compiled.Len(); i++ {
+
         if !dryrun {
-            fmt.Printf("rm: %s\n", compiled.At(i))
+
             e := os.Remove(compiled.At(i))
             if e != nil {
-                fmt.Fprintf(os.Stderr, "[ERROR] could not delete file: %s\n", compiled.At(i))
+                log.Stderrf("[ERROR] could not delete file: %s\n", compiled.At(i))
+            }else{
+                fmt.Printf("rm: %s\n", compiled.At(i))
             }
+
         } else {
             fmt.Printf("[dryrun] rm: %s\n", compiled.At(i))
         }

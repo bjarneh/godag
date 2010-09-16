@@ -19,6 +19,7 @@ import (
     "io/ioutil"
     "regexp"
     "runtime"
+    "exec"
 )
 
 
@@ -499,7 +500,14 @@ func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw stri
     var useTabs string = "-tabindent=false"
     var comments string = "-comments=true"
     var rewRule string = ""
-    var fmtexec string = handy.Which("gofmt")
+    var fmtexec string
+    var err os.Error
+
+    fmtexec, err = exec.LookPath("gofmt")
+
+    if err != nil {
+        log.Exit("[ERROR] could not find 'gofmt' in $PATH")
+    }
 
     if tw != "" {
         tabWidth = "-tabwidth=" + tw

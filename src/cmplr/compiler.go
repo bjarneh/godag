@@ -13,6 +13,7 @@ import (
     "cmplr/dag"
     "path"
     "log"
+    "exec"
 )
 
 
@@ -36,6 +37,9 @@ func (c *Compiler) archDependantInfo(arch string) {
 
     var A string // a:architecture
 
+    var pathCompiler, pathLinker string
+    var err os.Error
+
     if arch == "" {
         A = os.Getenv("GOARCH")
     } else {
@@ -55,15 +59,16 @@ func (c *Compiler) archDependantInfo(arch string) {
         log.Exitf("[ERROR] unknown architecture: %s\n", A)
     }
 
-    pathCompiler := handy.Which( C )
-    pathLinker   := handy.Which( L )
+    pathCompiler, err = exec.LookPath( C )
 
-    if pathCompiler == "" {
-        log.Exit("[ERROR] could not find compiler")
+    if err != nil {
+        log.Exitf("[ERROR] could not find compiler: %s\n", C)
     }
 
-    if pathLinker == ""  {
-        log.Exit("[ERROR] could not find linker")
+    pathLinker, err   = exec.LookPath( L )
+
+    if err != nil {
+        log.Exitf("[ERROR] could not find linker: %s\n", L)
     }
 
     c.arch       = A

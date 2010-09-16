@@ -27,7 +27,7 @@ package=(
 'container'
 'ebnf'
 'encoding'
-'exec'
+## 'exec'
 'expvar'
 'flag'
 'fmt'

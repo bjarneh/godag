@@ -66,7 +66,7 @@ package=(
 
 
 function build(){
-    echo "build"
+    echo -n "build"
     cd src/utilz && $COMPILER walker.go || exit 1
     $COMPILER handy.go || exit 1
     $COMPILER stringset.go || exit 1
@@ -76,10 +76,11 @@ function build(){
     $COMPILER -I $IDIR compiler.go || exit 1
     cd $HERE/src/start && $COMPILER -I $IDIR main.go || exit 1
     cd $HERE && $LINKY -o gd -L src src/start/main.? || exit 1
+    echo " ...done"
 }
 
 function clean(){
-    echo "clean"
+    echo -n "clean"
     cd $HERE
     rm -rf src/utilz/walker.?
     rm -rf src/utilz/stringset.?
@@ -94,6 +95,31 @@ function clean(){
     rm -rf src/start/main.?
     rm -rf gd
     rm -rf "$HOME/bin/gd"
+    rm -rf "$GOBIN/gd"
+    echo " ...done"
+}
+
+function move(){
+    cd "$HERE"
+    if [ -f "gd" ]; then
+        echo -n "move"
+        if [ -d "${HOME}/bin" ]; then
+            cd "$HERE"
+            mv gd "$HOME/bin"
+        else
+            if [ -d "$GOBIN" ]; then
+                cd "$HERE"
+                mv gd "$GOBIN"
+            else
+                echo -e "\n[ERROR] \$HOME/bin: not a directory"
+                echo -e "[ERROR] \$GOBIN   : not set\n"
+            fi
+        fi
+        echo "  ...done"
+    else
+        echo "'gd' not found, nothing to move"
+        exit 1
+    fi
 }
 
 function phelp(){
@@ -104,9 +130,10 @@ build.sh - utility script for godag
 targets:
 
   help    : print this menu and exit
-  clean   : rm *.[865a] from src + rm gd \$HOME/bin/gd
+  clean   : rm *.[865a] from src + rm gd \$HOME/bin/gd \$GOBIN/gd
   build   : compile source code in ./src
-  install : build + mv gd \$HOME/bin  (default)
+  move    : move 'gd' to \$HOME/bin (\$GOBIN fallback)
+  install : clean + build + move (DEFAULT)
   cproot  : copy modified (pure go) part of \$GOROOT/src/pkg
 
 EOH
@@ -186,6 +213,13 @@ function cproot {
 }
 
 
+# default target clean + build + move
+function triple {
+    clean
+    build
+    move
+}
+
 # main
 {
 [ "$GOROOT" ] || die "GOROOT"
@@ -229,14 +263,12 @@ case "$1" in
       'build' | 'b' | '-b' | '--build' | '-build')
       time build
       ;;
+      'move' | 'm' | '-m' | '--move' | '-move')
+      time move
+      ;;
       *)
-      time build
-      if [ -d "${HOME}/bin" ]; then
-          cd "$HERE"
-          mv gd "$HOME/bin"
-      else
-          echo -e "\n[ERROR] ${HOME}/bin: not a directory\n"
-      fi
+      time triple
       ;;
 esac
 }
+

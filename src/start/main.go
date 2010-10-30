@@ -161,6 +161,16 @@ func main() {
                 }
             }
         }
+
+    }else{
+
+        // give nice feedback if missing input dir
+        possibleSrc := path.Join(os.Getenv("PWD"), "src")
+        _, e = os.Stat(possibleSrc)
+        if e != nil {
+            fmt.Printf("usage: gd [OPTIONS] src-directory\n")
+            os.Exit(1)
+        }
     }
 
     // stuff that can be done without $GOROOT

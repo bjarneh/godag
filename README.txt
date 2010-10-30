@@ -28,12 +28,12 @@ You can try to compile the same source using the generated
 executable: gd
 
 
-$ ./gd src          # will compile source inside src
-$ ./gd -p src       # will print dependency info gathered
-$ ./gd -s src       # will print legal compile order
-$ ./gd src -test    # will run unit-tests
-$ ./gd src -fmt     # will format (gofmt) the source-code
-
+$ gd src          # will compile source inside src
+$ gd -p src       # will print dependency info gathered
+$ gd -s src       # will print legal compile order
+$ gd src -test    # will run unit-tests
+$ gd src -fmt     # will format (gofmt) the source-code
+$ gd src -o gd    # will compile and link executable
 
 
 Philosophy (Babble?)
@@ -46,6 +46,12 @@ a dynamic problem like a changing source tree. They also make
 flat structures quite common, since this usually simplifies
 the Makefiles, but makes organisation far less intuitive than
 a directory-tree package-structure.
+
+
+Completion
+------------------------------------------------------------
+
+A small completion script for bash is placed in util/
 
 
 Logo

@@ -225,6 +225,7 @@ function triple {
 [ "$GOROOT" ] || die "GOROOT"
 [ "$GOARCH" ] || die "GOARCH"
 [ "$GOOS" ]   || die "GOOS"
+[ "$GOBIN" ]  || die "GOBIN"
 
 case "$GOARCH" in
     '386')

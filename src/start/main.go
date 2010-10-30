@@ -130,7 +130,7 @@ func main() {
     if ok {
         args = parseArgv(argv)
         if len(args) > 0 {
-            log.Stderr("[WARNING] non-option arguments in config file\n")
+            log.Print("[WARNING] non-option arguments in config file\n")
         }
     }
 
@@ -140,7 +140,7 @@ func main() {
     if ok {
         args = parseArgv(argv)
         if len(args) > 0 {
-            log.Stderr("[WARNING] non-option arguments in config file\n")
+            log.Print("[WARNING] non-option arguments in config file\n")
         }
     }
 
@@ -149,7 +149,7 @@ func main() {
 
     if len(args) > 0 {
         if len(args) > 1 {
-            log.Stderr("[WARNING] len(input directories) > 1\n")
+            log.Print("[WARNING] len(input directories) > 1\n")
         }
         srcdir = args[0]
         if srcdir == "." {
@@ -242,7 +242,7 @@ func main() {
         kompiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
         if rmError != nil {
-            log.Stderrf("[ERROR] failed to remove testdir: %s\n", testDir)
+            log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
         testArgv := createTestArgv(gdtest, bmatch, match, testVerbose)
         if !dryrun {
@@ -254,7 +254,7 @@ func main() {
             ok = handy.StdExecve(testArgv, false)
             e = os.Remove(gdtest)
             if e != nil {
-                log.Stderrf("[ERROR] %s\n", e)
+                log.Printf("[ERROR] %s\n", e)
             }
             if !ok {
                 os.Exit(1)
@@ -295,8 +295,8 @@ func getConfigArgv(where string) (argv []string, ok bool) {
     b, e := ioutil.ReadFile(configFile)
 
     if e != nil {
-        log.Stderr("[WARNING] failed to read config file\n")
-        log.Stderrf("[WARNING] %s \n", e)
+        log.Print("[WARNING] failed to read config file\n")
+        log.Printf("[WARNING] %s \n", e)
         return nil, false
     }
 
@@ -578,7 +578,7 @@ func rm865(srcdir string, dryrun bool) {
 
             e := os.Remove(compiled.At(i))
             if e != nil {
-                log.Stderrf("[ERROR] could not delete file: %s\n", compiled.At(i))
+                log.Printf("[ERROR] could not delete file: %s\n", compiled.At(i))
             }else{
                 fmt.Printf("rm: %s\n", compiled.At(i))
             }

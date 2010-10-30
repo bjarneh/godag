@@ -27,7 +27,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
         if stopOnTrouble {
             log.Exitf("[ERROR] %s\n", err)
         }else{
-            log.Stderrf("[ERROR] %s\n", err)
+            log.Printf("[ERROR] %s\n", err)
         }
         ok = false
 
@@ -35,10 +35,10 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 
         wmsg, werr := os.Wait(pid, 0)
 
-        if werr != nil || wmsg.WaitStatus != 0 {
+        if werr != nil || wmsg.WaitStatus.ExitStatus() != 0 {
 
             if werr != nil {
-                log.Stderr("[ERROR] %s\n", werr)
+                log.Printf("[ERROR] %s\n", werr)
             }
 
             if stopOnTrouble {

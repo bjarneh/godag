@@ -104,7 +104,7 @@ func (d Dag) GraphBuilder(includes []string) {
                 /// fmt.Printf("local:  %s \n", dep);
             } else if !d.stdlibDependency(goRoot, dep) {
                 if includes == nil || len(includes) == 0 {
-                    log.Stderrf("[ERROR] Dependency: '%s' not found\n", dep)
+                    log.Printf("[ERROR] Dependency: '%s' not found\n", dep)
                     log.Exit("[ERROR] Did you use actual src-root?\n")
                 }
             }
@@ -248,7 +248,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
     dir, e1 := os.Stat(tmpdir)
 
     if e1 == nil && dir.IsDirectory() {
-        log.Stderrf("[ERROR] directory: %s already exists\n", tmpdir)
+        log.Printf("[ERROR] directory: %s already exists\n", tmpdir)
     } else {
         e_mk := os.Mkdir(tmpdir, rwxr_xr_x)
         if e_mk != nil {

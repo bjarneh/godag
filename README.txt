@@ -14,10 +14,16 @@ Install:
 
 Run the script ./build.sh
 
-NOTE: It will try to copy the file 'gd' to $HOME/bin
-      and if that directory is not present, an error
-      message will be displayed, it's not the most
-      advanced install script.. :-)
+
+1) compile (+link) the source code
+2) move binary (gd) to $HOME/bin
+
+
+NOTE: If $HOME/bin is not present, it falls
+      back to $GOBIN, which is required now.
+
+
+./build.sh help   to see all available targets
 
 
 

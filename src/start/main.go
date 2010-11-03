@@ -245,6 +245,7 @@ func main() {
 
     // test
     if test {
+        os.Setenv("SRCROOT", srcdir);
         testMain, testDir := dgrph.MakeMainTest(srcdir)
         kompiler.CreateArgv(testMain)
         kompiler.SerialCompile(testMain)
@@ -270,6 +271,7 @@ func main() {
                 os.Exit(1)
             }
         }
+
     }
 
     if output != "" {

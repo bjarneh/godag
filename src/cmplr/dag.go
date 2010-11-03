@@ -93,7 +93,7 @@ func (d Dag) addEdge(from, to string) {
 
 func (d Dag) GraphBuilder(includes []string) {
 
-    goRoot := path.Join(os.Getenv("GOROOT"), "src/pkg")
+    goRoot := path.Join(os.Getenv("GOROOT"), "src", "pkg")
 
     for k, v := range d {
 

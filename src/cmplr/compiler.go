@@ -18,10 +18,10 @@ import (
 
 
 type Compiler struct {
-    root, arch, suffix   string
-    executable, linker   string
-    dryrun               bool
-    includes             []string
+    root, arch, suffix string
+    executable, linker string
+    dryrun             bool
+    includes           []string
 }
 
 func New(root, arch string, dryrun bool, include []string) *Compiler {
@@ -29,7 +29,7 @@ func New(root, arch string, dryrun bool, include []string) *Compiler {
     c.root = root
     c.dryrun = dryrun
     c.includes = include
-    c.archDependantInfo( arch )
+    c.archDependantInfo(arch)
     return c
 }
 
@@ -50,31 +50,37 @@ func (c *Compiler) archDependantInfo(arch string) {
 
     switch A {
     case "arm":
-        S = ".5"; C = "5g"; L = "5l"
+        S = ".5"
+        C = "5g"
+        L = "5l"
     case "amd64":
-        S = ".6"; C = "6g"; L = "6l"
+        S = ".6"
+        C = "6g"
+        L = "6l"
     case "386":
-        S = ".8"; C = "8g"; L = "8l"
+        S = ".8"
+        C = "8g"
+        L = "8l"
     default:
         log.Exitf("[ERROR] unknown architecture: %s\n", A)
     }
 
-    pathCompiler, err = exec.LookPath( C )
+    pathCompiler, err = exec.LookPath(C)
 
     if err != nil {
         log.Exitf("[ERROR] could not find compiler: %s\n", C)
     }
 
-    pathLinker, err   = exec.LookPath( L )
+    pathLinker, err = exec.LookPath(L)
 
     if err != nil {
         log.Exitf("[ERROR] could not find linker: %s\n", L)
     }
 
-    c.arch       = A
+    c.arch = A
     c.executable = pathCompiler
-    c.linker     = pathLinker
-    c.suffix     = S
+    c.linker = pathLinker
+    c.suffix = S
 
 }
 
@@ -128,11 +134,11 @@ func (c *Compiler) SerialCompile(pkgs *vector.Vector) {
         if c.dryrun {
             dryRun(pkg.Argv)
         } else {
-            if oldPkgFound || !pkg.UpToDate(){
+            if oldPkgFound || !pkg.UpToDate() {
                 fmt.Println("compiling:", pkg.Name)
                 handy.StdExecve(pkg.Argv, true)
                 oldPkgFound = true
-            }else{
+            } else {
                 fmt.Println("up 2 date:", pkg.Name)
             }
         }
@@ -148,12 +154,12 @@ func (c *Compiler) ParallelCompile(pkgs *vector.Vector) {
     var parallel *vector.Vector
     var oldPkgFound bool = false
 
-    localDeps    = stringset.New()
+    localDeps = stringset.New()
     compiledDeps = stringset.New()
 
     for y = 0; y < pkgs.Len(); y++ {
         pkg, _ = pkgs.At(y).(*dag.Package)
-        localDeps.Add( pkg.Name )
+        localDeps.Add(pkg.Name)
     }
 
     parallel = new(vector.Vector)
@@ -162,30 +168,30 @@ func (c *Compiler) ParallelCompile(pkgs *vector.Vector) {
 
         pkg, _ = pkgs.At(y).(*dag.Package)
 
-        if ! pkg.Ready( localDeps, compiledDeps ) {
+        if !pkg.Ready(localDeps, compiledDeps) {
 
-            oldPkgFound = c.compileMultipe( parallel, oldPkgFound )
+            oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
 
             for z = 0; z < parallel.Len(); z++ {
                 cpkg, _ = parallel.At(z).(*dag.Package)
-                compiledDeps.Add( cpkg.Name )
+                compiledDeps.Add(cpkg.Name)
             }
 
             parallel = new(vector.Vector)
 
-        }else{
-            parallel.Push( pkg )
+        } else {
+            parallel.Push(pkg)
             y++
         }
     }
 
     if parallel.Len() > 0 {
-        oldPkgFound = c.compileMultipe( parallel, oldPkgFound )
+        oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
     }
 
 }
 
-func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool{
+func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool {
 
     var ok bool
     var max int = pkgs.Len()
@@ -202,22 +208,22 @@ func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool{
             fmt.Println("compiling:", pkg.Name)
             handy.StdExecve(pkg.Argv, true)
             oldPkgFound = true
-        }else{
+        } else {
             fmt.Println("up 2 date:", pkg.Name)
         }
-    }else{
+    } else {
 
         ch := make(chan bool, pkgs.Len())
 
         for y := 0; y < max; y++ {
             pkg, _ := pkgs.At(y).(*dag.Package)
-            if oldPkgFound || ! pkg.UpToDate() {
+            if oldPkgFound || !pkg.UpToDate() {
                 fmt.Println("compiling:", pkg.Name)
                 oldPkgFound = true
-                go gCompile( pkg.Argv, ch )
-            }else{
+                go gCompile(pkg.Argv, ch)
+            } else {
                 fmt.Println("up 2 date:", pkg.Name)
-                ch<-true
+                ch <- true
             }
         }
 
@@ -237,9 +243,9 @@ func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool{
     return oldPkgFound
 }
 
-func gCompile(argv []string, c chan bool){
+func gCompile(argv []string, c chan bool) {
     ok := handy.StdExecve(argv, false) // don't exit on error
-    c<-ok
+    c <- ok
 }
 
 // for removal of temoprary packages created for testing and so on..
@@ -255,7 +261,7 @@ func (c *Compiler) DeletePackages(pkgs *vector.Vector) bool {
             e = os.Remove(pkg.Files.At(y))
             if e != nil {
                 ok = false
-                fmt.Fprintf(os.Stderr, "[ERROR] %s\n", e)
+                log.Printf("[ERROR] %s\n", e)
             }
         }
         if !c.dryrun {
@@ -263,7 +269,7 @@ func (c *Compiler) DeletePackages(pkgs *vector.Vector) bool {
             e = os.Remove(pcompile)
             if e != nil {
                 ok = false
-                fmt.Fprintf(os.Stderr, "[ERROR] %s\n", e)
+                log.Printf("[ERROR] %s\n", e)
             }
         }
     }

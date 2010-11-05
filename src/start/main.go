@@ -33,7 +33,7 @@ var files *vector.StringVector
 var includes []string = nil
 
 // variables for the string options
-var(
+var (
     dot      = ""
     arch     = ""
     gdtest   = "gdtest"
@@ -46,7 +46,7 @@ var(
 )
 
 // variables for bool options
-var(
+var (
     dryrun       = false
     test         = false
     testVerbose  = false
@@ -162,7 +162,7 @@ func main() {
             }
         }
 
-    }else{
+    } else {
 
         // give nice feedback if missing input dir
         possibleSrc := path.Join(os.Getenv("PWD"), "src")
@@ -175,18 +175,18 @@ func main() {
 
     // stuff that can be done without $GOROOT
     if listing {
-        printListing();
-        os.Exit(0);
+        printListing()
+        os.Exit(0)
     }
 
     if needsHelp {
-        printHelp();
-        os.Exit(0);
+        printHelp()
+        os.Exit(0)
     }
 
     if needsVersion {
-        printVersion();
-        os.Exit(0);
+        printVersion()
+        os.Exit(0)
     }
 
     // delete all object/archive files
@@ -219,7 +219,7 @@ func main() {
         os.Exit(0)
     }
 
-    gotRoot();//?
+    gotRoot() //?
 
     // sort graph based on dependencies
     dgrph.GraphBuilder(includes)
@@ -237,15 +237,15 @@ func main() {
     // compile
     kompiler := compiler.New(srcdir, arch, dryrun, includes)
     kompiler.CreateArgv(sorted)
-    if runtime.GOMAXPROCS( -1 ) > 1 && !dryrun {
+    if runtime.GOMAXPROCS(-1) > 1 && !dryrun {
         kompiler.ParallelCompile(sorted)
-    }else{
+    } else {
         kompiler.SerialCompile(sorted)
     }
 
     // test
     if test {
-        os.Setenv("SRCROOT", srcdir);
+        os.Setenv("SRCROOT", srcdir)
         testMain, testDir := dgrph.MakeMainTest(srcdir)
         kompiler.CreateArgv(testMain)
         kompiler.SerialCompile(testMain)
@@ -315,13 +315,13 @@ func getConfigArgv(where string) (argv []string, ok bool) {
     comStripRegex := regexp.MustCompile("#[^\n]*\n?")
     blankRegex := regexp.MustCompile("[\n\t \r]+")
 
-    rmComments  := comStripRegex.ReplaceAllString(string(b), "")
-    rmNewLine   := blankRegex.ReplaceAllString(rmComments, " ")
+    rmComments := comStripRegex.ReplaceAllString(string(b), "")
+    rmNewLine := blankRegex.ReplaceAllString(rmComments, " ")
 
-    pureOptions := strings.TrimSpace( rmNewLine );
+    pureOptions := strings.TrimSpace(rmNewLine)
 
     if pureOptions == "" {
-        return nil, false;
+        return nil, false
     }
 
     argv = strings.Split(pureOptions, " ", -1)
@@ -339,7 +339,7 @@ func parseArgv(argv []string) (args []string) {
     }
 
     if getopt.IsSet("-list") {
-        listing = true;
+        listing = true
     }
 
     if getopt.IsSet("-version") {
@@ -374,24 +374,23 @@ func parseArgv(argv []string) (args []string) {
         dot = getopt.Get("-dot")
     }
 
-
     if getopt.IsSet("-I") {
         if includes == nil {
             includes = getopt.GetMultiple("-I")
-        }else{
-            tmp    := getopt.GetMultiple("-I");
-            joined := make([]string, ( len(includes) + len(tmp) ));
+        } else {
+            tmp := getopt.GetMultiple("-I")
+            joined := make([]string, (len(includes) + len(tmp)))
 
-            var i, j int;
+            var i, j int
 
             for i = 0; i < len(includes); i++ {
-                joined[i] = includes[i];
+                joined[i] = includes[i]
             }
             for j = 0; j < len(tmp); j++ {
-                joined[i+j] = tmp[j];
+                joined[i+j] = tmp[j]
             }
 
-            includes = joined;
+            includes = joined
         }
     }
 
@@ -591,7 +590,7 @@ func rm865(srcdir string, dryrun bool) {
             e := os.Remove(compiled.At(i))
             if e != nil {
                 log.Printf("[ERROR] could not delete file: %s\n", compiled.At(i))
-            }else{
+            } else {
                 fmt.Printf("rm: %s\n", compiled.At(i))
             }
 
@@ -643,7 +642,7 @@ func printVersion() {
     fmt.Println("godag 0.1")
 }
 
-func printListing(){
+func printListing() {
     var listMSG string = `
   Listing of options and their content:
 
@@ -669,20 +668,19 @@ func printListing(){
   --tabwidth           =>   %s
   --no-comments        =>   %t
 
-`;
-    tabRepr := "4";
+`
+    tabRepr := "4"
     if tabWidth != "" {
-        tabRepr = tabWidth;
+        tabRepr = tabWidth
     }
 
-    archRepr := "$GOARCH";
+    archRepr := "$GOARCH"
     if arch != "" {
-        archRepr = arch;
+        archRepr = arch
     }
 
     fmt.Printf(listMSG, needsHelp, needsVersion, printInfo,
-              sortInfo, output, static, archRepr, dryrun, cleanTree,
-              includes, dot, test, bmatch, match, testVerbose, gdtest,
-              gofmt, rewRule, tabIndent, tabRepr, noComments);
+        sortInfo, output, static, archRepr, dryrun, cleanTree,
+        includes, dot, test, bmatch, match, testVerbose, gdtest,
+        gofmt, rewRule, tabIndent, tabRepr, noComments)
 }
-

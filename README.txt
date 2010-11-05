@@ -9,8 +9,9 @@ compile order. [865]g and [865]l is used to compile and
 link program. Testing and formatting is also automated.
 
 
-Install:
+Install:  [Linux/Unix]
 ------------------------------------------------------------
+
 
 Run the script ./build.sh
 
@@ -24,6 +25,17 @@ NOTE: If $HOME/bin is not present, it falls
 
 
 ./build.sh help   to see all available targets
+
+
+
+Install:  [Windows] (experimental)
+------------------------------------------------------------
+
+
+Run the script ./build.bat install
+
+1) compile (+link) the source code
+2) move binary (gd) to $GOBIN
 
 
 

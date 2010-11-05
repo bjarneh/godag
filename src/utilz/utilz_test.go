@@ -85,6 +85,8 @@ func TestWalker(t *testing.T){
 
     ss := stringset.New()
 
+    // this is a bit static, will cause problems if
+    // stuff is added or removed == not ideal..
     ss.Add(path.Join(srcroot, "cmplr", "compiler.go"))
     ss.Add(path.Join(srcroot, "cmplr", "dag.go"))
     ss.Add(path.Join(srcroot, "parse", "gopt.go"))

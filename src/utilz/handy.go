@@ -26,7 +26,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
     if err != nil {
         if stopOnTrouble {
             log.Exitf("[ERROR] %s\n", err)
-        }else{
+        } else {
             log.Printf("[ERROR] %s\n", err)
         }
         ok = false
@@ -42,7 +42,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
             }
 
             if stopOnTrouble {
-                os.Exit(1);
+                os.Exit(1)
             }
 
             ok = false
@@ -51,4 +51,3 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 
     return ok
 }
-

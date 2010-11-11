@@ -55,6 +55,8 @@ import (
     "strings"
     "container/vector"
     "log"
+    "os"
+    "strconv"
 )
 
 type GetOpt struct {
@@ -87,10 +89,10 @@ func (g *GetOpt) getStringOption(o string) *StringOption {
         if ok {
             return sopt
         } else {
-            log.Exitf("%s: is not a string option\n", o)
+            log.Exitf("[ERROR] %s: is not a string option\n", o)
         }
     } else {
-        log.Exitf("%s: is not an option at all\n", o)
+        log.Exitf("[ERROR] %s: is not an option at all\n", o)
     }
 
     return nil
@@ -102,12 +104,20 @@ func (g *GetOpt) Get(o string) string {
 
     switch sopt.count {
     case 0:
-        log.Exitf("%s: is not set\n", o)
+        log.Exitf("[ERROR] %s: is not set\n", o)
     case 1: // fine do nothing
     default:
         log.Printf("[WARNING] option %s: has more arguments than 1\n", o)
     }
     return sopt.values[0]
+}
+
+func (g *GetOpt) GetFloat(o string) (float, os.Error) {
+    return strconv.Atof( g.Get(o) )
+}
+
+func (g *GetOpt) GetInt(o string) (int, os.Error) {
+    return strconv.Atoi( g.Get(o) )
 }
 
 func (g *GetOpt) Reset() {
@@ -121,7 +131,7 @@ func (g *GetOpt) GetMultiple(o string) []string {
     sopt := g.getStringOption(o)
 
     if sopt.count == 0 {
-        log.Exitf("%s: is not set\n", o)
+        log.Exitf("[ERROR] %s: is not set\n", o)
     }
 
     return sopt.values[0:sopt.count]
@@ -147,7 +157,7 @@ func (g *GetOpt) Parse(argv []string) (args []string) {
             case *StringOption:
                 sopt, _ := opt.(*StringOption)
                 if i+1 >= len(argv) {
-                    log.Exitf("missing argument for: %s\n", argv[i])
+                    log.Exitf("[ERROR] missing argument for: %s\n", argv[i])
                 } else {
                     sopt.addArgument(argv[i+1])
                     i++
@@ -204,7 +214,7 @@ func (g *GetOpt) IsSet(o string) bool {
         element, _ := g.cache[o]
         return element.isSet()
     } else {
-        log.Exitf("%s not an option\n", o)
+        log.Exitf("[ERROR] %s not an option\n", o)
     }
     return false
 }

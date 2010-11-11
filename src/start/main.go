@@ -162,8 +162,26 @@ func main() {
             }
         }
 
-    } else {
+    }
 
+
+    // stuff that can be done without $GOROOT
+    if needsHelp {
+        printHelp()
+        os.Exit(0)
+    }
+
+    if listing {
+        printListing()
+        os.Exit(0)
+    }
+
+    if needsVersion {
+        printVersion()
+        os.Exit(0)
+    }
+
+    if len(args) == 0 {
         // give nice feedback if missing input dir
         possibleSrc := path.Join(os.Getenv("PWD"), "src")
         _, e = os.Stat(possibleSrc)
@@ -173,21 +191,6 @@ func main() {
         }
     }
 
-    // stuff that can be done without $GOROOT
-    if listing {
-        printListing()
-        os.Exit(0)
-    }
-
-    if needsHelp {
-        printHelp()
-        os.Exit(0)
-    }
-
-    if needsVersion {
-        printVersion()
-        os.Exit(0)
-    }
 
     // delete all object/archive files
     if cleanTree {

@@ -54,6 +54,7 @@ $ gd src -fmt     # will format (gofmt) the source-code
 $ gd src -o gd    # will compile and link executable
 
 
+
 Philosophy (Babble?)
 ------------------------------------------------------------
 
@@ -64,6 +65,7 @@ a dynamic problem like a changing source tree. They also make
 flat structures quite common, since this usually simplifies
 the Makefiles, but makes organisation far less intuitive than
 a directory-tree package-structure.
+
 
 
 Completion

@@ -17,9 +17,10 @@ func TestGetOpt(t *testing.T) {
     getopt.BoolOption("-h -help --help")
     getopt.BoolOption("-v -version --version")
     getopt.StringOption("-f -file --file --file=")
+    getopt.StringOption("-num=")
     getopt.StringOption("-I")
 
-    argv := strings.Split("-h -version not-option -fsomething -I/dir1 -I/dir2", " ", -1)
+    argv := strings.Split("-h -num=7 -version not-option -fsomething -I/dir1 -I/dir2", " ", -1)
 
     args := getopt.Parse(argv)
 
@@ -36,6 +37,18 @@ func TestGetOpt(t *testing.T) {
     } else {
         if getopt.Get("-f") != "something" {
             t.Fatal(" getopt.Get('-f') != 'something'\n")
+        }
+    }
+
+    if !getopt.IsSet("-num=") {
+        t.Fatal(" ! getopt.IsSet('-num=')\n")
+    }else{
+        n,e := getopt.GetInt("-num=")
+        if e != nil {
+            t.Fatalf(" getopt.GetInt error = %s\n", e)
+        }
+        if n != 7 {
+            t.Fatalf(" getopt.GetInt != 7 (%d)\n", n)
         }
     }
 

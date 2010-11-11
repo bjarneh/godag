@@ -169,7 +169,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
     sbImports.Add("import \"testing\";\n")
 
 
-    sbTests.Add("\n\nvar tests = []testing.Test{\n")
+    sbTests.Add("\n\nvar tests = []testing.InternalTest{\n")
     sbBench.Add("\n\nvar benchmarks = []testing.InternalBenchmark{\n")
 
     for _, v := range d {
@@ -191,7 +191,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
                 for i = 0; i < collector.Names.Len(); i++ {
                     testFunc := collector.Names.At(i)
                     if len(testFunc) > 4 && testFunc[0:4] == "Test" {
-                        sbTests.Add(fmt.Sprintf("testing.Test{\"%s.%s\", %s.%s },\n",
+                        sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
                             sname, testFunc, sname, testFunc))
                     } else if len(testFunc) > 9 && testFunc[0:9] == "Benchmark" {
                         sbBench.Add(fmt.Sprintf("testing.InternalBenchmark{\"%s.%s\", %s.%s },\n",
@@ -219,7 +219,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
                 for i = 0; i < collector.Names.Len(); i++ {
                     testFunc := collector.Names.At(i)
                     if len(testFunc) > 4 && testFunc[0:4] == "Test" {
-                        sbTests.Add(fmt.Sprintf("testing.Test{\"%s.%s\", %s.%s },\n",
+                        sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
                             sname, testFunc, sname, testFunc))
                     } else if len(testFunc) > 9 && testFunc[0:9] == "Benchmark" {
                         sbBench.Add(fmt.Sprintf("testing.InternalBenchmark{\"%s.%s\", %s.%s },\n",

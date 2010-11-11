@@ -9,6 +9,8 @@ import (
     "log"
 )
 
+
+
 // some utility functions
 
 func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
@@ -50,4 +52,25 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
     }
 
     return ok
+}
+
+
+// more or less stolen from a pastebin posted on #go-nuts
+// http://pastebin.com/V0CULJWt by yiyus
+// looked kind of handy, so it was placed here :-)
+func Fopen(name, mode string, perms uint32) (file *os.File, err os.Error) {
+
+    var imode int // int mode
+
+    switch mode {
+        case "r"   : imode = os.O_RDONLY
+        case "r+"  : imode = os.O_RDWR
+        case "w"   : imode = os.O_WRONLY|os.O_CREAT|os.O_TRUNC
+        case "w+"  : imode = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+        case "a"   : imode = os.O_WRONLY|os.O_CREAT|os.O_APPEND
+        case "a+"  : imode = os.O_RDWR|os.O_CREAT|os.O_APPEND
+        default    : panic("Fopen: illegal mode -> "+mode)
+    }
+
+    return os.Open(name, imode, perms) // 0644 default
 }

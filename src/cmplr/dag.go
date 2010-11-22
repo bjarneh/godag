@@ -88,25 +88,15 @@ func (d Dag) addEdge(from, to string) {
 }
 // note that nothing is done in order to check if dependencies
 // are valid if they are not part of the actual source-tree,
-// i.e., stdlib dependencies and included (-I) dependencies
-// are not investigated for validity..
 
 func (d Dag) GraphBuilder(includes []string) {
-
-    goRoot := path.Join(os.Getenv("GOROOT"), "src", "pkg")
 
     for k, v := range d {
 
         for dep := range v.dependencies.Iter() {
-
             if d.localDependency(dep) {
                 d.addEdge(dep, k)
                 /// fmt.Printf("local:  %s \n", dep);
-            } else if !d.stdlibDependency(goRoot, dep) {
-                if includes == nil || len(includes) == 0 {
-                    log.Printf("[ERROR] Dependency: '%s' not found\n", dep)
-                    log.Exit("[ERROR] Did you use actual src-root?\n")
-                }
             }
         }
     }
@@ -114,7 +104,6 @@ func (d Dag) GraphBuilder(includes []string) {
 
 func (d Dag) MakeDotGraph(filename string) {
 
-    var rw_r__r__ uint32 = 420
     var file *os.File
     var fileinfo *os.FileInfo
     var e os.Error
@@ -132,7 +121,7 @@ func (d Dag) MakeDotGraph(filename string) {
     }
 
     sb = stringbuffer.NewSize(500)
-    file, e = os.Open(filename, os.O_WRONLY|os.O_CREAT, rw_r__r__)
+    file, e = os.Open(filename, os.O_WRONLY|os.O_CREAT, 0644)
 
     if e != nil {
         log.Exitf("[ERROR] %s\n", e)
@@ -155,7 +144,6 @@ func (d Dag) MakeDotGraph(filename string) {
 func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
 
     var max, i int
-    var rwxr_xr_x uint32 = 493
     var isTest bool
     var sname, tmpdir, tmpstub, tmpfile string
 
@@ -252,7 +240,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
     if e1 == nil && dir.IsDirectory() {
         log.Printf("[ERROR] directory: %s already exists\n", tmpdir)
     } else {
-        e_mk := os.Mkdir(tmpdir, rwxr_xr_x)
+        e_mk := os.Mkdir(tmpdir, 0777)
         if e_mk != nil {
             log.Exit("[ERROR] failed to create directory for testing")
         }
@@ -260,7 +248,7 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
 
     tmpfile = path.Join(tmpdir, "main.go")
 
-    fil, e2 := os.Open(tmpfile, os.O_WRONLY|os.O_CREAT, rwxr_xr_x)
+    fil, e2 := os.Open(tmpfile, os.O_WRONLY|os.O_CREAT, 0777)
 
     if e2 != nil {
         log.Exitf("[ERROR] %s\n", e2)
@@ -325,14 +313,6 @@ func (d Dag) Topsort() *vector.Vector {
 func (d Dag) localDependency(dep string) bool {
     _, ok := d[dep]
     return ok
-}
-
-func (d Dag) stdlibDependency(root, dep string) bool {
-    dir, staterr := os.Stat(path.Join(root, dep))
-    if staterr != nil {
-        return false
-    }
-    return dir.IsDirectory()
 }
 
 func (d Dag) PrintInfo() {

@@ -426,6 +426,7 @@ func parseArgv(argv []string) (args []string) {
     // for gofmt
     if getopt.IsSet("-fmt") {
         gofmt = true
+        findTestFilesAlso()
     }
 
     if getopt.IsSet("-no-comments") {

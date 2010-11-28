@@ -49,7 +49,8 @@ var (
 var (
     dryrun       = false
     test         = false
-    testVerbose  = false
+    Verbose  = false
+    external     = false
     static       = false
     noComments   = false
     tabIndent    = false
@@ -81,6 +82,7 @@ func init() {
     getopt.BoolOption("-f -fmt --fmt")
     getopt.BoolOption("-no-comments --no-comments")
     getopt.BoolOption("-tab --tab")
+    getopt.BoolOption("-e -external --external")
     getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
     getopt.StringOption("-dot -dot= --dot --dot=")
     getopt.StringOption("-I -I=")
@@ -224,8 +226,13 @@ func main() {
 
     gotRoot() //?
 
+    // build all external dependencies
+    if external {
+        dgrph.External(Verbose)
+    }
+
     // sort graph based on dependencies
-    dgrph.GraphBuilder(includes)
+    dgrph.GraphBuilder()
     sorted := dgrph.Topsort()
 
     // print packages sorted
@@ -258,10 +265,10 @@ func main() {
         if rmError != nil {
             log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
-        testArgv := createTestArgv(gdtest, bmatch, match, testVerbose)
+        testArgv := createTestArgv(gdtest, bmatch, match, Verbose)
         if !dryrun {
             tstring := "testing  : "
-            if testVerbose {
+            if Verbose {
                 tstring += "\n"
             }
             fmt.Printf(tstring)
@@ -369,6 +376,10 @@ func parseArgv(argv []string) (args []string) {
         cleanTree = true
     }
 
+    if getopt.IsSet("-external") {
+        external = true
+    }
+
     if getopt.IsSet("-arch") {
         arch = getopt.Get("-a")
     }
@@ -416,7 +427,7 @@ func parseArgv(argv []string) (args []string) {
     }
 
     if getopt.IsSet("-verbose") {
-        testVerbose = true
+        Verbose = true
     }
 
     if getopt.IsSet("-test-bin") {
@@ -630,13 +641,14 @@ func printHelp() {
   -t --test            run all unit-tests
   -b --benchmarks      pass argument to unit-test
   -m --match           pass argument to unit-test
-  -V --verbose         pass argument '-v' to unit-test
+  -V --verbose         verbose unit-test and goinstall
   --test-bin           name of test-binary (default: gdtest)
   -f --fmt             run gofmt on src and exit
   --rew-rule           pass rewrite rule to gofmt
   --tab                pass -tabindent=true to gofmt
   --tabwidth           pass -tabwidth to gofmt (default:4)
   --no-comments        pass -comments=false to gofmt
+  -e --external        goinstall all external dependencies
     `
 
     fmt.Println(helpMSG)
@@ -671,6 +683,7 @@ func printListing() {
   --tab                =>   %t
   --tabwidth           =>   %s
   --no-comments        =>   %t
+  -e --external        =>   %t
 
 `
     tabRepr := "4"
@@ -685,6 +698,6 @@ func printListing() {
 
     fmt.Printf(listMSG, needsHelp, needsVersion, printInfo,
         sortInfo, output, static, archRepr, dryrun, cleanTree,
-        includes, dot, test, bmatch, match, testVerbose, gdtest,
-        gofmt, rewRule, tabIndent, tabRepr, noComments)
+        includes, dot, test, bmatch, match, Verbose, gdtest,
+        gofmt, rewRule, tabIndent, tabRepr, noComments, external)
 }

@@ -49,7 +49,7 @@ var (
 var (
     dryrun       = false
     test         = false
-    Verbose  = false
+    Verbose      = false
     external     = false
     static       = false
     noComments   = false

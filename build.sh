@@ -45,7 +45,6 @@ package=(
 'nntp'
 'once'
 'patch'
-'path'
 'rand'
 'reflect'
 'regexp'

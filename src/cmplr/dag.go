@@ -7,6 +7,7 @@ package dag
 import (
     "exec"
     "go/parser"
+    "go/token"
     "path"
     "go/ast"
     "os"
@@ -512,7 +513,7 @@ func addSeparatorPath(root string) string {
 }
 
 func getSyntaxTreeOrDie(file string, mode uint) *ast.File {
-    absSynTree, err := parser.ParseFile(file, nil, mode)
+    absSynTree, err := parser.ParseFile(token.NewFileSet(), file, nil, mode)
     if err != nil {
         log.Exitf("%s\n", err)
     }

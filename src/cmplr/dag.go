@@ -479,7 +479,7 @@ func (p *Package) Ready(local, compiled *stringset.StringSet) bool {
     return true
 }
 
-func (p *Package) Visit(node interface{}) (v ast.Visitor) {
+func (p *Package) Visit(node ast.Node) (v ast.Visitor) {
 
     switch node.(type) {
     case *ast.BasicLit:
@@ -493,7 +493,7 @@ func (p *Package) Visit(node interface{}) (v ast.Visitor) {
     return p
 }
 
-func (t *TestCollector) Visit(node interface{}) (v ast.Visitor) {
+func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
     switch node.(type) {
     case *ast.FuncDecl:
         fdecl, ok := node.(*ast.FuncDecl)

@@ -500,7 +500,7 @@ func formatFiles(files *vector.StringVector) {
     i++
 
     if rewRule != "" {
-        argv[i] = "-r=\"" + rewRule +"\""
+        argv[i] = fmt.Sprintf("-r='%s'", rewRule)
         i++
     }
 

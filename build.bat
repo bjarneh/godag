@@ -49,6 +49,7 @@ ECHO [install]
 CHDIR src\utilz
 8g.exe walker.go
 8g.exe handy.go
+8g.exe global.go
 8g.exe stringset.go
 8g.exe stringbuffer.go
 CHDIR ..\parse

@@ -10,6 +10,7 @@ import (
     "fmt"
     "utilz/stringset"
     "utilz/handy"
+    "utilz/global"
     "cmplr/dag"
     "path"
     "log"
@@ -24,12 +25,12 @@ type Compiler struct {
     includes           []string
 }
 
-func New(root, arch string, dryrun bool, include []string) *Compiler {
+func New(root string, include []string) *Compiler {
     c := new(Compiler)
     c.root = root
-    c.dryrun = dryrun
+    c.dryrun = global.GetBool("-dryrun")
     c.includes = include
-    c.archDependantInfo(arch)
+    c.archDependantInfo(global.GetString("-arch"))
     return c
 }
 
@@ -277,7 +278,7 @@ func (c *Compiler) DeletePackages(pkgs *vector.Vector) bool {
     return ok
 }
 
-func (c *Compiler) ForkLink(pkgs *vector.Vector, output string, static bool) {
+func (c *Compiler) ForkLink(pkgs *vector.Vector, output string) {
 
     var mainPKG *dag.Package
 
@@ -303,7 +304,7 @@ func (c *Compiler) ForkLink(pkgs *vector.Vector, output string, static bool) {
 
     includeLen := c.extraPkgIncludes()
     staticXtra := 0
-    if static {
+    if global.GetBool("-static") {
         staticXtra++
     }
 
@@ -321,7 +322,7 @@ func (c *Compiler) ForkLink(pkgs *vector.Vector, output string, static bool) {
     i++
     argv[i] = c.root
     i++
-    if static {
+    if global.GetBool("-static") {
         argv[i] = "-d"
         i++
     }

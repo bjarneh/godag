@@ -9,17 +9,18 @@ import (
     "fmt"
     "path"
     "log"
-    "utilz/walker"
-    "cmplr/compiler"
-    "cmplr/dag"
-    "container/vector"
-    "parse/gopt"
     "strings"
-    "utilz/handy"
     "io/ioutil"
     "regexp"
     "runtime"
     "exec"
+    "utilz/walker"
+    "cmplr/compiler"
+    "cmplr/dag"
+    "parse/gopt"
+    "utilz/handy"
+    "container/vector"
+    "utilz/global"
 )
 
 
@@ -32,36 +33,41 @@ var files *vector.StringVector
 // libraries other than $GOROOT/pkg/PLATFORM
 var includes []string = nil
 
-// variables for the string options
-var (
-    dot      = ""
-    arch     = ""
-    gdtest   = "gdtest"
-    output   = ""
-    srcdir   = "src"
-    bmatch   = ""
-    match    = ""
-    rewRule  = ""
-    tabWidth = ""
-)
+// source root
+var srcdir string = "src"
 
-// variables for bool options
-var (
-    dryrun       = false
-    test         = false
-    Verbose      = false
-    external     = false
-    static       = false
-    noComments   = false
-    tabIndent    = false
-    listing      = false
-    gofmt        = false
-    printInfo    = false
-    sortInfo     = false
-    cleanTree    = false
-    needsHelp    = false
-    needsVersion = false
-)
+
+// keys for the bool options
+var bools = []string{
+    "-help",
+    "-clean",
+    "-static",
+    "-version",
+    "-sort",
+    "-print",
+    "-dryrun",
+    "-test",
+    "-list",
+    "-verbose",
+    "-fmt",
+    "-no-comments",
+    "-tab",
+    "-external",
+}
+
+// keys for the string options
+// note: -I is handled seperately
+var strs  = []string{
+    "-arch",
+    "-dot",
+    "-tabwidth",
+    "-rew-rule",
+    "-output",
+    "-benchmarks",
+    "-match",
+    "-test-bin",
+}
+
 
 func init() {
 
@@ -104,6 +110,17 @@ func init() {
         _, dirname := path.Split(s)
         return dirname[0] != '.'
     }
+
+    for _, bkey := range bools {
+        global.SetBool(bkey, false)
+    }
+
+    for _, skey := range strs {
+        global.SetString(skey, "")
+    }
+
+    global.SetString("-test-bin", "gdtest")
+    global.SetString("-I", "")
 
 }
 
@@ -168,17 +185,17 @@ func main() {
 
 
     // stuff that can be done without $GOROOT
-    if needsHelp {
-        printHelp()
-        os.Exit(0)
-    }
-
-    if listing {
+    if global.GetBool("-list") {
         printListing()
         os.Exit(0)
     }
 
-    if needsVersion {
+    if global.GetBool("-help") {
+        printHelp()
+        os.Exit(0)
+    }
+
+    if global.GetBool("-version") {
         printVersion()
         os.Exit(0)
     }
@@ -195,16 +212,16 @@ func main() {
 
 
     // delete all object/archive files
-    if cleanTree {
-        rm865(srcdir, dryrun)
+    if global.GetBool("-clean") {
+        rm865(srcdir)
         os.Exit(0)
     }
 
     files = findFiles(srcdir)
 
     // gofmt on all files gathered
-    if gofmt {
-        formatFiles(files, dryrun, tabIndent, noComments, rewRule, tabWidth)
+    if global.GetBool("-fmt") {
+        formatFiles(files)
         os.Exit(0)
     }
 
@@ -213,22 +230,22 @@ func main() {
     dgrph.Parse(srcdir, files)
 
     // print collected dependency info
-    if printInfo {
+    if global.GetBool("-print") {
         dgrph.PrintInfo()
         os.Exit(0)
     }
 
     // draw graphviz dot graph
-    if dot != "" {
-        dgrph.MakeDotGraph(dot)
+    if global.GetString("-dot") != "" {
+        dgrph.MakeDotGraph( global.GetString("-dot"))
         os.Exit(0)
     }
 
     gotRoot() //?
 
     // build all external dependencies
-    if external {
-        dgrph.External(Verbose)
+    if global.GetBool("-external") {
+        dgrph.External()
     }
 
     // sort graph based on dependencies
@@ -236,7 +253,7 @@ func main() {
     sorted := dgrph.Topsort()
 
     // print packages sorted
-    if sortInfo {
+    if global.GetBool("-sort") {
         for i := 0; i < sorted.Len(); i++ {
             rpkg, _ := sorted.At(i).(*dag.Package)
             fmt.Printf("%s\n", rpkg.Name)
@@ -245,35 +262,35 @@ func main() {
     }
 
     // compile
-    kompiler := compiler.New(srcdir, arch, dryrun, includes)
+    kompiler := compiler.New(srcdir, includes)
     kompiler.CreateArgv(sorted)
-    if runtime.GOMAXPROCS(-1) > 1 && !dryrun {
+    if runtime.GOMAXPROCS(-1) > 1 && ! global.GetBool("-dryrun") {
         kompiler.ParallelCompile(sorted)
     } else {
         kompiler.SerialCompile(sorted)
     }
 
     // test
-    if test {
+    if global.GetBool("-test") {
         os.Setenv("SRCROOT", srcdir)
         testMain, testDir := dgrph.MakeMainTest(srcdir)
         kompiler.CreateArgv(testMain)
         kompiler.SerialCompile(testMain)
-        kompiler.ForkLink(testMain, gdtest, false)
+        kompiler.ForkLink(testMain, global.GetString("-test-bin"))
         kompiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
         if rmError != nil {
             log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
-        testArgv := createTestArgv(gdtest, bmatch, match, Verbose)
-        if !dryrun {
+        testArgv := createTestArgv()
+        if ! global.GetBool("-dryrun") {
             tstring := "testing  : "
-            if Verbose {
+            if global.GetBool("-verbose") {
                 tstring += "\n"
             }
             fmt.Printf(tstring)
             ok = handy.StdExecve(testArgv, false)
-            e = os.Remove(gdtest)
+            e = os.Remove(global.GetString("-test-bin"))
             if e != nil {
                 log.Printf("[ERROR] %s\n", e)
             }
@@ -284,8 +301,8 @@ func main() {
 
     }
 
-    if output != "" {
-        kompiler.ForkLink(sorted, output, static)
+    if global.GetString("-output") != "" {
+        kompiler.ForkLink(sorted, global.GetString("-output"))
     }
 
 }
@@ -344,155 +361,72 @@ func parseArgv(argv []string) (args []string) {
 
     args = getopt.Parse(argv)
 
-    if getopt.IsSet("-help") {
-        needsHelp = true
+    for _, bkey := range bools {
+        if getopt.IsSet(bkey) {
+            global.SetBool(bkey, true)
+        }
     }
 
-    if getopt.IsSet("-list") {
-        listing = true
+    for _, skey := range strs {
+        if getopt.IsSet(skey) {
+            global.SetString(skey, getopt.Get(skey))
+        }
     }
 
-    if getopt.IsSet("-version") {
-        needsVersion = true
-    }
-
-    if getopt.IsSet("-dryrun") {
-        dryrun = true
-    }
-
-    if getopt.IsSet("-print") {
-        printInfo = true
-    }
-
-    if getopt.IsSet("-sort") {
-        sortInfo = true
-    }
-
-    if getopt.IsSet("-static") {
-        static = true
-    }
-
-    if getopt.IsSet("-clean") {
-        cleanTree = true
-    }
-
-    if getopt.IsSet("-external") {
-        external = true
-    }
-
-    if getopt.IsSet("-arch") {
-        arch = getopt.Get("-a")
-    }
-
-    if getopt.IsSet("-dot") {
-        dot = getopt.Get("-dot")
+    if getopt.IsSet("-test") || getopt.IsSet("-fmt") {
+        findTestFilesAlso()
     }
 
     if getopt.IsSet("-I") {
         if includes == nil {
             includes = getopt.GetMultiple("-I")
         } else {
-            tmp := getopt.GetMultiple("-I")
-            joined := make([]string, (len(includes) + len(tmp)))
-
-            var i, j int
-
-            for i = 0; i < len(includes); i++ {
-                joined[i] = includes[i]
-            }
-            for j = 0; j < len(tmp); j++ {
-                joined[i+j] = tmp[j]
-            }
-
-            includes = joined
+            includes = append(includes, getopt.GetMultiple("-I")...)
         }
-    }
-
-    if getopt.IsSet("-output") {
-        output = getopt.Get("-o")
-    }
-
-    // for gotest
-    if getopt.IsSet("-test") {
-        test = true
-        findTestFilesAlso()
-    }
-
-    if getopt.IsSet("-benchmarks") {
-        bmatch = getopt.Get("-b")
-    }
-
-    if getopt.IsSet("-match") {
-        match = getopt.Get("-m")
-    }
-
-    if getopt.IsSet("-verbose") {
-        Verbose = true
-    }
-
-    if getopt.IsSet("-test-bin") {
-        gdtest = getopt.Get("-test-bin")
-    }
-
-    // for gofmt
-    if getopt.IsSet("-fmt") {
-        gofmt = true
-        findTestFilesAlso()
-    }
-
-    if getopt.IsSet("-no-comments") {
-        noComments = true
-    }
-
-    if getopt.IsSet("-rew-rule") {
-        rewRule = getopt.Get("-rew-rule")
-    }
-
-    if getopt.IsSet("-tab") {
-        tabIndent = true
-    }
-
-    if getopt.IsSet("-tabwidth") {
-        tabWidth = getopt.Get("-tabwidth")
     }
 
     getopt.Reset()
     return args
 }
 
-func createTestArgv(prg, bmatch, match string, tverb bool) []string {
+func createTestArgv() []string {
+
     var numArgs int = 1
+
     pwd, e := os.Getwd()
+
     if e != nil {
         log.Exit("[ERROR] could not locate working directory\n")
     }
-    arg0 := path.Join(pwd, prg)
-    if bmatch != "" {
+
+    arg0 := path.Join(pwd, global.GetString("-test-bin"))
+
+    if global.GetString("-benchmarks") != "" {
         numArgs += 2
     }
-    if match != "" {
+    if global.GetString("-match") != "" {
         numArgs += 2
     }
-    if tverb {
+    if global.GetBool("-verbose") {
         numArgs++
     }
 
     var i = 1
     argv := make([]string, numArgs)
     argv[0] = arg0
-    if bmatch != "" {
+    if global.GetString("-benchmarks") != "" {
         argv[i] = "-benchmarks"
         i++
-        argv[i] = bmatch
+        argv[i] = global.GetString("-benchmarks")
         i++
     }
-    if match != "" {
+    if global.GetString("-match") != "" {
         argv[i] = "-match"
         i++
-        argv[i] = match
+        argv[i] = global.GetString("-match")
         i++
     }
-    if tverb {
+    if global.GetBool("-verbose") {
         argv[i] = "-v"
     }
     return argv
@@ -517,7 +451,7 @@ func okDirOrDie(pathname string) {
     }
 }
 
-func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw string) {
+func formatFiles(files *vector.StringVector) {
 
     var i int = 0
     var argvLen int = 0
@@ -525,7 +459,7 @@ func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw stri
     var tabWidth string = "-tabwidth=4"
     var useTabs string = "-tabindent=false"
     var comments string = "-comments=true"
-    var rewRule string = ""
+    var rewRule string = global.GetString("-rew-rule")
     var fmtexec string
     var err os.Error
 
@@ -535,17 +469,16 @@ func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw stri
         log.Exit("[ERROR] could not find 'gofmt' in $PATH")
     }
 
-    if tw != "" {
-        tabWidth = "-tabwidth=" + tw
+    if global.GetString("-tabwidth") != "" {
+        tabWidth = "-tabwidth=" + global.GetString("-tabwidth")
     }
-    if noC {
+    if global.GetBool("-no-comments") {
         comments = "-comments=false"
     }
-    if rew != "" {
-        rewRule = rew
+    if rewRule != "" {
         argvLen++
     }
-    if tab {
+    if global.GetBool("-tab") {
         useTabs = "-tabindent=true"
     }
 
@@ -567,13 +500,13 @@ func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw stri
     i++
 
     if rewRule != "" {
-        argv[i] = "-r=" + rewRule
+        argv[i] = "-r=\"" + rewRule +"\""
         i++
     }
 
     for y := 0; y < files.Len(); y++ {
         argv[i] = files.At(y)
-        if !dryrun {
+        if ! global.GetBool("-dryrun") {
             fmt.Printf("gofmt : %s\n", files.At(y))
             _ = handy.StdExecve(argv, true)
         } else {
@@ -583,7 +516,7 @@ func formatFiles(files *vector.StringVector, dryrun, tab, noC bool, rew, tw stri
 
 }
 
-func rm865(srcdir string, dryrun bool) {
+func rm865(srcdir string) {
 
     // override IncludeFile to make walker pick up only .[865] files
     walker.IncludeFile = func(s string) bool {
@@ -600,7 +533,7 @@ func rm865(srcdir string, dryrun bool) {
 
     for i := 0; i < compiled.Len(); i++ {
 
-        if !dryrun {
+        if ! global.GetBool("-dryrun") {
 
             e := os.Remove(compiled.At(i))
             if e != nil {
@@ -687,17 +620,36 @@ func printListing() {
 
 `
     tabRepr := "4"
-    if tabWidth != "" {
-        tabRepr = tabWidth
+    if global.GetString("-tabwidth") != "" {
+        tabRepr = global.GetString("-tabwidth")
     }
 
     archRepr := "$GOARCH"
-    if arch != "" {
-        archRepr = arch
+    if global.GetString("-arch") != "" {
+        archRepr = global.GetString("-arch")
     }
 
-    fmt.Printf(listMSG, needsHelp, needsVersion, printInfo,
-        sortInfo, output, static, archRepr, dryrun, cleanTree,
-        includes, dot, test, bmatch, match, Verbose, gdtest,
-        gofmt, rewRule, tabIndent, tabRepr, noComments, external)
+    fmt.Printf(listMSG,
+               global.GetBool("-help"),
+               global.GetBool("-version"),
+               global.GetBool("-print"),
+               global.GetBool("-sort"),
+               global.GetString("-output"),
+               global.GetBool("-static"),
+               archRepr,
+               global.GetBool("-dryrun"),
+               global.GetBool("-clean"),
+               includes,
+               global.GetString("-dot"),
+               global.GetBool("-test"),
+               global.GetString("-benchmarks"),
+               global.GetString("-match"),
+               global.GetBool("-verbose"),
+               global.GetString("-test-bin"),
+               global.GetBool("-fmt"),
+               global.GetString("-rew-rule"),
+               global.GetBool("-tab"),
+               tabRepr,
+               global.GetBool("-no-comments"),
+               global.GetBool("-external"))
 }

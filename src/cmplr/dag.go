@@ -20,6 +20,7 @@ import (
     "utilz/stringset"
     "utilz/stringbuffer"
     "utilz/handy"
+    "utilz/global"
 )
 
 
@@ -106,7 +107,7 @@ func (d Dag) GraphBuilder() {
     }
 }
 
-func (d Dag) External(verbose bool) {
+func (d Dag) External() {
 
     var err os.Error
     var argv []string
@@ -130,7 +131,7 @@ func (d Dag) External(verbose bool) {
         }
     }
 
-    if verbose {
+    if global.GetBool("-verbose") {
         argc++
     }
 
@@ -143,7 +144,7 @@ func (d Dag) External(verbose bool) {
         log.Exitf("[ERROR] %s\n", err)
     }
 
-    if verbose {
+    if global.GetBool("-verbose") {
         argv[i] = "-v=true"
         i++
     }

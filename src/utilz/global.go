@@ -1,10 +1,20 @@
-// © Knug Industries 2009 all rights reserved
+// © Knug Industries 2010 all rights reserved
 // GNU GENERAL PUBLIC LICENSE VERSION 3.0
 // Author bjarneh@ifi.uio.no
 
 package global
 
-// be a man and use some globals.
+// Be a man and use some globals.
+
+// This is not threadsafe, unless maps are, i.e. it's not
+// Since I only use the globals in a single thread, I did
+// not bother with the 'sync' package Lock/Unlock..
+
+// The idea of this package is to have 'global' values naturally
+// but also to use it as some sort of multi-map. I.e. map that
+// can hold different types, naturally we use one map for each
+// type, but still from a callers viewpoint, it's all:
+// global.SetXxx and global.GetXxx
 
 var intMap map[string]int
 var stringMap map[string]string

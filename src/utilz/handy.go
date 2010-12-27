@@ -7,6 +7,9 @@ package handy
 import (
     "os"
     "log"
+    "io/ioutil"
+    "regexp"
+    "strings"
 )
 
 
@@ -55,7 +58,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 }
 
 
-// more or less stolen from a pastebin posted on #go-nuts
+// More or less taken from a pastebin posted on #go-nuts
 // http://pastebin.com/V0CULJWt by yiyus
 // looked kind of handy, so it was placed here :-)
 func Fopen(name, mode string, perms uint32) (file *os.File, err os.Error) {
@@ -73,4 +76,59 @@ func Fopen(name, mode string, perms uint32) (file *os.File, err os.Error) {
     }
 
     return os.Open(name, imode, perms) // 0644 default
+}
+
+
+// Config files can be as simple as writing command line arguments,
+// after all that's all they are anyway, options we give every time.
+// This function takes a pathname which possibly contains a config
+// file and returns an array (ARGV)
+func ConfigToArgv(pathname string) (argv []string, ok bool) {
+
+    fileInfo, e := os.Stat(pathname)
+
+    if e != nil {
+        return nil, false
+    }
+
+    if !fileInfo.IsRegular() {
+        return nil, false
+    }
+
+    b, e := ioutil.ReadFile(pathname)
+
+    if e != nil {
+        log.Print("[WARNING] failed to read config file\n")
+        log.Printf("[WARNING] %s \n", e)
+        return nil, false
+    }
+
+    comStripRegex := regexp.MustCompile("#[^\n]*\n?")
+    blankRegex := regexp.MustCompile("[\n\t \r]+")
+
+    rmComments := comStripRegex.ReplaceAllString(string(b), "")
+    rmNewLine := blankRegex.ReplaceAllString(rmComments, " ")
+
+    pureOptions := strings.TrimSpace(rmNewLine)
+
+    if pureOptions == "" {
+        return nil, false
+    }
+
+    argv = strings.Split(pureOptions, " ", -1)
+
+    return argv, true
+}
+
+// Exit if pathname ! dir
+
+func DirOrExit(pathname string) {
+
+    fileInfo, err := os.Stat(pathname)
+
+    if err != nil {
+        log.Exitf("[ERROR] %s\n", err)
+    } else if !fileInfo.IsDirectory() {
+        log.Exitf("[ERROR] %s: is not a directory\n", pathname)
+    }
 }

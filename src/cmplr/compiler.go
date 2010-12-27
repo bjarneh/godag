@@ -8,13 +8,15 @@ import (
     "os"
     "container/vector"
     "fmt"
+    "path"
+    "log"
+    "exec"
+    "strings"
+    "utilz/walker"
     "utilz/stringset"
     "utilz/handy"
     "utilz/global"
     "cmplr/dag"
-    "path"
-    "log"
-    "exec"
 )
 
 
@@ -392,4 +394,144 @@ func (c *Compiler) extraPkgIncludes() int {
         return len(c.includes)
     }
     return 0
+}
+
+
+func CreateTestArgv() []string {
+
+    var numArgs int = 1
+
+    pwd, e := os.Getwd()
+
+    if e != nil {
+        log.Exit("[ERROR] could not locate working directory\n")
+    }
+
+    arg0 := path.Join(pwd, global.GetString("-test-bin"))
+
+    if global.GetString("-benchmarks") != "" {
+        numArgs += 2
+    }
+    if global.GetString("-match") != "" {
+        numArgs += 2
+    }
+    if global.GetBool("-verbose") {
+        numArgs++
+    }
+
+    var i = 1
+    argv := make([]string, numArgs)
+    argv[0] = arg0
+    if global.GetString("-benchmarks") != "" {
+        argv[i] = "-benchmarks"
+        i++
+        argv[i] = global.GetString("-benchmarks")
+        i++
+    }
+    if global.GetString("-match") != "" {
+        argv[i] = "-match"
+        i++
+        argv[i] = global.GetString("-match")
+        i++
+    }
+    if global.GetBool("-verbose") {
+        argv[i] = "-v"
+    }
+    return argv
+}
+
+func Remove865a(srcdir string) {
+
+    // override IncludeFile to make walker pick up only .[865a] files
+    walker.IncludeFile = func(s string) bool {
+        return strings.HasSuffix(s, ".8") ||
+            strings.HasSuffix(s, ".6") ||
+            strings.HasSuffix(s, ".5") ||
+            strings.HasSuffix(s, ".a")
+
+    }
+
+    handy.DirOrExit(srcdir)
+
+    compiled := walker.PathWalk(path.Clean(srcdir))
+
+    for i := 0; i < compiled.Len(); i++ {
+
+        if ! global.GetBool("-dryrun") {
+
+            e := os.Remove(compiled.At(i))
+            if e != nil {
+                log.Printf("[ERROR] could not delete file: %s\n", compiled.At(i))
+            } else {
+                fmt.Printf("rm: %s\n", compiled.At(i))
+            }
+
+        } else {
+            fmt.Printf("[dryrun] rm: %s\n", compiled.At(i))
+        }
+    }
+}
+
+
+func FormatFiles(files *vector.StringVector) {
+
+    var i, argvLen int
+    var argv []string
+    var tabWidth string = "-tabwidth=4"
+    var useTabs string = "-tabindent=false"
+    var comments string = "-comments=true"
+    var rewRule string = global.GetString("-rew-rule")
+    var fmtexec string
+    var err os.Error
+
+    fmtexec, err = exec.LookPath("gofmt")
+
+    if err != nil {
+        log.Exit("[ERROR] could not find 'gofmt' in $PATH")
+    }
+
+    if global.GetString("-tabwidth") != "" {
+        tabWidth = "-tabwidth=" + global.GetString("-tabwidth")
+    }
+    if global.GetBool("-no-comments") {
+        comments = "-comments=false"
+    }
+    if rewRule != "" {
+        argvLen++
+    }
+    if global.GetBool("-tab") {
+        useTabs = "-tabindent=true"
+    }
+
+    argv = make([]string, 6+argvLen)
+
+    if fmtexec == "" {
+        log.Exit("[ERROR] could not find: gofmt\n")
+    }
+
+    argv[i] = fmtexec
+    i++
+    argv[i] = "-w=true"
+    i++
+    argv[i] = tabWidth
+    i++
+    argv[i] = useTabs
+    i++
+    argv[i] = comments
+    i++
+
+    if rewRule != "" {
+        argv[i] = fmt.Sprintf("-r='%s'", rewRule)
+        i++
+    }
+
+    for y := 0; y < files.Len(); y++ {
+        argv[i] = files.At(y)
+        if ! global.GetBool("-dryrun") {
+            fmt.Printf("gofmt : %s\n", files.At(y))
+            _ = handy.StdExecve(argv, true)
+        } else {
+            fmt.Printf(" %s\n", strings.Join(argv, " "))
+        }
+    }
 }

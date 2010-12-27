@@ -10,10 +10,7 @@ import (
     "path"
     "log"
     "strings"
-    "io/ioutil"
-    "regexp"
     "runtime"
-    "exec"
     "utilz/walker"
     "cmplr/compiler"
     "cmplr/dag"
@@ -130,21 +127,17 @@ func gotRoot() {
     }
 }
 
-func findTestFilesAlso() {
-    // override IncludeFile to make walker pick _test.go files also
-    walker.IncludeFile = func(s string) bool {
-        return strings.HasSuffix(s, ".go")
-    }
-}
 
 func main() {
 
     var ok bool
     var e os.Error
     var argv, args []string
+    var config1, config2 string
 
     // default config location 1 $HOME/.gdrc
-    argv, ok = getConfigArgv("HOME")
+    config1 = path.Join(os.Getenv("HOME"), ".gdrc")
+    argv, ok = handy.ConfigToArgv(config1)
 
     if ok {
         args = parseArgv(argv)
@@ -154,7 +147,8 @@ func main() {
     }
 
     // default config location 2 $PWD/.gdrc
-    argv, ok = getConfigArgv("PWD")
+    config2 = path.Join(os.Getenv("PWD"), ".gdrc")
+    argv, ok = handy.ConfigToArgv(config2)
 
     if ok {
         args = parseArgv(argv)
@@ -213,15 +207,16 @@ func main() {
 
     // delete all object/archive files
     if global.GetBool("-clean") {
-        rm865(srcdir)
+        compiler.Remove865a(srcdir)
         os.Exit(0)
     }
 
-    files = findFiles(srcdir)
+    handy.DirOrExit(srcdir)
+    files = walker.PathWalk(path.Clean(srcdir))
 
     // gofmt on all files gathered
     if global.GetBool("-fmt") {
-        formatFiles(files)
+        compiler.FormatFiles(files)
         os.Exit(0)
     }
 
@@ -282,7 +277,7 @@ func main() {
         if rmError != nil {
             log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
-        testArgv := createTestArgv()
+        testArgv := compiler.CreateTestArgv()
         if ! global.GetBool("-dryrun") {
             tstring := "testing  : "
             if global.GetBool("-verbose") {
@@ -308,55 +303,6 @@ func main() {
 }
 
 
-// syntax for config files are identical to command line
-// options, i.e., write command line options to the config file 
-// and everything should work, comments start with a '#' sign.
-// config files are either $HOME/.gdrc or $PWD/.gdrc
-func getConfigArgv(where string) (argv []string, ok bool) {
-
-    location := os.Getenv(where)
-
-    if location == "" {
-        return nil, false
-    }
-
-    configFile := path.Join(location, ".gdrc")
-    configDir, e := os.Stat(configFile)
-
-    if e != nil {
-        return nil, false
-    }
-
-    if !configDir.IsRegular() {
-        return nil, false
-    }
-
-    b, e := ioutil.ReadFile(configFile)
-
-    if e != nil {
-        log.Print("[WARNING] failed to read config file\n")
-        log.Printf("[WARNING] %s \n", e)
-        return nil, false
-    }
-
-    comStripRegex := regexp.MustCompile("#[^\n]*\n?")
-    blankRegex := regexp.MustCompile("[\n\t \r]+")
-
-    rmComments := comStripRegex.ReplaceAllString(string(b), "")
-    rmNewLine := blankRegex.ReplaceAllString(rmComments, " ")
-
-    pureOptions := strings.TrimSpace(rmNewLine)
-
-    if pureOptions == "" {
-        return nil, false
-    }
-
-    argv = strings.Split(pureOptions, " ", -1)
-
-    return argv, true
-}
-
-
 func parseArgv(argv []string) (args []string) {
 
     args = getopt.Parse(argv)
@@ -374,7 +320,10 @@ func parseArgv(argv []string) (args []string) {
     }
 
     if getopt.IsSet("-test") || getopt.IsSet("-fmt") {
-        findTestFilesAlso()
+        // override IncludeFile to make walker pick _test.go files
+        walker.IncludeFile = func(s string) bool {
+            return strings.HasSuffix(s, ".go")
+        }
     }
 
     if getopt.IsSet("-I") {
@@ -389,163 +338,9 @@ func parseArgv(argv []string) (args []string) {
     return args
 }
 
-func createTestArgv() []string {
-
-    var numArgs int = 1
-
-    pwd, e := os.Getwd()
-
-    if e != nil {
-        log.Exit("[ERROR] could not locate working directory\n")
-    }
-
-    arg0 := path.Join(pwd, global.GetString("-test-bin"))
-
-    if global.GetString("-benchmarks") != "" {
-        numArgs += 2
-    }
-    if global.GetString("-match") != "" {
-        numArgs += 2
-    }
-    if global.GetBool("-verbose") {
-        numArgs++
-    }
-
-    var i = 1
-    argv := make([]string, numArgs)
-    argv[0] = arg0
-    if global.GetString("-benchmarks") != "" {
-        argv[i] = "-benchmarks"
-        i++
-        argv[i] = global.GetString("-benchmarks")
-        i++
-    }
-    if global.GetString("-match") != "" {
-        argv[i] = "-match"
-        i++
-        argv[i] = global.GetString("-match")
-        i++
-    }
-    if global.GetBool("-verbose") {
-        argv[i] = "-v"
-    }
-    return argv
-}
-
 func findFiles(pathname string) *vector.StringVector {
-    okDirOrDie(pathname)
+    handy.DirOrExit(pathname)
     return walker.PathWalk(path.Clean(pathname))
-}
-
-func okDirOrDie(pathname string) {
-
-    var dir *os.FileInfo
-    var staterr os.Error
-
-    dir, staterr = os.Stat(pathname)
-
-    if staterr != nil {
-        log.Exitf("[ERROR] %s\n", staterr)
-    } else if !dir.IsDirectory() {
-        log.Exitf("[ERROR] %s: is not a directory\n", pathname)
-    }
-}
-
-func formatFiles(files *vector.StringVector) {
-
-    var i int = 0
-    var argvLen int = 0
-    var argv []string
-    var tabWidth string = "-tabwidth=4"
-    var useTabs string = "-tabindent=false"
-    var comments string = "-comments=true"
-    var rewRule string = global.GetString("-rew-rule")
-    var fmtexec string
-    var err os.Error
-
-    fmtexec, err = exec.LookPath("gofmt")
-
-    if err != nil {
-        log.Exit("[ERROR] could not find 'gofmt' in $PATH")
-    }
-
-    if global.GetString("-tabwidth") != "" {
-        tabWidth = "-tabwidth=" + global.GetString("-tabwidth")
-    }
-    if global.GetBool("-no-comments") {
-        comments = "-comments=false"
-    }
-    if rewRule != "" {
-        argvLen++
-    }
-    if global.GetBool("-tab") {
-        useTabs = "-tabindent=true"
-    }
-
-    argv = make([]string, 6+argvLen)
-
-    if fmtexec == "" {
-        log.Exit("[ERROR] could not find: gofmt\n")
-    }
-
-    argv[i] = fmtexec
-    i++
-    argv[i] = "-w=true"
-    i++
-    argv[i] = tabWidth
-    i++
-    argv[i] = useTabs
-    i++
-    argv[i] = comments
-    i++
-
-    if rewRule != "" {
-        argv[i] = fmt.Sprintf("-r='%s'", rewRule)
-        i++
-    }
-
-    for y := 0; y < files.Len(); y++ {
-        argv[i] = files.At(y)
-        if ! global.GetBool("-dryrun") {
-            fmt.Printf("gofmt : %s\n", files.At(y))
-            _ = handy.StdExecve(argv, true)
-        } else {
-            fmt.Printf(" %s\n", strings.Join(argv, " "))
-        }
-    }
-
-}
-
-func rm865(srcdir string) {
-
-    // override IncludeFile to make walker pick up only .[865] files
-    walker.IncludeFile = func(s string) bool {
-        return strings.HasSuffix(s, ".8") ||
-            strings.HasSuffix(s, ".6") ||
-            strings.HasSuffix(s, ".5") ||
-            strings.HasSuffix(s, ".a")
-
-    }
-
-    okDirOrDie(srcdir)
-
-    compiled := walker.PathWalk(path.Clean(srcdir))
-
-    for i := 0; i < compiled.Len(); i++ {
-
-        if ! global.GetBool("-dryrun") {
-
-            e := os.Remove(compiled.At(i))
-            if e != nil {
-                log.Printf("[ERROR] could not delete file: %s\n", compiled.At(i))
-            } else {
-                fmt.Printf("rm: %s\n", compiled.At(i))
-            }
-
-        } else {
-            fmt.Printf("[dryrun] rm: %s\n", compiled.At(i))
-        }
-    }
 }
 
 func printHelp() {

@@ -196,7 +196,7 @@ func main() {
 
     if len(args) == 0 {
         // give nice feedback if missing input dir
-        possibleSrc := path.Join(os.Getenv("PWD"), "src")
+        possibleSrc := path.Join(os.Getcwd(), "src")
         _, e = os.Stat(possibleSrc)
         if e != nil {
             fmt.Printf("usage: gd [OPTIONS] src-directory\n")

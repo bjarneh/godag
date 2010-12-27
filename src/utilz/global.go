@@ -10,11 +10,11 @@ package global
 // Since I only use the globals in a single thread, I did
 // not bother with the 'sync' package Lock/Unlock..
 
-// The idea of this package is to have 'global' values naturally
-// but also to use it as some sort of multi-map. I.e. map that
-// can hold different types, naturally we use one map for each
-// type, but still from a callers viewpoint, it's all:
-// global.SetXxx and global.GetXxx
+// The idea of this package is to have 'global' variables
+// naturally, but also to use it as some sort of multi-map. 
+// I.e. a map that can hold different types, naturally we 
+// use one map for each type, but still from a callers 
+// viewpoint, it's all: global.SetXxx and global.GetXxx
 
 var intMap map[string]int
 var stringMap map[string]string

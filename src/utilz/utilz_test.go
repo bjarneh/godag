@@ -113,15 +113,15 @@ func TestWalker(t *testing.T){
 
     // make sure stringset == files
 
-    if files.Len() != ss.Len() {
+    if len(files) != ss.Len() {
         t.Fatalf("walker.Len() != files.Len()\n");
     }
 
-    for i := 0; i < files.Len(); i++ {
-        if ! ss.Contains( files.At(i) ){
+    for i := 0; i < len(files); i++ {
+        if ! ss.Contains( files[i] ){
             t.Fatalf("walker picked up files not in SRCROOT\n")
         }
-        ss.Remove( files.At(i) )
+        ss.Remove( files[i] )
     }
 
 }

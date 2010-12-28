@@ -252,10 +252,7 @@ func main() {
 
     // print packages sorted
     if global.GetBool("-sort") {
-///         for i := 0; i < sorted.Len(); i++ {
         for i := 0; i < len(sorted); i++ {
-///             rpkg, _ := sorted.At(i).(*dag.Package)
-///             fmt.Printf("%s\n", rpkg.Name)
             fmt.Printf("%s\n", sorted[i].Name)
         }
         os.Exit(0)

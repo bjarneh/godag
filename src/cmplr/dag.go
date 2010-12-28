@@ -59,15 +59,14 @@ func newTestCollector() *TestCollector {
 }
 
 
-func (d Dag) Parse(root string, sv *vector.StringVector) {
+func (d Dag) Parse(root string, files []string) {
 
     root = addSeparatorPath(root)
 
     var e string
-    var max int = sv.Len()
 
-    for i := 0; i < max; i++ {
-        e = sv.At(i)
+    for i := 0; i < len(files); i++ {
+        e = files[i]
         tree := getSyntaxTreeOrDie(e, parser.ImportsOnly)
         dir, _ := path.Split(e)
         unroot := dir[len(root):len(dir)]
@@ -175,11 +174,7 @@ func seemsExternal(imprt string) (bool) {
 
     ok, _ := regexp.MatchString("[^.]\\.googlecode\\.com\\/.*", imprt)
 
-    if ok {
-        return true
-    }
-
-    return false
+    return ok
 }
 
 func (d Dag) MakeDotGraph(filename string) {
@@ -221,7 +216,7 @@ func (d Dag) MakeDotGraph(filename string) {
 
 }
 
-func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
+func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
     var max, i int
     var isTest bool
@@ -349,18 +344,18 @@ func (d Dag) MakeMainTest(root string) (*vector.Vector, string) {
     p.ShortName = "main"
     p.Files.Push(tmpfile)
 
-    vec := new(vector.Vector)
-    vec.Push(p)
+    vec := make([]*Package, 1)
+    vec[0] = p
     return vec, tmpdir
 }
 
-func (d Dag) Topsort() *vector.Vector {
+func (d Dag) Topsort() []*Package {
 
     var node, child *Package
     var cnt int = 0
 
     zero := new(vector.Vector)
-    done := new(vector.Vector)
+    done := make([]*Package, 0)
 
     for _, v := range d {
         if v.indegree == 0 {
@@ -380,7 +375,7 @@ func (d Dag) Topsort() *vector.Vector {
             }
         }
         cnt++
-        done.Push(node)
+        done = append(done, node)
     }
 
     if cnt < len(d) {

@@ -72,12 +72,8 @@ func (s *StringBuffer) String() string {
 }
 
 func (s *StringBuffer) resize() {
-    s.max = s.max * 2
-    nbuffer := make([]byte, s.max)
 
-    for i := 0; i < s.current; i++ {
-        nbuffer[i] = s.buffer[i]
-    }
+    s.buffer = append(s.buffer, make([]byte, s.max * 2)...)
+    s.max += s.max * 2
 
-    s.buffer = nbuffer
 }

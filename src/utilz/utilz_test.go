@@ -44,25 +44,34 @@ func TestStringBuffer(t *testing.T) {
     ss := stringbuffer.New()
     ss.Add("en")
     if ss.String() != "en" {
-        t.Fatal(" stringset.String() != 'en'\n")
+        t.Fatal(" stringbuffer.String() != 'en'\n")
     }
     ss.Add("to")
     if ss.String() != "ento" {
-        t.Fatal(" stringset.String() != 'ento'\n")
+        t.Fatal(" stringbuffer.String() != 'ento'\n")
     }
     if ss.Len() != 4 {
-        t.Fatal(" stringset.Len() != 4\n")
+        t.Fatal(" stringbuffer.Len() != 4\n")
     }
     ss.Add("øæå"); // utf-8 multi-byte fun
     if ss.Len() != 10 {
-        t.Fatal(" stringset.Len() != 10\n");
+        t.Fatal(" stringbuffer.Len() != 10\n");
     }
     if ss.String() != "entoøæå" {
-        t.Fatal(" stringset.String() != 'entoøæå'\n");
+        t.Fatal(" stringbuffer.String() != 'entoøæå'\n");
     }
-    ss.ClearSize(5)
+    ss.ClearSize(2)
     if ss.Len() != 0 {
-        t.Fatal(" stringset.Len() != 0\n")
+        t.Fatal(" stringbuffer.Len() != 0\n")
+    }
+    for i := 0; i < 20; i++ {
+        if ss.Len() != i {
+            t.Fatal(" stringbuffer.Len() != i")
+        }
+        ss.Add("a")
+    }
+    if ss.String() != "aaaaaaaaaaaaaaaaaaaa" {
+        t.Fatal(" stringbuffer.String() != a * 20")
     }
 }
 

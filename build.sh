@@ -42,8 +42,6 @@ package=(
 'log'
 'mime'
 'netchan'
-'nntp'
-'once'
 'patch'
 'rand'
 'reflect'

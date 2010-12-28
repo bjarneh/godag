@@ -88,16 +88,15 @@ func (c *Compiler) archDependantInfo(arch string) {
 }
 
 
-func (c *Compiler) CreateArgv(pkgs *vector.Vector) {
+func (c *Compiler) CreateArgv(pkgs []*dag.Package) {
 
     var argv []string
 
     includeLen := c.extraPkgIncludes()
 
-    for y := 0; y < pkgs.Len(); y++ {
-        pkg, _ := pkgs.At(y).(*dag.Package) //safe cast, only Packages there
+    for y := 0; y < len(pkgs); y++ {
 
-        argv = make([]string, 5+pkg.Files.Len()+(includeLen*2))
+        argv = make([]string, 5+pkgs[y].Files.Len()+(includeLen*2))
         i := 0
         argv[i] = c.executable
         i++
@@ -115,90 +114,83 @@ func (c *Compiler) CreateArgv(pkgs *vector.Vector) {
         }
         argv[i] = "-o"
         i++
-        argv[i] = path.Join(c.root, pkg.Name) + c.suffix
+        argv[i] = path.Join(c.root, pkgs[y].Name) + c.suffix
         i++
 
-        for z := 0; z < pkg.Files.Len(); z++ {
-            argv[i] = pkg.Files.At(z)
+        for z := 0; z < pkgs[y].Files.Len(); z++ {
+            argv[i] = pkgs[y].Files.At(z)
             i++
         }
 
-        pkg.Argv = argv
+        pkgs[y].Argv = argv
     }
 }
 
-func (c *Compiler) SerialCompile(pkgs *vector.Vector) {
+func (c *Compiler) SerialCompile(pkgs []*dag.Package) {
 
     var oldPkgFound bool = false
 
-    for y := 0; y < pkgs.Len(); y++ {
-        pkg, _ := pkgs.At(y).(*dag.Package) //safe cast, only Packages there
+    for y := 0; y < len(pkgs); y++ {
 
         if c.dryrun {
-            dryRun(pkg.Argv)
+            dryRun(pkgs[y].Argv)
         } else {
-            if oldPkgFound || !pkg.UpToDate() {
-                fmt.Println("compiling:", pkg.Name)
-                handy.StdExecve(pkg.Argv, true)
+            if oldPkgFound || !pkgs[y].UpToDate() {
+                fmt.Println("compiling:", pkgs[y].Name)
+                handy.StdExecve(pkgs[y].Argv, true)
                 oldPkgFound = true
             } else {
-                fmt.Println("up 2 date:", pkg.Name)
+                fmt.Println("up 2 date:", pkgs[y].Name)
             }
         }
     }
 }
 
-func (c *Compiler) ParallelCompile(pkgs *vector.Vector) {
+func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
 
     var localDeps *stringset.StringSet
     var compiledDeps *stringset.StringSet
-    var pkg, cpkg *dag.Package
     var y, z int
-    var parallel *vector.Vector
+    var parallel []*dag.Package
     var oldPkgFound bool = false
 
     localDeps = stringset.New()
     compiledDeps = stringset.New()
 
-    for y = 0; y < pkgs.Len(); y++ {
-        pkg, _ = pkgs.At(y).(*dag.Package)
-        localDeps.Add(pkg.Name)
+    for y = 0; y < len(pkgs); y++ {
+        localDeps.Add(pkgs[y].Name)
     }
 
-    parallel = new(vector.Vector)
+    parallel = make([]*dag.Package, 0)
 
-    for y = 0; y < pkgs.Len(); {
+    for y = 0; y < len(pkgs); {
 
-        pkg, _ = pkgs.At(y).(*dag.Package)
-
-        if !pkg.Ready(localDeps, compiledDeps) {
+        if !pkgs[y].Ready(localDeps, compiledDeps) {
 
             oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
 
-            for z = 0; z < parallel.Len(); z++ {
-                cpkg, _ = parallel.At(z).(*dag.Package)
-                compiledDeps.Add(cpkg.Name)
+            for z = 0; z < len(parallel); z++ {
+                compiledDeps.Add(parallel[z].Name)
             }
 
-            parallel = new(vector.Vector)
+            parallel = make([]*dag.Package, 0)
 
         } else {
-            parallel.Push(pkg)
+            parallel = append(parallel, pkgs[y])
             y++
         }
     }
 
-    if parallel.Len() > 0 {
+    if len(parallel) > 0 {
         oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
     }
 
 }
 
-func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool {
+func (c *Compiler) compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
 
     var ok bool
-    var max int = pkgs.Len()
-    var pkg *dag.Package
+    var max int = len(pkgs)
     var trouble bool = false
 
     if max == 0 {
@@ -206,26 +198,24 @@ func (c *Compiler) compileMultipe(pkgs *vector.Vector, oldPkgFound bool) bool {
     }
 
     if max == 1 {
-        pkg, _ = pkgs.At(0).(*dag.Package)
-        if oldPkgFound || !pkg.UpToDate() {
-            fmt.Println("compiling:", pkg.Name)
-            handy.StdExecve(pkg.Argv, true)
+        if oldPkgFound || !pkgs[0].UpToDate() {
+            fmt.Println("compiling:", pkgs[0].Name)
+            handy.StdExecve(pkgs[0].Argv, true)
             oldPkgFound = true
         } else {
-            fmt.Println("up 2 date:", pkg.Name)
+            fmt.Println("up 2 date:", pkgs[0].Name)
         }
     } else {
 
-        ch := make(chan bool, pkgs.Len())
+        ch := make(chan bool, max)
 
         for y := 0; y < max; y++ {
-            pkg, _ := pkgs.At(y).(*dag.Package)
-            if oldPkgFound || !pkg.UpToDate() {
-                fmt.Println("compiling:", pkg.Name)
+            if oldPkgFound || !pkgs[y].UpToDate() {
+                fmt.Println("compiling:", pkgs[y].Name)
                 oldPkgFound = true
-                go gCompile(pkg.Argv, ch)
+                go gCompile(pkgs[y].Argv, ch)
             } else {
-                fmt.Println("up 2 date:", pkg.Name)
+                fmt.Println("up 2 date:", pkgs[y].Name)
                 ch <- true
             }
         }
@@ -252,23 +242,22 @@ func gCompile(argv []string, c chan bool) {
 }
 
 // for removal of temoprary packages created for testing and so on..
-func (c *Compiler) DeletePackages(pkgs *vector.Vector) bool {
+func (c *Compiler) DeletePackages(pkgs []*dag.Package) bool {
 
     var ok = true
     var e os.Error
 
-    for i := 0; i < pkgs.Len(); i++ {
-        pkg, _ := pkgs.At(i).(*dag.Package) //safe cast, only Packages there
+    for i := 0; i < len(pkgs); i++ {
 
-        for y := 0; y < pkg.Files.Len(); y++ {
-            e = os.Remove(pkg.Files.At(y))
+        for y := 0; y < pkgs[i].Files.Len(); y++ {
+            e = os.Remove(pkgs[i].Files.At(y))
             if e != nil {
                 ok = false
                 log.Printf("[ERROR] %s\n", e)
             }
         }
         if !c.dryrun {
-            pcompile := path.Join(c.root, pkg.Name) + c.suffix
+            pcompile := path.Join(c.root, pkgs[i].Name) + c.suffix
             e = os.Remove(pcompile)
             if e != nil {
                 ok = false
@@ -280,16 +269,15 @@ func (c *Compiler) DeletePackages(pkgs *vector.Vector) bool {
     return ok
 }
 
-func (c *Compiler) ForkLink(pkgs *vector.Vector, output string) {
+func (c *Compiler) ForkLink(pkgs []*dag.Package, output string) {
 
     var mainPKG *dag.Package
 
     gotMain := new(vector.Vector)
 
-    for i := 0; i < pkgs.Len(); i++ {
-        pk, _ := pkgs.At(i).(*dag.Package)
-        if pk.ShortName == "main" {
-            gotMain.Push(pk)
+    for i := 0; i < len(pkgs); i++ {
+        if pkgs[i].ShortName == "main" {
+            gotMain.Push(pkgs[i])
         }
     }
 
@@ -455,25 +443,25 @@ func Remove865a(srcdir string) {
 
     compiled := walker.PathWalk(path.Clean(srcdir))
 
-    for i := 0; i < compiled.Len(); i++ {
+    for i := 0; i < len(compiled); i++ {
 
         if ! global.GetBool("-dryrun") {
 
-            e := os.Remove(compiled.At(i))
+            e := os.Remove(compiled[i])
             if e != nil {
-                log.Printf("[ERROR] could not delete file: %s\n", compiled.At(i))
+                log.Printf("[ERROR] could not delete file: %s\n", compiled[i])
             } else {
-                fmt.Printf("rm: %s\n", compiled.At(i))
+                fmt.Printf("rm: %s\n", compiled[i])
             }
 
         } else {
-            fmt.Printf("[dryrun] rm: %s\n", compiled.At(i))
+            fmt.Printf("[dryrun] rm: %s\n", compiled[i])
         }
     }
 }
 
 
-func FormatFiles(files *vector.StringVector) {
+func FormatFiles(files []string) {
 
     var i, argvLen int
     var argv []string
@@ -525,10 +513,10 @@ func FormatFiles(files *vector.StringVector) {
         i++
     }
 
-    for y := 0; y < files.Len(); y++ {
-        argv[i] = files.At(y)
+    for y := 0; y < len(files); y++ {
+        argv[i] = files[y]
         if ! global.GetBool("-dryrun") {
-            fmt.Printf("gofmt : %s\n", files.At(y))
+            fmt.Printf("gofmt : %s\n", files[y])
             _ = handy.StdExecve(argv, true)
         } else {
             fmt.Printf(" %s\n", strings.Join(argv, " "))

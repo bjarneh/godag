@@ -27,7 +27,7 @@ import (
 type Dag map[string]*Package // package-name -> Package object
 
 type Package struct {
-    indegree        int
+    Indegree        int
     Name, ShortName string               // absolute path, basename
     Argv            []string             // command needed to compile package
     Files           *vector.StringVector // relative path of files
@@ -45,7 +45,7 @@ func New() Dag {
 
 func newPackage() *Package {
     p := new(Package)
-    p.indegree = 0
+    p.Indegree = 0
     p.Files = new(vector.StringVector)
     p.dependencies = stringset.New()
     p.children = new(vector.Vector)
@@ -89,7 +89,7 @@ func (d Dag) addEdge(from, to string) {
     fromNode := d[from]
     toNode := d[to]
     fromNode.children.Push(toNode)
-    toNode.indegree++
+    toNode.Indegree++
 }
 // note that nothing is done in order to check if dependencies
 // are valid if they are not part of the actual source-tree,
@@ -358,7 +358,7 @@ func (d Dag) Topsort() []*Package {
     done := make([]*Package, 0)
 
     for _, v := range d {
-        if v.indegree == 0 {
+        if v.Indegree == 0 {
             zero.Push(v)
         }
     }
@@ -369,8 +369,8 @@ func (d Dag) Topsort() []*Package {
 
         for i := 0; i < node.children.Len(); i++ {
             child = node.children.At(i).(*Package)
-            child.indegree--
-            if child.indegree == 0 {
+            child.Indegree--
+            if child.Indegree == 0 {
                 zero.Push(child)
             }
         }
@@ -473,6 +473,13 @@ func (p *Package) Ready(local, compiled *stringset.StringSet) bool {
     }
 
     return true
+}
+
+func (p *Package) ResetIndegree(){
+    for i := 0; i < p.children.Len(); i++ {
+        child, _ := p.children.At(i).(*Package)
+        child.Indegree++
+    }
 }
 
 func (p *Package) Visit(node ast.Node) (v ast.Visitor) {

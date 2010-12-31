@@ -150,22 +150,40 @@ func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
 
     var localDeps *stringset.StringSet
     var compiledDeps *stringset.StringSet
-    var y, z int
+    var y, z, count int
     var parallel []*dag.Package
     var oldPkgFound bool = false
+    var zeroFirst []*dag.Package
 
     localDeps = stringset.New()
     compiledDeps = stringset.New()
 
     for y = 0; y < len(pkgs); y++ {
         localDeps.Add(pkgs[y].Name)
+        pkgs[y].ResetIndegree()
+    }
+
+    zeroFirst = make([]*dag.Package, len(pkgs))
+
+    for y = 0; y < len(pkgs); y++ {
+        if pkgs[y].Indegree == 0 {
+            zeroFirst[count] = pkgs[y]
+            count++
+        }
+    }
+
+    for y = 0; y < len(pkgs); y++ {
+        if pkgs[y].Indegree > 0 {
+            zeroFirst[count] = pkgs[y]
+            count++
+        }
     }
 
     parallel = make([]*dag.Package, 0)
 
-    for y = 0; y < len(pkgs); {
+    for y = 0; y < len(zeroFirst); {
 
-        if !pkgs[y].Ready(localDeps, compiledDeps) {
+        if !zeroFirst[y].Ready(localDeps, compiledDeps) {
 
             oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
 
@@ -176,7 +194,7 @@ func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
             parallel = make([]*dag.Package, 0)
 
         } else {
-            parallel = append(parallel, pkgs[y])
+            parallel = append(parallel, zeroFirst[y])
             y++
         }
     }

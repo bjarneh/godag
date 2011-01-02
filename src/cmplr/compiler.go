@@ -23,14 +23,12 @@ import (
 type Compiler struct {
     root, arch, suffix string
     executable, linker string
-    dryrun             bool
     includes           []string
 }
 
 func New(root string, include []string) *Compiler {
     c := new(Compiler)
     c.root = root
-    c.dryrun = global.GetBool("-dryrun")
     c.includes = include
     c.archDependantInfo(global.GetString("-arch"))
     return c
@@ -132,7 +130,7 @@ func (c *Compiler) SerialCompile(pkgs []*dag.Package) {
 
     for y := 0; y < len(pkgs); y++ {
 
-        if c.dryrun {
+        if global.GetBool("-dryrun") {
             dryRun(pkgs[y].Argv)
         } else {
             if oldPkgFound || !pkgs[y].UpToDate() {
@@ -274,7 +272,7 @@ func (c *Compiler) DeletePackages(pkgs []*dag.Package) bool {
                 log.Printf("[ERROR] %s\n", e)
             }
         }
-        if !c.dryrun {
+        if ! global.GetBool("-dryrun") {
             pcompile := path.Join(c.root, pkgs[i].Name) + c.suffix
             e = os.Remove(pcompile)
             if e != nil {
@@ -345,7 +343,7 @@ func (c *Compiler) ForkLink(pkgs []*dag.Package, output string) {
     argv[i] = compiled
     i++
 
-    if c.dryrun {
+    if global.GetBool("-dryrun") {
         dryRun(argv)
     } else {
         fmt.Println("linking  :", output)

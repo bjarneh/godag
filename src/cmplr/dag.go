@@ -16,7 +16,6 @@ import (
     "log"
     "strings"
     "regexp"
-    "container/vector"
     "utilz/stringset"
     "utilz/stringbuffer"
     "utilz/handy"
@@ -30,13 +29,13 @@ type Package struct {
     Indegree        int
     Name, ShortName string               // absolute path, basename
     Argv            []string             // command needed to compile package
-    Files           *vector.StringVector // relative path of files
+    Files           []string             // relative path of files
     dependencies    *stringset.StringSet
-    children        *vector.Vector // packages that depend on this
+    children        []*Package           // packages that depend on this
 }
 
 type TestCollector struct {
-    Names *vector.StringVector
+    Names []string
 }
 
 func New() Dag {
@@ -46,15 +45,15 @@ func New() Dag {
 func newPackage() *Package {
     p := new(Package)
     p.Indegree = 0
-    p.Files = new(vector.StringVector)
+    p.Files = make([]string, 0)
     p.dependencies = stringset.New()
-    p.children = new(vector.Vector)
+    p.children = make([]*Package, 0)
     return p
 }
 
 func newTestCollector() *TestCollector {
     t := new(TestCollector)
-    t.Names = new(vector.StringVector)
+    t.Names = make([]string, 0)
     return t
 }
 
@@ -81,14 +80,14 @@ func (d Dag) Parse(root string, files []string) {
         }
 
         ast.Walk(d[pkgname], tree)
-        d[pkgname].Files.Push(e)
+        d[pkgname].Files = append(d[pkgname].Files, e)
     }
 }
 
 func (d Dag) addEdge(from, to string) {
     fromNode := d[from]
     toNode := d[to]
-    fromNode.children.Push(toNode)
+    fromNode.children = append(fromNode.children, toNode)
     toNode.Indegree++
 }
 // note that nothing is done in order to check if dependencies
@@ -243,16 +242,16 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
         if max > 5 && sname[max-5:] == "_test" {
             collector := newTestCollector()
-            for i = 0; i < v.Files.Len(); i++ {
-                tree := getSyntaxTreeOrDie(v.Files.At(i), 0)
+            for i = 0; i < len(v.Files); i++ {
+                tree := getSyntaxTreeOrDie(v.Files[i], 0)
                 ast.Walk(collector, tree)
             }
 
-            if collector.Names.Len() > 0 {
+            if len(collector.Names) > 0 {
                 isTest = true
                 sbImports.Add(fmt.Sprintf("import \"%s\";\n", v.Name))
-                for i = 0; i < collector.Names.Len(); i++ {
-                    testFunc := collector.Names.At(i)
+                for i = 0; i < len(collector.Names); i++ {
+                    testFunc := collector.Names[i]
                     if len(testFunc) > 4 && testFunc[0:4] == "Test" {
                         sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
                             sname, testFunc, sname, testFunc))
@@ -269,18 +268,18 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
             collector := newTestCollector()
 
-            for i = 0; i < v.Files.Len(); i++ {
-                fname := v.Files.At(i)
+            for i = 0; i < len(v.Files); i++ {
+                fname := v.Files[i]
                 if len(fname) > 8 && fname[len(fname)-8:] == "_test.go" {
                     tree := getSyntaxTreeOrDie(fname, 0)
                     ast.Walk(collector, tree)
                 }
             }
 
-            if collector.Names.Len() > 0 {
+            if len(collector.Names) > 0 {
                 sbImports.Add(fmt.Sprintf("import \"%s\";\n", v.Name))
-                for i = 0; i < collector.Names.Len(); i++ {
-                    testFunc := collector.Names.At(i)
+                for i = 0; i < len(collector.Names); i++ {
+                    testFunc := collector.Names[i]
                     if len(testFunc) > 4 && testFunc[0:4] == "Test" {
                         sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
                             sname, testFunc, sname, testFunc))
@@ -342,7 +341,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     p := newPackage()
     p.Name = path.Join(tmpstub, "main")
     p.ShortName = "main"
-    p.Files.Push(tmpfile)
+    p.Files = append(p.Files, tmpfile)
 
     vec := make([]*Package, 1)
     vec[0] = p
@@ -354,24 +353,25 @@ func (d Dag) Topsort() []*Package {
     var node, child *Package
     var cnt int = 0
 
-    zero := new(vector.Vector)
+    zero := make([]*Package, 0)
     done := make([]*Package, 0)
 
     for _, v := range d {
         if v.Indegree == 0 {
-            zero.Push(v)
+            zero = append(zero, v)
         }
     }
 
-    for zero.Len() > 0 {
+    for len(zero) > 0 {
 
-        node, _ = zero.Pop().(*Package)
+        node = zero[0]
+        zero = zero[1:] // Pop
 
-        for i := 0; i < node.children.Len(); i++ {
-            child = node.children.At(i).(*Package)
+        for i := 0; i < len(node.children); i++ {
+            child = node.children[i]
             child.Indegree--
             if child.Indegree == 0 {
-                zero.Push(child)
+                zero = append(zero, child)
             }
         }
         cnt++
@@ -401,8 +401,8 @@ func (d Dag) PrintInfo() {
 
     for k, v := range d {
         fmt.Println("p ", k)
-        for i = 0; i < v.Files.Len(); i++ {
-            fmt.Println("f ", v.Files.At(i))
+        for i = 0; i < len(v.Files); i++ {
+            fmt.Println("f ", v.Files[i])
         }
         for ds := range v.dependencies.Iter() {
             fmt.Println("d ", ds)
@@ -439,8 +439,8 @@ func (p *Package) UpToDate() bool {
     var resultingFile string
 
     last = len(p.Argv) - 1
-    resultingFile = p.Argv[last-p.Files.Len()]
-    stop = last - p.Files.Len()
+    stop = last - len(p.Files)
+    resultingFile = p.Argv[stop]
 
     finfo, e = os.Stat(resultingFile)
 
@@ -476,9 +476,8 @@ func (p *Package) Ready(local, compiled *stringset.StringSet) bool {
 }
 
 func (p *Package) ResetIndegree(){
-    for i := 0; i < p.children.Len(); i++ {
-        child, _ := p.children.At(i).(*Package)
-        child.Indegree++
+    for i := 0; i < len(p.children); i++ {
+        p.children[i].Indegree++
     }
 }
 
@@ -501,7 +500,7 @@ func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
     case *ast.FuncDecl:
         fdecl, ok := node.(*ast.FuncDecl)
         if ok {
-            t.Names.Push(fdecl.Name.Name)
+            t.Names = append(t.Names, fdecl.Name.Name)
         }
     default: // nothing to do if not FuncDecl
     }

@@ -53,20 +53,19 @@ Usage:
 
 import (
     "strings"
-    "container/vector"
     "log"
     "os"
     "strconv"
 )
 
 type GetOpt struct {
-    options *vector.Vector
+    options []Option
     cache   map[string]Option
 }
 
 func New() *GetOpt {
     g := new(GetOpt)
-    g.options = new(vector.Vector)
+    g.options = make([]Option, 0)
     g.cache = make(map[string]Option)
     return g
 }
@@ -185,11 +184,10 @@ func (g *GetOpt) Parse(argv []string) (args []string) {
 func (g *GetOpt) juxtaOption(opt string) (string, bool) {
 
     var tmpmax string = ""
-    var optlen int = g.options.Len()
 
-    for i := 0; i < optlen; i++ {
+    for i := 0; i < len(g.options); i++ {
 
-        sopt, ok := g.options.At(i).(*StringOption)
+        sopt, ok := g.options[i].(*StringOption)
 
         if ok {
             s := sopt.startsWith(opt)
@@ -225,7 +223,7 @@ func (g *GetOpt) BoolOption(optstr string) {
     for i := range ops {
         g.cache[ops[i]] = boolopt
     }
-    g.options.Push(boolopt)
+    g.options = append(g.options, boolopt)
 }
 
 func (g *GetOpt) StringOption(optstr string) {
@@ -234,5 +232,5 @@ func (g *GetOpt) StringOption(optstr string) {
     for i := range ops {
         g.cache[ops[i]] = stringopt
     }
-    g.options.Push(stringopt)
+    g.options = append(g.options, stringopt)
 }

@@ -6,7 +6,6 @@ package compiler
 
 import (
     "os"
-    "container/vector"
     "fmt"
     "path"
     "log"
@@ -20,25 +19,16 @@ import (
 )
 
 
-type Compiler struct {
-    root, arch, suffix string
-    executable, linker string
-    includes           []string
-}
+var includes []string
+var srcroot string
+var pathLinker string
+var pathCompiler string
+var suffix string
 
-func New(root string, include []string) *Compiler {
-    c := new(Compiler)
-    c.root = root
-    c.includes = include
-    c.archDependantInfo(global.GetString("-arch"))
-    return c
-}
 
-func (c *Compiler) archDependantInfo(arch string) {
+func Init(srcdir, arch string, include []string){
 
     var A string // a:architecture
-
-    var pathCompiler, pathLinker string
     var err os.Error
 
     if arch == "" {
@@ -78,45 +68,41 @@ func (c *Compiler) archDependantInfo(arch string) {
         log.Exitf("[ERROR] could not find linker: %s\n", L)
     }
 
-    c.arch = A
-    c.executable = pathCompiler
-    c.linker = pathLinker
-    c.suffix = S
-
+    suffix   = S
+    srcroot  = srcdir
+    includes = include
 }
 
 
-func (c *Compiler) CreateArgv(pkgs []*dag.Package) {
+func CreateArgv(pkgs []*dag.Package) {
 
     var argv []string
 
-    includeLen := c.extraPkgIncludes()
+    includeLen := len(includes)
 
     for y := 0; y < len(pkgs); y++ {
 
-        argv = make([]string, 5+pkgs[y].Files.Len()+(includeLen*2))
+        argv = make([]string, 5 + len(pkgs[y].Files) + (includeLen*2))
         i := 0
-        argv[i] = c.executable
+        argv[i] = pathCompiler
         i++
         argv[i] = "-I"
         i++
-        argv[i] = c.root
+        argv[i] = srcroot
         i++
-        if includeLen > 0 {
-            for y := 0; y < includeLen; y++ {
-                argv[i] = "-I"
-                i++
-                argv[i] = c.includes[y]
-                i++
-            }
+        for y := 0; y < includeLen; y++ {
+            argv[i] = "-I"
+            i++
+            argv[i] = includes[y]
+            i++
         }
         argv[i] = "-o"
         i++
-        argv[i] = path.Join(c.root, pkgs[y].Name) + c.suffix
+        argv[i] = path.Join(srcroot, pkgs[y].Name) + suffix
         i++
 
-        for z := 0; z < pkgs[y].Files.Len(); z++ {
-            argv[i] = pkgs[y].Files.At(z)
+        for z := 0; z < len(pkgs[y].Files); z++ {
+            argv[i] = pkgs[y].Files[z]
             i++
         }
 
@@ -124,7 +110,7 @@ func (c *Compiler) CreateArgv(pkgs []*dag.Package) {
     }
 }
 
-func (c *Compiler) SerialCompile(pkgs []*dag.Package) {
+func SerialCompile(pkgs []*dag.Package) {
 
     var oldPkgFound bool = false
 
@@ -144,7 +130,7 @@ func (c *Compiler) SerialCompile(pkgs []*dag.Package) {
     }
 }
 
-func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
+func ParallelCompile(pkgs []*dag.Package) {
 
     var localDeps *stringset.StringSet
     var compiledDeps *stringset.StringSet
@@ -183,7 +169,7 @@ func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
 
         if !zeroFirst[y].Ready(localDeps, compiledDeps) {
 
-            oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
+            oldPkgFound = compileMultipe(parallel, oldPkgFound)
 
             for z = 0; z < len(parallel); z++ {
                 compiledDeps.Add(parallel[z].Name)
@@ -198,12 +184,12 @@ func (c *Compiler) ParallelCompile(pkgs []*dag.Package) {
     }
 
     if len(parallel) > 0 {
-        oldPkgFound = c.compileMultipe(parallel, oldPkgFound)
+        _ = compileMultipe(parallel, oldPkgFound)
     }
 
 }
 
-func (c *Compiler) compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
+func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
 
     var ok bool
     var max int = len(pkgs)
@@ -258,22 +244,22 @@ func gCompile(argv []string, c chan bool) {
 }
 
 // for removal of temoprary packages created for testing and so on..
-func (c *Compiler) DeletePackages(pkgs []*dag.Package) bool {
+func DeletePackages(pkgs []*dag.Package) bool {
 
     var ok = true
     var e os.Error
 
     for i := 0; i < len(pkgs); i++ {
 
-        for y := 0; y < pkgs[i].Files.Len(); y++ {
-            e = os.Remove(pkgs[i].Files.At(y))
+        for y := 0; y < len(pkgs[i].Files); y++ {
+            e = os.Remove(pkgs[i].Files[y])
             if e != nil {
                 ok = false
                 log.Printf("[ERROR] %s\n", e)
             }
         }
         if ! global.GetBool("-dryrun") {
-            pcompile := path.Join(c.root, pkgs[i].Name) + c.suffix
+            pcompile := path.Join(srcroot, pkgs[i].Name) + suffix
             e = os.Remove(pcompile)
             if e != nil {
                 ok = false
@@ -285,40 +271,39 @@ func (c *Compiler) DeletePackages(pkgs []*dag.Package) bool {
     return ok
 }
 
-func (c *Compiler) ForkLink(pkgs []*dag.Package, output string) {
+func ForkLink(output string, pkgs []*dag.Package) {
 
     var mainPKG *dag.Package
 
-    gotMain := new(vector.Vector)
+    gotMain := make([]*dag.Package, 0)
 
     for i := 0; i < len(pkgs); i++ {
         if pkgs[i].ShortName == "main" {
-            gotMain.Push(pkgs[i])
+            gotMain = append(gotMain, pkgs[i])
         }
     }
 
-    if gotMain.Len() == 0 {
+    if len(gotMain) == 0 {
         log.Exit("[ERROR] (linking) no main package found\n")
     }
 
-    if gotMain.Len() > 1 {
+    if len(gotMain) > 1 {
         choice := mainChoice(gotMain)
-        mainPKG, _ = gotMain.At(choice).(*dag.Package)
+        mainPKG = gotMain[choice]
     } else {
-        mainPKG, _ = gotMain.Pop().(*dag.Package)
+        mainPKG = gotMain[0]
     }
 
-    includeLen := c.extraPkgIncludes()
     staticXtra := 0
     if global.GetBool("-static") {
         staticXtra++
     }
 
-    compiled := path.Join(c.root, mainPKG.Name) + c.suffix
+    compiled := path.Join(srcroot, mainPKG.Name) + suffix
 
-    argv := make([]string, 6+(includeLen*2)+staticXtra)
+    argv := make([]string, 6+(len(includes)*2)+staticXtra)
     i := 0
-    argv[i] = c.linker
+    argv[i] = pathLinker
     i++
     argv[i] = "-o"
     i++
@@ -326,19 +311,17 @@ func (c *Compiler) ForkLink(pkgs []*dag.Package, output string) {
     i++
     argv[i] = "-L"
     i++
-    argv[i] = c.root
+    argv[i] = srcroot
     i++
     if global.GetBool("-static") {
         argv[i] = "-d"
         i++
     }
-    if includeLen > 0 {
-        for y := 0; y < includeLen; y++ {
-            argv[i] = "-L"
-            i++
-            argv[i] = c.includes[y]
-            i++
-        }
+    for y := 0; y < len(includes); y++ {
+        argv[i] = "-L"
+        i++
+        argv[i] = includes[y]
+        i++
     }
     argv[i] = compiled
     i++
@@ -351,13 +334,12 @@ func (c *Compiler) ForkLink(pkgs []*dag.Package, output string) {
     }
 }
 
-func mainChoice(pkgs *vector.Vector) int {
+func mainChoice(pkgs []*dag.Package) int {
 
     fmt.Println("\n More than one main package found\n")
 
-    for i := 0; i < pkgs.Len(); i++ {
-        pk, _ := pkgs.At(i).(*dag.Package)
-        fmt.Printf(" type %2d  for: %s\n", i, pk.Name)
+    for i := 0; i < len(pkgs); i++ {
+        fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].Name)
     }
 
     var choice int
@@ -373,11 +355,11 @@ func mainChoice(pkgs *vector.Vector) int {
         log.Exit("failed to read input\n")
     }
 
-    if choice >= pkgs.Len() || choice < 0 {
+    if choice >= len(pkgs) || choice < 0 {
         log.Exitf(" bad choice: %d\n", choice)
     }
 
-    fmt.Printf(" chosen main-package: %s\n\n", pkgs.At(choice).(*dag.Package).Name)
+    fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].Name)
 
     return choice
 }
@@ -391,13 +373,6 @@ func dryRun(argv []string) {
     }
 
     fmt.Printf("%s || exit 1\n", cmd)
-}
-
-func (c *Compiler) extraPkgIncludes() int {
-    if c.includes != nil && len(c.includes) > 0 {
-        return len(c.includes)
-    }
-    return 0
 }
 
 

@@ -259,23 +259,23 @@ func main() {
     }
 
     // compile
-    kompiler := compiler.New(srcdir, includes)
-    kompiler.CreateArgv(sorted)
+    compiler.Init(srcdir, global.GetString("-arch"), includes)
+    compiler.CreateArgv(sorted)
 
     if runtime.GOMAXPROCS(-1) > 1 && ! global.GetBool("-dryrun") {
-        kompiler.ParallelCompile(sorted)
+        compiler.ParallelCompile(sorted)
     } else {
-        kompiler.SerialCompile(sorted)
+        compiler.SerialCompile(sorted)
     }
 
     // test
     if global.GetBool("-test") {
         os.Setenv("SRCROOT", srcdir)
         testMain, testDir := dgrph.MakeMainTest(srcdir)
-        kompiler.CreateArgv(testMain)
-        kompiler.SerialCompile(testMain)
-        kompiler.ForkLink(testMain, global.GetString("-test-bin"))
-        kompiler.DeletePackages(testMain)
+        compiler.CreateArgv(testMain)
+        compiler.SerialCompile(testMain)
+        compiler.ForkLink(global.GetString("-test-bin"), testMain)
+        compiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
         if rmError != nil {
             log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
@@ -300,7 +300,7 @@ func main() {
     }
 
     if global.GetString("-output") != "" {
-        kompiler.ForkLink(sorted, global.GetString("-output"))
+        compiler.ForkLink(global.GetString("-output"), sorted)
     }
 
 }

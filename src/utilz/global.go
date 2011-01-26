@@ -18,7 +18,8 @@ package global
 
 var intMap map[string]int
 var stringMap map[string]string
-var floatMap map[string]float
+var float64Map map[string]float64
+var float32Map map[string]float32
 var boolMap map[string]bool
 var interfaceMap map[string]interface{}
 
@@ -26,7 +27,8 @@ var interfaceMap map[string]interface{}
 func init() {
     intMap = make(map[string]int)
     stringMap = make(map[string]string)
-    floatMap = make(map[string]float)
+    float64Map = make(map[string]float64)
+    float32Map = make(map[string]float32)
     boolMap = make(map[string]bool)
     interfaceMap = make(map[string]interface{})
 }
@@ -41,8 +43,12 @@ func SetString(key, value string) {
     stringMap[key] = value
 }
 
-func SetFloat(key string, value float) {
-    floatMap[key] = value
+func SetFloat64(key string, value float64) {
+    float64Map[key] = value
+}
+
+func SetFloat32(key string, value float32) {
+    float32Map[key] = value
 }
 
 func SetBool(key string, value bool) {
@@ -73,13 +79,22 @@ func GetString(key string) string {
     return stringMap[key]
 }
 
-func GetFloatSafe(key string) (value float, ok bool) {
-    value, ok = floatMap[key]
+func GetFloat64Safe(key string) (value float64, ok bool) {
+    value, ok = float64Map[key]
     return value, ok
 }
 
-func GetFloat(key string) float {
-    return floatMap[key]
+func GetFloat64(key string) float64 {
+    return float64Map[key]
+}
+
+func GetFloat32Safe(key string) (value float32, ok bool) {
+    value, ok = float32Map[key]
+    return value, ok
+}
+
+func GetFloat32(key string) float32 {
+    return float32Map[key]
 }
 
 func GetBoolSafe(key string) (value, ok bool) {

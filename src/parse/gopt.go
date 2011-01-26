@@ -111,8 +111,12 @@ func (g *GetOpt) Get(o string) string {
     return sopt.values[0]
 }
 
-func (g *GetOpt) GetFloat(o string) (float, os.Error) {
-    return strconv.Atof( g.Get(o) )
+func (g *GetOpt) GetFloat32(o string) (float32, os.Error) {
+    return strconv.Atof32( g.Get(o) )
+}
+
+func (g *GetOpt) GetFloat64(o string) (float64, os.Error) {
+    return strconv.Atof64( g.Get(o) )
 }
 
 func (g *GetOpt) GetInt(o string) (int, os.Error) {

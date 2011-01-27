@@ -117,7 +117,7 @@ func SerialCompile(pkgs []*dag.Package) {
     for y := 0; y < len(pkgs); y++ {
 
         if global.GetBool("-dryrun") {
-            dryRun(pkgs[y].Argv)
+            fmt.Printf("%s || exit 1\n", strings.Join(pkgs[y].Argv, " "))
         } else {
             if oldPkgFound || !pkgs[y].UpToDate() {
                 fmt.Println("compiling:", pkgs[y].Name)
@@ -327,7 +327,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
     i++
 
     if global.GetBool("-dryrun") {
-        dryRun(argv)
+        fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
     } else {
         fmt.Println("linking  :", output)
         handy.StdExecve(argv, true)
@@ -362,17 +362,6 @@ func mainChoice(pkgs []*dag.Package) int {
     fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].Name)
 
     return choice
-}
-
-
-func dryRun(argv []string) {
-    var cmd string
-
-    for i := 0; i < len(argv); i++ {
-        cmd = fmt.Sprintf("%s %s ", cmd, argv[i])
-    }
-
-    fmt.Printf("%s || exit 1\n", cmd)
 }
 
 

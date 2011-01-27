@@ -148,9 +148,13 @@ func (d Dag) External() {
     }
 
     for u := range set.Iter() {
-        fmt.Printf("goinstall: %s\n", u)
         argv[i] = u
-        handy.StdExecve(argv, true)
+        if global.GetBool("-dryrun") {
+            fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
+        }else{
+            fmt.Printf("goinstall: %s\n", u)
+            handy.StdExecve(argv, true)
+        }
     }
 
 }

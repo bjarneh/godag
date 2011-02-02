@@ -122,7 +122,7 @@ func init() {
 
 func gotRoot() {
     if os.Getenv("GOROOT") == "" {
-        log.Exit("[ERROR] missing GOROOT\n")
+        log.Fatal("[ERROR] missing GOROOT\n")
     }
 }
 
@@ -169,7 +169,7 @@ func main() {
             if e != nil {
                 srcdir = os.Getenv("PWD")
                 if srcdir == "" {
-                    log.Exit("[ERROR] can't find working directory\n")
+                    log.Fatal("[ERROR] can't find working directory\n")
                 }
             }
         }

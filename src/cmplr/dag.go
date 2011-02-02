@@ -139,7 +139,7 @@ func (d Dag) External() {
     i++
 
     if err != nil {
-        log.Exitf("[ERROR] %s\n", err)
+        log.Fatalf("[ERROR] %s\n", err)
     }
 
     if global.GetBool("-verbose") {
@@ -193,7 +193,7 @@ func (d Dag) MakeDotGraph(filename string) {
         if fileinfo.IsRegular() {
             e = os.Remove(fileinfo.Name)
             if e != nil {
-                log.Exitf("[ERROR] failed to remove: %s\n", filename)
+                log.Fatalf("[ERROR] failed to remove: %s\n", filename)
             }
         }
     }
@@ -202,7 +202,7 @@ func (d Dag) MakeDotGraph(filename string) {
     file, e = os.Open(filename, os.O_WRONLY|os.O_CREAT, 0644)
 
     if e != nil {
-        log.Exitf("[ERROR] %s\n", e)
+        log.Fatalf("[ERROR] %s\n", e)
     }
 
     sb.Add("digraph depgraph {\n\trankdir=LR;\n")
@@ -320,7 +320,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     } else {
         e_mk := os.Mkdir(tmpdir, 0777)
         if e_mk != nil {
-            log.Exit("[ERROR] failed to create directory for testing")
+            log.Fatal("[ERROR] failed to create directory for testing")
         }
     }
 
@@ -329,15 +329,15 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     fil, e2 := os.Open(tmpfile, os.O_WRONLY|os.O_CREAT, 0777)
 
     if e2 != nil {
-        log.Exitf("[ERROR] %s\n", e2)
+        log.Fatalf("[ERROR] %s\n", e2)
     }
 
     n, e3 := fil.WriteString(sbTotal.String())
 
     if e3 != nil {
-        log.Exitf("[ERROR] %s\n", e3)
+        log.Fatalf("[ERROR] %s\n", e3)
     } else if n != sbTotal.Len() {
-        log.Exit("[ERROR] failed to write test")
+        log.Fatal("[ERROR] failed to write test")
     }
 
     fil.Close()
@@ -383,7 +383,7 @@ func (d Dag) Topsort() []*Package {
     }
 
     if cnt < len(d) {
-        log.Exit("[ERROR] loop in dependency graph")
+        log.Fatal("[ERROR] loop in dependency graph")
     }
 
     return done
@@ -521,7 +521,7 @@ func addSeparatorPath(root string) string {
 func getSyntaxTreeOrDie(file string, mode uint) *ast.File {
     absSynTree, err := parser.ParseFile(token.NewFileSet(), file, nil, mode)
     if err != nil {
-        log.Exitf("%s\n", err)
+        log.Fatalf("%s\n", err)
     }
     return absSynTree
 }

@@ -30,7 +30,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 
     if err != nil {
         if stopOnTrouble {
-            log.Exitf("[ERROR] %s\n", err)
+            log.Fatalf("[ERROR] %s\n", err)
         } else {
             log.Printf("[ERROR] %s\n", err)
         }
@@ -127,8 +127,8 @@ func DirOrExit(pathname string) {
     fileInfo, err := os.Stat(pathname)
 
     if err != nil {
-        log.Exitf("[ERROR] %s\n", err)
+        log.Fatalf("[ERROR] %s\n", err)
     } else if !fileInfo.IsDirectory() {
-        log.Exitf("[ERROR] %s: is not a directory\n", pathname)
+        log.Fatalf("[ERROR] %s: is not a directory\n", pathname)
     }
 }

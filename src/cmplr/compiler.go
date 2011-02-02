@@ -53,19 +53,19 @@ func Init(srcdir, arch string, include []string){
         C = "8g"
         L = "8l"
     default:
-        log.Exitf("[ERROR] unknown architecture: %s\n", A)
+        log.Fatalf("[ERROR] unknown architecture: %s\n", A)
     }
 
     pathCompiler, err = exec.LookPath(C)
 
     if err != nil {
-        log.Exitf("[ERROR] could not find compiler: %s\n", C)
+        log.Fatalf("[ERROR] could not find compiler: %s\n", C)
     }
 
     pathLinker, err = exec.LookPath(L)
 
     if err != nil {
-        log.Exitf("[ERROR] could not find linker: %s\n", L)
+        log.Fatalf("[ERROR] could not find linker: %s\n", L)
     }
 
     suffix   = S
@@ -196,7 +196,7 @@ func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
     var trouble bool = false
 
     if max == 0 {
-        log.Exit("[ERROR] trying to compile 0 packages in parallel\n")
+        log.Fatal("[ERROR] trying to compile 0 packages in parallel\n")
     }
 
     if max == 1 {
@@ -232,7 +232,7 @@ func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
     }
 
     if trouble {
-        log.Exit("[ERROR] failed batch compile job\n")
+        log.Fatal("[ERROR] failed batch compile job\n")
     }
 
     return oldPkgFound
@@ -284,7 +284,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
     }
 
     if len(gotMain) == 0 {
-        log.Exit("[ERROR] (linking) no main package found\n")
+        log.Fatal("[ERROR] (linking) no main package found\n")
     }
 
     if len(gotMain) > 1 {
@@ -349,14 +349,14 @@ func mainChoice(pkgs []*dag.Package) int {
     n, e := fmt.Scanf("%d", &choice)
 
     if e != nil {
-        log.Exitf("%s\n", e)
+        log.Fatalf("%s\n", e)
     }
     if n != 1 {
-        log.Exit("failed to read input\n")
+        log.Fatal("failed to read input\n")
     }
 
     if choice >= len(pkgs) || choice < 0 {
-        log.Exitf(" bad choice: %d\n", choice)
+        log.Fatalf(" bad choice: %d\n", choice)
     }
 
     fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].Name)
@@ -372,7 +372,7 @@ func CreateTestArgv() []string {
     pwd, e := os.Getwd()
 
     if e != nil {
-        log.Exit("[ERROR] could not locate working directory\n")
+        log.Fatal("[ERROR] could not locate working directory\n")
     }
 
     arg0 := path.Join(pwd, global.GetString("-test-bin"))
@@ -455,7 +455,7 @@ func FormatFiles(files []string) {
     fmtexec, err = exec.LookPath("gofmt")
 
     if err != nil {
-        log.Exit("[ERROR] could not find 'gofmt' in $PATH")
+        log.Fatal("[ERROR] could not find 'gofmt' in $PATH")
     }
 
     if global.GetString("-tabwidth") != "" {
@@ -474,7 +474,7 @@ func FormatFiles(files []string) {
     argv = make([]string, 6+argvLen)
 
     if fmtexec == "" {
-        log.Exit("[ERROR] could not find: gofmt\n")
+        log.Fatal("[ERROR] could not find: gofmt\n")
     }
 
     argv[i] = fmtexec

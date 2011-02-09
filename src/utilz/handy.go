@@ -10,6 +10,7 @@ import (
     "io/ioutil"
     "regexp"
     "strings"
+    "exec"
 )
 
 
@@ -18,15 +19,12 @@ import (
 
 func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 
-    var fdesc []*os.File
+    var err os.Error
+    var cmd *exec.Cmd
+    var pt int = exec.PassThrough
+    var wmsg *os.Waitmsg
     ok = true
-
-    fdesc = make([]*os.File, 3)
-    fdesc[0] = os.Stdin
-    fdesc[1] = os.Stdout
-    fdesc[2] = os.Stderr
-
-    pid, err := os.ForkExec(argv[0], argv, os.Environ(), "", fdesc)
+    cmd, err = exec.Run(argv[0], argv, os.Environ(), "", pt, pt, pt)
 
     if err != nil {
         if stopOnTrouble {
@@ -38,12 +36,12 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 
     } else {
 
-        wmsg, werr := os.Wait(pid, 0)
+        wmsg, err = cmd.Wait(0)
 
-        if werr != nil || wmsg.WaitStatus.ExitStatus() != 0 {
+        if err != nil || wmsg.WaitStatus.ExitStatus() != 0 {
 
-            if werr != nil {
-                log.Printf("[ERROR] %s\n", werr)
+            if err != nil {
+                log.Printf("[ERROR] %s\n", err)
             }
 
             if stopOnTrouble {

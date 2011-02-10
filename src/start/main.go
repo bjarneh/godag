@@ -173,9 +173,12 @@ func main() {
                 }
             }
         }
-
     }
 
+    // expand variables in includes
+    for i := 0; i < len(includes); i++ {
+        includes[i] = os.ShellExpand(includes[i]);
+    }
 
     // stuff that can be done without $GOROOT
     if global.GetBool("-list") {

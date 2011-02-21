@@ -305,13 +305,13 @@ func ForkLink(output string, pkgs []*dag.Package) {
     i := 0
     argv[i] = pathLinker
     i++
-    argv[i] = "-o"
-    i++
-    argv[i] = output
-    i++
     argv[i] = "-L"
     i++
     argv[i] = srcroot
+    i++
+    argv[i] = "-o"
+    i++
+    argv[i] = output
     i++
     if global.GetBool("-static") {
         argv[i] = "-d"

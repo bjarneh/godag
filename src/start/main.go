@@ -376,7 +376,7 @@ func printHelp() {
   -f --fmt             run gofmt on src and exit
   --rew-rule           pass rewrite rule to gofmt
   --tab                pass -tabindent=true to gofmt
-  --tabwidth           pass -tabwidth to gofmt (default:4)
+  --tabwidth           pass -tabwidth to gofmt (default: 4)
   --no-comments        pass -comments=false to gofmt
   -e --external        goinstall all external dependencies
     `
@@ -385,7 +385,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.1")
+    fmt.Println("godag 0.2")
 }
 
 func printListing() {

@@ -62,7 +62,7 @@ func (d Dag) Parse(root string, files []string) {
 
     root = addSeparatorPath(root)
 
-    var e string
+    var e, pkgname string
 
     for i := 0; i < len(files); i++ {
         e = files[i]
@@ -70,7 +70,13 @@ func (d Dag) Parse(root string, files []string) {
         dir, _ := path.Split(e)
         unroot := dir[len(root):len(dir)]
         shortname := tree.Name.String()
-        pkgname := path.Join(unroot, shortname)
+
+        // if package name == directory name -> assume stdlib organizing
+        if len(unroot) > 1 && path.Base(dir) == shortname {
+            pkgname = unroot[:len(unroot)-1]
+        }else{
+            pkgname = path.Join(unroot, shortname)
+        }
 
         _, ok := d[pkgname]
         if !ok {
@@ -91,7 +97,7 @@ func (d Dag) addEdge(from, to string) {
     toNode.Indegree++
 }
 // note that nothing is done in order to check if dependencies
-// are valid if they are not part of the actual source-tree,
+// are valid if they are not part of the actual source-tree.
 
 func (d Dag) GraphBuilder() {
 
@@ -99,7 +105,7 @@ func (d Dag) GraphBuilder() {
         for dep := range v.dependencies.Iter() {
             if d.localDependency(dep) {
                 d.addEdge(dep, k)
-                /// fmt.Printf("local:  %s \n", dep);
+                ///fmt.Printf("local:  %s \n", dep);
             }
         }
     }
@@ -433,7 +439,7 @@ func (p *Package) DotGraph(sb *stringbuffer.StringBuffer) {
 func (p *Package) UpToDate() bool {
 
     if p.Argv == nil {
-        panic("Missing dag.Package.Argv")
+        log.Fatalf("[ERROR] missing dag.Package.Argv\n")
     }
 
     var e os.Error

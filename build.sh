@@ -12,6 +12,7 @@ HERE=$(dirname "$FULL")
 IDIR=$HERE/src
 CPROOT=`date +"tmp-pkgroot-%s"`
 SRCROOT="$GOROOT/src/pkg"
+UP_ONE=""
 
 # array to store packages which are pure go
 declare -a package;
@@ -137,6 +138,7 @@ targets:
   move    : move 'gd' to \$HOME/bin (\$GOBIN fallback)
   install : clean + build + move (DEFAULT)
   cproot  : copy modified (pure go) part of \$GOROOT/src/pkg
+  stdlib  : copy original (pure go) part of \$GOROOT/src/pkg
 
 EOH
 }
@@ -206,7 +208,9 @@ function cproot {
         recursive_copy "$SRCROOT/$p" "$CPROOT/$p"
     done
 
-    up_one_level "$CPROOT" "$CPROOT"
+    if [ "$UP_ONE" ];then
+        up_one_level "$CPROOT" "$CPROOT"
+    fi
 
     # delete empty directories from $CPROOT
     find -depth -type d -empty -exec rmdir {} \;
@@ -258,6 +262,10 @@ case "$1" in
       phelp
       ;;
       'cproot' | '--cproot' | '-cproot')
+      UP_ONE="yes"
+      time cproot
+      ;;
+      'stdlib' | '-stdlib' | '--stdlib')
       time cproot
       ;;
       'clean' | 'c' | '-c' | '--clean' | '-clean')

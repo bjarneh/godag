@@ -78,7 +78,7 @@ func init() {
     getopt.BoolOption("-s -sort --sort sort")
     getopt.BoolOption("-p -print --print")
     getopt.BoolOption("-d -dryrun --dryrun")
-    getopt.BoolOption("-t -test --test")
+    getopt.BoolOption("-t -test --test test")
     getopt.BoolOption("-l -list --list")
     getopt.BoolOption("-V -verbose --verbose")
     getopt.BoolOption("-f -fmt --fmt")

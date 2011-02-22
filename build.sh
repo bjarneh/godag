@@ -21,41 +21,42 @@ declare -a package;
 # to figure out which packges are actually pure go..
 package=(
 'archive'
-'asn1'
-'bufio'
-'cmath'
 'compress'
 'container'
-'ebnf'
-'encoding'
-'expvar'
 'flag'
-'fmt'
 'go'
-'gob'
-'hash'
 'html'
 'http'
 'image'
+'mime'
+'patch'
+'rpc'
+'strconv'
+'tabwriter'
+'template'
 'io'
+## packages above this line cannot be tested without modification
+'asn1'
+'bufio'
+'cmath'
+'ebnf'
+'encoding'
+'expvar'
+'fmt'
+'gob'
+'hash'
 'index'
 'json'
 'log'
-'mime'
 'netchan'
-'patch'
 'rand'
 'reflect'
 'regexp'
-'rpc'
 'scanner'
 'smtp'
 'sort'
-'strconv'
 'strings'
 'syslog'
-'tabwriter'
-'template'
 'testing'
 'try'
 'unicode'
@@ -139,6 +140,7 @@ targets:
   install : clean + build + move (DEFAULT)
   cproot  : copy modified (pure go) part of \$GOROOT/src/pkg
   stdlib  : copy original (pure go) part of \$GOROOT/src/pkg
+  testok  : copy partial stdlib that can be tested without modification
 
 EOH
 }
@@ -218,6 +220,15 @@ function cproot {
     exit 0
 }
 
+function testok {
+    cnt=15
+    for((i = 0; i < cnt; i++))
+    do
+        unset package[$i]
+    done
+
+    cproot
+}
 
 # default target clean + build + move
 function triple {
@@ -267,6 +278,9 @@ case "$1" in
       ;;
       'stdlib' | '-stdlib' | '--stdlib')
       time cproot
+      ;;
+      'testok' | '-testok' | '--testok')
+      time testok
       ;;
       'clean' | 'c' | '-c' | '--clean' | '-clean')
       time clean

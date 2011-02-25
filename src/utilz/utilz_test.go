@@ -8,6 +8,7 @@ import (
     "utilz/stringset"
     "utilz/stringbuffer"
     "utilz/walker"
+    "utilz/timer"
 )
 
 func TestStringSet(t *testing.T) {
@@ -108,6 +109,7 @@ func TestWalker(t *testing.T){
     ss.Add(path.Join(srcroot, "utilz", "utilz_test.go"))
     ss.Add(path.Join(srcroot, "utilz", "walker.go"))
     ss.Add(path.Join(srcroot, "utilz", "global.go"))
+    ss.Add(path.Join(srcroot, "utilz", "timer.go"))
 
     files   := walker.PathWalk(srcroot)
 
@@ -122,6 +124,53 @@ func TestWalker(t *testing.T){
             t.Fatalf("walker picked up files not in SRCROOT\n")
         }
         ss.Remove( files[i] )
+    }
+
+}
+
+func TestTimer(t *testing.T){
+
+    timer.Start("is here")
+    err := timer.Stop("not here")
+
+    if err == nil {
+        t.Fatalf("job: 'not here' is not here\n")
+    }
+
+    err = timer.Stop("is here")
+
+    if err != nil {
+        t.Fatalf("job: 'is here' is here\n")
+    }
+
+    delta, err := timer.Delta("is here")
+
+    if err != nil {
+        t.Fatalf("job: 'is here' still not here..\n")
+    }
+
+    if delta <= 0 {
+        t.Fatalf("job: 'is here' used <= ns\n")
+    }
+
+    delta = timer.Hour*4 + timer.Minute*7 + timer.Second*3 + timer.Millisecond*9
+
+    tid := timer.Nano2Time(delta)
+
+    if tid.Hours != 4 {
+        t.Fatalf("timer.Nano2Time() 4 != %d\n",tid.Hours)
+    }
+
+    if tid.Minutes != 7 {
+        t.Fatalf("timer.Nano2Time() 7 != %d\n",tid.Minutes)
+    }
+
+    if tid.Seconds != 3 {
+        t.Fatalf("timer.Nano2Time() 3 != %d\n",tid.Seconds)
+    }
+
+    if tid.Milliseconds != 9 {
+        t.Fatalf("timer.Nano2Time() 9 != %d\n",tid.Milliseconds)
     }
 
 }

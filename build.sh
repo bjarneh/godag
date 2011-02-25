@@ -75,6 +75,7 @@ function build(){
     $COMPILER stringset.go || exit 1
     $COMPILER stringbuffer.go || exit 1
     $COMPILER global.go || exit 1
+    $COMPILER timer.go || exit 1
     cd $HERE/src/parse && $COMPILER -o gopt.$OBJ option.go gopt.go || exit 1
     cd $HERE/src/cmplr && $COMPILER -I $IDIR dag.go || exit 1
     $COMPILER -I $IDIR compiler.go || exit 1
@@ -91,6 +92,7 @@ function clean(){
     rm -rf src/utilz/stringbuffer.?
     rm -rf src/utilz/utilz_test.?
     rm -rf src/utilz/handy.?
+    rm -rf src/utilz/timer.?
     rm -rf src/cmplr/dag.?
     rm -rf src/cmplr/compiler.?
     rm -rf src/parse/gopt.?

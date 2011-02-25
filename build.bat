@@ -52,6 +52,7 @@ CHDIR src\utilz
 8g.exe global.go
 8g.exe stringset.go
 8g.exe stringbuffer.go
+8g.exe timer.go
 CHDIR ..\parse
 8g.exe -o gopt.8 option.go gopt.go
 cd ..\cmplr

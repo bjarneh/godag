@@ -377,7 +377,7 @@ func CreateTestArgv() []string {
 
     arg0 := path.Join(pwd, global.GetString("-test-bin"))
 
-    if global.GetString("-benchmarks") != "" {
+    if global.GetString("-bench") != "" {
         numArgs += 2
     }
     if global.GetString("-match") != "" {
@@ -390,20 +390,20 @@ func CreateTestArgv() []string {
     var i = 1
     argv := make([]string, numArgs)
     argv[0] = arg0
-    if global.GetString("-benchmarks") != "" {
-        argv[i] = "-benchmarks"
+    if global.GetString("-bench") != "" {
+        argv[i] = "-test.bench"
         i++
-        argv[i] = global.GetString("-benchmarks")
+        argv[i] = global.GetString("-bench")
         i++
     }
     if global.GetString("-match") != "" {
-        argv[i] = "-match"
+        argv[i] = "-test.run"
         i++
         argv[i] = global.GetString("-match")
         i++
     }
     if global.GetBool("-verbose") {
-        argv[i] = "-v"
+        argv[i] = "-test.v"
     }
     return argv
 }

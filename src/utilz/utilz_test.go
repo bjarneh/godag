@@ -150,8 +150,8 @@ func TestTimer(t *testing.T){
         t.Fatalf("job: 'is here' still not here..\n")
     }
 
-    if delta <= 0 {
-        t.Fatalf("job: 'is here' used <= ns\n")
+    if delta < 0 {
+        t.Fatalf("delta = %d < 0 ns\n",delta)
     }
 
     delta = timer.Hour*4 + timer.Minute*7 + timer.Second*3 + timer.Millisecond*9

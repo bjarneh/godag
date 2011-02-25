@@ -13,7 +13,6 @@ import(
 
 // a very simple timer package, perhaps to simple
 
-
 // nanosecond: Millisecond, Second, Minute, Hour
 const(
     Millisecond = 1e6
@@ -28,24 +27,51 @@ type Time struct {
 
 // jobname -> epoch-ns [ns used when stopped]
 var jobs map[string]int64
+// jobname -> running true or false
+var running map[string]bool
 
 func init(){
     jobs = make(map[string]int64)
+    running = make(map[string]bool)
 }
 
 func Start(name string) {
     jobs[name] = time.Nanoseconds()
+    running[name] = true
 }
 
 func Stop(name string) os.Error {
 
-    start, ok := jobs[name]
+    started, ok := running[name]
 
     if !ok {
         return os.NewError("[utilz/timer] unknown job: "+name)
     }
 
-    jobs[name] = time.Nanoseconds() - start
+    if !started {
+        return os.NewError("[utilz/timer] job not running: "+name)
+    }
+
+    jobs[name] = time.Nanoseconds() - jobs[name]
+    running[name] = false
+
+    return nil
+}
+
+func Resume(name string) os.Error {
+
+    started, ok := running[name]
+
+    if !ok {
+        return os.NewError("[utilz/timer] unknown job: "+name)
+    }
+
+    if started {
+        return os.NewError("[utilz/timer] job is running: "+name)
+    }
+
+    jobs[name] = time.Nanoseconds() - jobs[name]
+    running[name] = true
 
     return nil
 }
@@ -98,9 +124,9 @@ func (t *Time) String() string {
 }
 
 func Print(w io.Writer) {
-    fmt.Fprintf(w, "--------------------------------------\n")
+    fmt.Fprintf(w, "--------------------------------\n")
     for k,v := range jobs {
-        fmt.Fprintf(w,"%12s   : %19s\n", k, Nano2Time(v))
+        fmt.Fprintf(w,"%11s   : %14s\n", k, Nano2Time(v))
     }
-    fmt.Fprintf(w, "--------------------------------------\n")
+    fmt.Fprintf(w, "--------------------------------\n")
 }

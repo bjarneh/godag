@@ -20,6 +20,7 @@ import (
     "utilz/stringbuffer"
     "utilz/handy"
     "utilz/global"
+    "utilz/say"
 )
 
 
@@ -158,7 +159,7 @@ func (d Dag) External() {
         if global.GetBool("-dryrun") {
             fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
         }else{
-            fmt.Printf("goinstall: %s\n", u)
+            say.Printf("goinstall: %s\n", u)
             handy.StdExecve(argv, true)
         }
     }

@@ -14,6 +14,7 @@ import (
     "utilz/walker"
     "utilz/stringset"
     "utilz/handy"
+    "utilz/say"
     "utilz/global"
     "cmplr/dag"
 )
@@ -120,11 +121,11 @@ func SerialCompile(pkgs []*dag.Package) {
             fmt.Printf("%s || exit 1\n", strings.Join(pkgs[y].Argv, " "))
         } else {
             if oldPkgFound || !pkgs[y].UpToDate() {
-                fmt.Println("compiling:", pkgs[y].Name)
+                say.Println("compiling:", pkgs[y].Name)
                 handy.StdExecve(pkgs[y].Argv, true)
                 oldPkgFound = true
             } else {
-                fmt.Println("up 2 date:", pkgs[y].Name)
+                say.Println("up 2 date:", pkgs[y].Name)
             }
         }
     }
@@ -201,11 +202,11 @@ func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
 
     if max == 1 {
         if oldPkgFound || !pkgs[0].UpToDate() {
-            fmt.Println("compiling:", pkgs[0].Name)
+            say.Println("compiling:", pkgs[0].Name)
             handy.StdExecve(pkgs[0].Argv, true)
             oldPkgFound = true
         } else {
-            fmt.Println("up 2 date:", pkgs[0].Name)
+            say.Println("up 2 date:", pkgs[0].Name)
         }
     } else {
 
@@ -213,11 +214,11 @@ func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
 
         for y := 0; y < max; y++ {
             if oldPkgFound || !pkgs[y].UpToDate() {
-                fmt.Println("compiling:", pkgs[y].Name)
+                say.Println("compiling:", pkgs[y].Name)
                 oldPkgFound = true
                 go gCompile(pkgs[y].Argv, ch)
             } else {
-                fmt.Println("up 2 date:", pkgs[y].Name)
+                say.Println("up 2 date:", pkgs[y].Name)
                 ch <- true
             }
         }
@@ -329,7 +330,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
     if global.GetBool("-dryrun") {
         fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
     } else {
-        fmt.Println("linking  :", output)
+        say.Println("linking  :", output)
         handy.StdExecve(argv, true)
     }
 }
@@ -431,7 +432,7 @@ func Remove865a(srcdir string) {
             if e != nil {
                 log.Printf("[ERROR] could not delete file: %s\n", compiled[i])
             } else {
-                fmt.Printf("rm: %s\n", compiled[i])
+                say.Printf("rm: %s\n", compiled[i])
             }
 
         } else {
@@ -496,7 +497,7 @@ func FormatFiles(files []string) {
     for y := 0; y < len(files); y++ {
         argv[i] = files[y]
         if ! global.GetBool("-dryrun") {
-            fmt.Printf("gofmt : %s\n", files[y])
+            say.Printf("gofmt : %s\n", files[y])
             _ = handy.StdExecve(argv, true)
         } else {
             fmt.Printf(" %s\n", strings.Join(argv, " "))

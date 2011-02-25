@@ -18,6 +18,7 @@ import (
     "utilz/handy"
     "utilz/global"
     "utilz/timer"
+    "utilz/say"
 )
 
 
@@ -49,6 +50,7 @@ var bools = []string{
     "-verbose",
     "-fmt",
     "-no-comments",
+    "-quiet",
     "-tab",
     "-external",
 }
@@ -83,6 +85,7 @@ func init() {
     getopt.BoolOption("-t -test --test test")
     getopt.BoolOption("-T -time --time")
     getopt.BoolOption("-l -list --list")
+    getopt.BoolOption("-q -quiet --quiet")
     getopt.BoolOption("-V -verbose --verbose")
     getopt.BoolOption("-f -fmt --fmt")
     getopt.BoolOption("-no-comments --no-comments")
@@ -213,6 +216,9 @@ func main() {
         }
     }
 
+    if global.GetBool("-quiet") {
+        say.Mute()
+    }
 
     // delete all object/archive files
     if global.GetBool("-clean") {
@@ -303,7 +309,7 @@ func main() {
             if global.GetBool("-verbose") {
                 tstring += "\n"
             }
-            fmt.Printf(tstring)
+            say.Printf(tstring)
             ok = handy.StdExecve(testArgv, false)
             e = os.Remove(global.GetString("-test-bin"))
             if e != nil {
@@ -386,6 +392,7 @@ func printHelp() {
   -d --dryrun          print what gd would do (stdout)
   -c --clean           rm *.[a865] from src-directory
   -T --time            print some timing results
+  -q --quiet           silent, print only errors 
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests
@@ -422,6 +429,7 @@ func printListing() {
   -d --dryrun          =>   %t
   -c --clean           =>   %t
   -T --time            =>   %t
+  -q --quiet           =>   %t
   -I                   =>   %v
   -dot                 =>   '%s'
   -t --test            =>   %t
@@ -458,6 +466,7 @@ func printListing() {
                global.GetBool("-dryrun"),
                global.GetBool("-clean"),
                global.GetBool("-time"),
+               global.GetBool("-quiet"),
                includes,
                global.GetString("-dot"),
                global.GetBool("-test"),

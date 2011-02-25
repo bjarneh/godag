@@ -110,6 +110,7 @@ func TestWalker(t *testing.T){
     ss.Add(path.Join(srcroot, "utilz", "walker.go"))
     ss.Add(path.Join(srcroot, "utilz", "global.go"))
     ss.Add(path.Join(srcroot, "utilz", "timer.go"))
+    ss.Add(path.Join(srcroot, "utilz", "say.go"))
 
     files   := walker.PathWalk(srcroot)
 

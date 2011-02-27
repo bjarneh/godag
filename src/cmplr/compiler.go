@@ -22,6 +22,7 @@ import (
 
 var includes []string
 var srcroot string
+var libroot string
 var pathLinker string
 var pathCompiler string
 var suffix string
@@ -72,6 +73,12 @@ func Init(srcdir, arch string, include []string){
     suffix   = S
     srcroot  = srcdir
     includes = include
+
+    if global.GetString("-lib") != "" {
+        libroot = global.GetString("-lib")
+    }else{
+        libroot = srcroot
+    }
 }
 
 
@@ -89,7 +96,7 @@ func CreateArgv(pkgs []*dag.Package) {
         i++
         argv[i] = "-I"
         i++
-        argv[i] = srcroot
+        argv[i] = libroot
         i++
         for y := 0; y < includeLen; y++ {
             argv[i] = "-I"
@@ -99,7 +106,7 @@ func CreateArgv(pkgs []*dag.Package) {
         }
         argv[i] = "-o"
         i++
-        argv[i] = path.Join(srcroot, pkgs[y].Name) + suffix
+        argv[i] = path.Join(libroot, pkgs[y].Name) + suffix
         i++
 
         for z := 0; z < len(pkgs[y].Files); z++ {
@@ -113,9 +120,6 @@ func CreateArgv(pkgs []*dag.Package) {
 
 func CreateLibArgv(pkgs []*dag.Package) {
 
-    tmp := srcroot
-    srcroot = global.GetString("-lib")
-
     ss := stringset.New()
     for i := range pkgs {
         if len(pkgs[i].Name) > len(pkgs[i].ShortName) {
@@ -124,12 +128,12 @@ func CreateLibArgv(pkgs []*dag.Package) {
     }
     slice := ss.Slice()
     for i := 0; i < len(slice); i++ {
-        slice[i] = path.Join(srcroot, slice[i])
+        slice[i] = path.Join(libroot, slice[i])
         handy.DirOrMkdir(slice[i])
     }
 
     CreateArgv(pkgs)
-    srcroot = tmp
+
 }
 
 func SerialCompile(pkgs []*dag.Package) {
@@ -270,13 +274,6 @@ func DeletePackages(pkgs []*dag.Package) bool {
 
     var ok = true
     var e os.Error
-    var tmproot string
-
-    if global.GetString("-lib") != "" {
-        tmproot = srcroot
-        srcroot = global.GetString("-lib")
-    }
-
 
     for i := 0; i < len(pkgs); i++ {
 
@@ -288,7 +285,7 @@ func DeletePackages(pkgs []*dag.Package) bool {
             }
         }
         if ! global.GetBool("-dryrun") {
-            pcompile := path.Join(srcroot, pkgs[i].Name) + suffix
+            pcompile := path.Join(libroot, pkgs[i].Name) + suffix
             e = os.Remove(pcompile)
             if e != nil {
                 ok = false
@@ -297,23 +294,12 @@ func DeletePackages(pkgs []*dag.Package) bool {
         }
     }
 
-    if global.GetString("-lib") != "" {
-        srcroot = tmproot
-    }
-
     return ok
 }
 
 func ForkLink(output string, pkgs []*dag.Package) {
 
     var mainPKG *dag.Package
-
-    var tmproot string
-
-    if global.GetString("-lib") != "" {
-        tmproot = srcroot
-        srcroot = global.GetString("-lib")
-    }
 
     gotMain := make([]*dag.Package, 0)
 
@@ -339,7 +325,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
         staticXtra++
     }
 
-    compiled := path.Join(srcroot, mainPKG.Name) + suffix
+    compiled := path.Join(libroot, mainPKG.Name) + suffix
 
     argv := make([]string, 6+(len(includes)*2)+staticXtra)
     i := 0
@@ -347,7 +333,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
     i++
     argv[i] = "-L"
     i++
-    argv[i] = srcroot
+    argv[i] = libroot
     i++
     argv[i] = "-o"
     i++
@@ -365,10 +351,6 @@ func ForkLink(output string, pkgs []*dag.Package) {
     }
     argv[i] = compiled
     i++
-
-    if global.GetString("-lib") != "" {
-        srcroot = tmproot
-    }
 
     if global.GetBool("-dryrun") {
         fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
@@ -452,7 +434,7 @@ func CreateTestArgv() []string {
     return argv
 }
 
-func Remove865a(srcdir string) {
+func Remove865a(dir string, alsoDir bool) {
 
     // override IncludeFile to make walker pick up only .[865a] files
     walker.IncludeFile = func(s string) bool {
@@ -463,9 +445,9 @@ func Remove865a(srcdir string) {
 
     }
 
-    handy.DirOrExit(srcdir)
+    handy.DirOrExit(dir)
 
-    compiled := walker.PathWalk(path.Clean(srcdir))
+    compiled := walker.PathWalk(path.Clean(dir))
 
     for i := 0; i < len(compiled); i++ {
 
@@ -480,6 +462,23 @@ func Remove865a(srcdir string) {
 
         } else {
             fmt.Printf("[dryrun] rm: %s\n", compiled[i])
+        }
+    }
+
+    if alsoDir {
+        // remove entire dir if empty after objects are deleted
+        walker.IncludeFile = func (s string) bool { return true }
+        walker.IncludeDir = func (s string) bool { return true }
+        if len( walker.PathWalk(dir) ) == 0 {
+            if global.GetBool("-dryrun") {
+                fmt.Printf("[dryrun] rm: %s\n",dir)
+            }else{
+                say.Printf("rm: %s\n", dir)
+                e := os.RemoveAll(dir)
+                if e != nil {
+                    log.Fatalf("[ERROR] %s\n", e)
+                }
+            }
         }
     }
 }

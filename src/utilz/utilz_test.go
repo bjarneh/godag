@@ -112,7 +112,7 @@ func TestWalker(t *testing.T){
     ss.Add(path.Join(srcroot, "utilz", "timer.go"))
     ss.Add(path.Join(srcroot, "utilz", "say.go"))
 
-    files   := walker.PathWalk(srcroot)
+    files   := walker.PathWalk(path.Clean(srcroot))
 
     // make sure stringset == files
 

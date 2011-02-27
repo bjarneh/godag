@@ -224,19 +224,10 @@ func main() {
 
     // delete all object/archive files
     if global.GetBool("-clean") {
-        compiler.Remove865a(srcdir)
+        compiler.Remove865a(srcdir, false) // do not remove dir
         if global.GetString("-lib") != "" {
             if handy.IsDir(global.GetString("-lib")) {
-                compiler.Remove865a(global.GetString("-lib"))
-                // remove entire dir if empty after objects are deleted
-                walker.IncludeFile = func (s string) bool { return true }
-                walker.IncludeDir = func (s string) bool { return true }
-                if len( walker.PathWalk(global.GetString("-lib")) ) == 0 {
-                    e = os.RemoveAll(global.GetString("-lib"))
-                    if e != nil {
-                        log.Fatalf("[ERROR] %s\n", e)
-                    }
-                }
+                compiler.Remove865a(global.GetString("-lib"), true)
             }
         }
         os.Exit(0)
@@ -416,8 +407,8 @@ func printHelp() {
   -d --dryrun          print what gd would do (stdout)
   -c --clean           rm *.[a865] from src-directory
   -T --time            print some timing results
-  -q --quiet           silent, print only errors 
-  -L --lib             write objects to 'lib' directory
+  -q --quiet           silent, print only errors
+  -L --lib             write objects another directory
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests

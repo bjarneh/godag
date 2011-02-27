@@ -66,6 +66,7 @@ var strs  = []string{
     "-bench",
     "-match",
     "-test-bin",
+    "-lib",
 }
 
 
@@ -93,6 +94,7 @@ func init() {
     getopt.BoolOption("-e -external --external")
     getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
     getopt.StringOption("-dot -dot= --dot --dot=")
+    getopt.StringOption("-L -L= -lib -lib= --lib --lib=")
     getopt.StringOption("-I -I=")
     getopt.StringOption("-tabwidth --tabwidth -tabwidth= --tabwidth=")
     getopt.StringOption("-rew-rule --rew-rule -rew-rule= --rew-rule=")
@@ -223,6 +225,20 @@ func main() {
     // delete all object/archive files
     if global.GetBool("-clean") {
         compiler.Remove865a(srcdir)
+        if global.GetString("-lib") != "" {
+            if handy.IsDir(global.GetString("-lib")) {
+                compiler.Remove865a(global.GetString("-lib"))
+                // remove entire dir if empty after objects are deleted
+                walker.IncludeFile = func (s string) bool { return true }
+                walker.IncludeDir = func (s string) bool { return true }
+                if len( walker.PathWalk(global.GetString("-lib")) ) == 0 {
+                    e = os.RemoveAll(global.GetString("-lib"))
+                    if e != nil {
+                        log.Fatalf("[ERROR] %s\n", e)
+                    }
+                }
+            }
+        }
         os.Exit(0)
     }
 
@@ -281,7 +297,11 @@ func main() {
     // compile
     timer.Start("compiling")
     compiler.Init(srcdir, global.GetString("-arch"), includes)
-    compiler.CreateArgv(sorted)
+    if global.GetString("-lib") != "" {
+        compiler.CreateLibArgv(sorted)
+    }else{
+        compiler.CreateArgv(sorted)
+    }
 
     if runtime.GOMAXPROCS(-1) > 1 && ! global.GetBool("-dryrun") {
         compiler.ParallelCompile(sorted)
@@ -295,7 +315,11 @@ func main() {
         timer.Start("testing")
         os.Setenv("SRCROOT", srcdir)
         testMain, testDir := dgrph.MakeMainTest(srcdir)
-        compiler.CreateArgv(testMain)
+        if global.GetString("-lib") != "" {
+            compiler.CreateLibArgv(testMain)
+        }else{
+            compiler.CreateArgv(testMain)
+        }
         compiler.SerialCompile(testMain)
         compiler.ForkLink(global.GetString("-test-bin"), testMain)
         compiler.DeletePackages(testMain)
@@ -393,6 +417,7 @@ func printHelp() {
   -c --clean           rm *.[a865] from src-directory
   -T --time            print some timing results
   -q --quiet           silent, print only errors 
+  -L --lib             write objects to 'lib' directory
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests
@@ -430,6 +455,7 @@ func printListing() {
   -c --clean           =>   %t
   -T --time            =>   %t
   -q --quiet           =>   %t
+  -L --lib             =>   '%s'
   -I                   =>   %v
   -dot                 =>   '%s'
   -t --test            =>   %t
@@ -467,6 +493,7 @@ func printListing() {
                global.GetBool("-clean"),
                global.GetBool("-time"),
                global.GetBool("-quiet"),
+               global.GetString("-lib"),
                includes,
                global.GetString("-dot"),
                global.GetBool("-test"),

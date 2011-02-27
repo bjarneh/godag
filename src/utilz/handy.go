@@ -59,7 +59,7 @@ func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
 // More or less taken from a pastebin posted on #go-nuts
 // http://pastebin.com/V0CULJWt by yiyus
 // looked kind of handy, so it was placed here :-)
-func Fopen(name, mode string, perms uint32) (file *os.File, err os.Error) {
+func Fopen(name, mode string, perms uint32) (*os.File, os.Error) {
 
     var imode int // int mode
 
@@ -130,3 +130,28 @@ func DirOrExit(pathname string) {
         log.Fatalf("[ERROR] %s: is not a directory\n", pathname)
     }
 }
+
+// Mkdir if not dir
+
+func DirOrMkdir(pathname string) {
+
+    fileInfo, err := os.Stat(pathname)
+
+    if err == nil && fileInfo.IsDirectory() {
+        return
+    }else{
+        err = os.MkdirAll(pathname, 0777)
+        if err != nil {
+            log.Fatalf("[ERROR] %s\n", err)
+        }
+    }
+}
+
+func IsDir(pathname string) bool {
+    fileInfo, err := os.Stat(pathname)
+    if err != nil || !fileInfo.IsDirectory() {
+        return false
+    }
+    return true
+}
+

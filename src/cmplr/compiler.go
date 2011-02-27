@@ -111,6 +111,27 @@ func CreateArgv(pkgs []*dag.Package) {
     }
 }
 
+func CreateLibArgv(pkgs []*dag.Package) {
+
+    tmp := srcroot
+    srcroot = global.GetString("-lib")
+
+    ss := stringset.New()
+    for i := range pkgs {
+        if len(pkgs[i].Name) > len(pkgs[i].ShortName) {
+            ss.Add(pkgs[i].Name[:(len(pkgs[i].Name) - len(pkgs[i].ShortName))])
+        }
+    }
+    slice := ss.Slice()
+    for i := 0; i < len(slice); i++ {
+        slice[i] = path.Join(srcroot, slice[i])
+        handy.DirOrMkdir(slice[i])
+    }
+
+    CreateArgv(pkgs)
+    srcroot = tmp
+}
+
 func SerialCompile(pkgs []*dag.Package) {
 
     var oldPkgFound bool = false
@@ -249,6 +270,13 @@ func DeletePackages(pkgs []*dag.Package) bool {
 
     var ok = true
     var e os.Error
+    var tmproot string
+
+    if global.GetString("-lib") != "" {
+        tmproot = srcroot
+        srcroot = global.GetString("-lib")
+    }
+
 
     for i := 0; i < len(pkgs); i++ {
 
@@ -269,12 +297,23 @@ func DeletePackages(pkgs []*dag.Package) bool {
         }
     }
 
+    if global.GetString("-lib") != "" {
+        srcroot = tmproot
+    }
+
     return ok
 }
 
 func ForkLink(output string, pkgs []*dag.Package) {
 
     var mainPKG *dag.Package
+
+    var tmproot string
+
+    if global.GetString("-lib") != "" {
+        tmproot = srcroot
+        srcroot = global.GetString("-lib")
+    }
 
     gotMain := make([]*dag.Package, 0)
 
@@ -326,6 +365,10 @@ func ForkLink(output string, pkgs []*dag.Package) {
     }
     argv[i] = compiled
     i++
+
+    if global.GetString("-lib") != "" {
+        srcroot = tmproot
+    }
 
     if global.GetBool("-dryrun") {
         fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))

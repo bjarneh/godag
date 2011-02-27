@@ -73,3 +73,13 @@ func (s *StringSet) String() string {
     sarray[i] = "]"
     return strings.Join(sarray, " ")
 }
+
+func (s *StringSet) Slice() []string {
+    i := 0
+    slice := make([]string, len(s.elements))
+    for k,_ := range s.elements {
+        slice[i] = k
+        i++
+    }
+    return slice
+}

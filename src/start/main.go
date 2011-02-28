@@ -408,7 +408,7 @@ func printHelp() {
   -c --clean           rm *.[a865] from src-directory
   -T --time            print some timing results
   -q --quiet           silent, print only errors
-  -L --lib             write objects another directory
+  -L --lib             write objects to other dir (!src)
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests

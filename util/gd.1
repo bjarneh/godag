@@ -1,0 +1,312 @@
+'\" t
+.\"     Title: godag man page
+.\"    Author: bjarneh@ifi.uio.no
+.\"      Date: Feb.25.2011
+.\"    Manual: godag manual
+.\"    Source: godag 0.2
+.\"  Language: English
+.\"      Misc: I took this man page from git, and modified it
+.\"
+.TH "gd" "1" "03/3/2011" "godag 0\&.2\&.1" "godag manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gd \- build tool for golang
+.SH "SYNOPSIS"
+.sp
+.nf
+gd [OPTIONS] src-directory
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+godag is a build tool to avoid Makefiles, hopefully it can help with unit-testing, organizing and automatic builds of external dependencies as well\&.
+.sp
+source can be organized in a directory tree structure, where each package is placed according to its own namespace, or it can be organized in a more typical golang manner, where each package lives one level below its natural namespace. package relative imports are not accepted, anything else goes\&. 
+.sp
+To see the complete manual:  http://godag\&.googlecode\&.com
+.PP
+.SH "OPTIONS"
+.PP
+.B
+\-h, \-\-help
+.RS 4
+print legal options and exit
+.RE
+.PP
+.B
+\-v, \-\-version
+.RS 4
+print version and exit
+.RE
+.PP
+.B
+\-l, \-\-list
+.RS 4
+list options and values
+.RE
+.PP
+.B
+\-p, \-\-print
+.RS 4
+print package info collected
+.RE
+.PP
+.B
+\-s, \-\-sort
+.RS 4
+print legal compile order
+.RE
+.PP
+.B
+\-o, \-\-output
+.RS 4
+link main package \-> output
+.RE
+.PP
+.B
+\-S, \-\-static
+.RS 4
+statically link binary
+.RE
+.PP
+.B
+\-a, \-\-arch
+.RS 4
+architecture (amd64,arm,386)
+.RE
+.PP
+.B
+\-d, \-\-dryrun
+.RS 4
+print what gd would do (to stdout)
+.RE
+.PP
+.B
+\-c, \-\-clean
+.RS 4
+\fBrm\fR *\&.[a865] from src (or lib) directory
+.RE
+.PP
+.B
+\-T, \-\-time
+.RS 4
+print some timing results
+.RE
+.PP
+.B
+\-q, \-\-quiet
+.RS 4
+silent, print only errors
+.RE
+.PP
+.B
+\-L, \-\-lib
+.RS 4
+write objects to another dir (!src)
+.RE
+.PP
+.B
+\-\-dot
+.RS 4
+create a \fBgraphviz\fR dot-file
+.RE
+.PP
+.B
+\-I
+.RS 4
+import package directories
+.RE
+.PP
+.B
+\-t, \-\-test
+.RS 4
+run all unit\-test
+.RE
+.PP
+.B
+\-b, \-\-bench
+.RS 4
+regex to decide which benchmarks to run
+.RE
+.PP
+.B
+\-m, \-\-match
+.RS 4
+regex to decide which unit\-tests to run
+.RE
+.PP
+.B
+\-V, \-\-verbose
+.RS 4
+verbose unit\-testing and \fBgoinstall\fR
+.RE
+.PP
+.B
+\-\-test-bin
+.RS 4
+name of test\-binary (default:gdtest)
+.RE
+.PP
+.B
+\-f,\-\-fmt
+.RS 4
+run \fBgofmt\fR on src and exit
+.RE
+.PP
+.B
+\-\-rew\-rule
+.RS 4
+pass rewrite rule to \fBgofmt\fR
+.RE
+.PP
+.B
+\-\-tab
+.RS 4
+pass \-tabindent=true to \fBgofmt\fR
+.RE
+.PP
+.B
+\-\-tab\-width
+.RS 4
+pass \-tabwidth to \fBgofmt\fR (default:4)
+.RE
+.PP
+.B
+\-\-no\-comments
+.RS 4
+pass \-comments=false to \fBgofmt\fR
+.RE
+.PP
+.B
+\-e, \-\-external
+.RS 4
+\fBgoinstall\fR all external dependencies
+.SH "ORGANIZATION"
+.sp
+source\-code is organized in a \fBdirectory tree structure\fR. where each package is either placed according to its namespace, or in a directory with the same name as the package\&. the default location of the source\-code is \fBsrc\fR, i\&.e\&. no source directory has to be specified if source\-code is placed in a directory called \fBsrc\fR\&. assume that the file c\&.go has the header \fBpackage c\fR, and that the files d1\&.go and d2\&.go has the header \fBpackage "\fR\&. from anywhere inside this project, the \fBd\fR package, could be imported as \fBimport "a/d"\fR, since it resides in a directory with the same name as the package itself\&. the package \fBc\fR, can be imported as \fBimport "a/b/c"\fR, since it does \fBnot\fR reside in a directory with the same name as the package\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+
+src
+ `-\- a
+    |\-\- b
+    |   `\-\- c\&.go       package \fBc\fR   (import \fB"a/b/c"\fR)
+    `\-\- d                                  
+        |\-\- d1\&.go      package \fBd\fR   (import \fB"a/d"\fR)
+        `\-\- d2\&.go      package \fBd\fR   (import \fB"a/d"\fR)
+
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+I\&.e\&. the \fBinvariant\fR is: if a package has the same name as the directory it resides in, its namespace will be the name of that directory, or else it will be the path from source\-root to package name\&.
+.sp
+.RE
+.SH "CONFIGURATION"
+.sp
+this program is a command line tool, i\&.e\&. learning a new syntax for configuration seems a bit over the top\&. configuration is basically handled by writing command line arguments into \fB$HOME/\&.gdrc\fR, or \fB$PWD/\&.gdrc\fR. the second file overwrites options from the first file\&. a simple configuration file is shown below\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#
+# A \*(Aq#\*(Aq character indicates a comment\&.
+#
+
+--lib _obj             # place objects in _obj not src directory
+
+--static               # produce statically linked binaries
+
+-I $HOME/some/golib    # look in this directory for libraries
+
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "EXAMPLES"
+.sp
+.B
+gd src/
+.RS 4
+compile source\-code located in \fBsrc\fR
+.RE
+.PP
+.B
+gd \-test src/
+.RS 4
+compile and run unit\-tests on source\-code located in \fBsrc\fR
+.RE
+.PP
+.B
+gd  \-external src/
+.RS 4
+compile source\-code in \fBsrc\fR, but \fBgoinstall\fR all external libraries first, these are found by \fBgd\fR by parsing imports
+.RE
+.PP
+.B
+gd \-o program src/
+.RS 4
+compile and link \fBmain\fR package in \fBsrc\fR, call binary \fBprogram\fR
+.RE
+.PP
+.B
+gd \-test \-match something src/
+.RS 4
+compile and run unit\-tests matching \fBsomething\fR on source\-code located in \fBsrc\fR
+.RE
+.PP
+.B
+gd \-test \-bench something src/
+.RS 4
+compile and run unit\-tests and run benchmarks matching \fBsomething\fR on source\-code located in \fBsrc\fR
+.RE
+.PP
+.B
+gd  \-clean src/
+.RS 4
+delete all object files from \fBsrc\fR
+.RE
+.PP
+.B
+gd  \-lib _obj src/
+.RS 4
+compile source\-code in \fBsrc\fR, and place objects in directory \fB_obj\fR
+.RE
+.PP
+.B
+gd  \-lib $GOROOT/pkg/$GOOS_$GOARCH src/
+.RS 4
+compile source\-code in \fBsrc\fR, and place objects at official package root\&.this effectively installs a library, i\&.e\&. it can be used by any go\-program from now on
+.SH "BUGS"
+.sp
+who knows\&.
+.SH "AUTHORS"
+.sp
+bjarneh@ifi.uio.no
+.SH "DOCUMENTATION"
+.sp
+http://godag.googlecode.com

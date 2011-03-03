@@ -201,7 +201,7 @@ pass \-comments=false to \fBgofmt\fR
 \fBgoinstall\fR all external dependencies
 .SH "ORGANIZATION"
 .sp
-source\-code is organized in a \fBdirectory tree structure\fR. where each package is either placed according to its namespace, or in a directory with the same name as the package\&. the default location of the source\-code is \fBsrc\fR, i\&.e\&. no source directory has to be specified if source\-code is placed in a directory called \fBsrc\fR\&. assume that the file c\&.go has the header \fBpackage c\fR, and that the files d1\&.go and d2\&.go has the header \fBpackage "\fR\&. from anywhere inside this project, the \fBd\fR package, could be imported as \fBimport "a/d"\fR, since it resides in a directory with the same name as the package itself\&. the package \fBc\fR, can be imported as \fBimport "a/b/c"\fR, since it does \fBnot\fR reside in a directory with the same name as the package\&.
+source\-code is organized in a \fBdirectory tree structure\fR. where each package is either placed according to its namespace, or in a directory with the same name as the package\&. the default location of the source\-code is \fBsrc\fR, i\&.e\&. no source directory has to be specified if source\-code is placed in a directory called \fBsrc\fR\&. assume that the file c\&.go has the header \fBpackage c\fR, and that the files d1\&.go and d2\&.go has the header \fBpackage d\fR\&. from anywhere inside this project, the \fBd\fR package, could be imported as \fBimport "a/d"\fR, since it resides in a directory with the same name as the package itself\&. the package \fBc\fR, can be imported as \fBimport "a/b/c"\fR, since it does \fBnot\fR reside in a directory with the same name as the package\&.
 .sp
 .if n \{\
 .RS 4
@@ -214,7 +214,7 @@ src
     |   `\-\- c\&.go       package \fBc\fR   (import \fB"a/b/c"\fR)
     `\-\- d                                  
         |\-\- d1\&.go      package \fBd\fR   (import \fB"a/d"\fR)
-        `\-\- d2\&.go      package \fBd\fR   (import \fB"a/d"\fR)
+        `\-\- d2\&.go
 
 .fi
 .if n \{\

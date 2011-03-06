@@ -224,10 +224,10 @@ func main() {
 
     // delete all object/archive files
     if global.GetBool("-clean") {
-        compiler.Remove865a(srcdir, false) // do not remove dir
+        compiler.Remove865(srcdir, false) // do not remove dir
         if global.GetString("-lib") != "" {
             if handy.IsDir(global.GetString("-lib")) {
-                compiler.Remove865a(global.GetString("-lib"), true)
+                compiler.Remove865(global.GetString("-lib"), true)
             }
         }
         os.Exit(0)
@@ -405,7 +405,7 @@ func printHelp() {
   -S --static          statically link binary
   -a --arch            architecture (amd64,arm,386)
   -d --dryrun          print what gd would do (stdout)
-  -c --clean           rm *.[a865] from src-directory
+  -c --clean           rm *.[865] from src-directory
   -T --time            print some timing results
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)

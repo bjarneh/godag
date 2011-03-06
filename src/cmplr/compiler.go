@@ -434,15 +434,13 @@ func CreateTestArgv() []string {
     return argv
 }
 
-func Remove865a(dir string, alsoDir bool) {
+func Remove865(dir string, alsoDir bool) {
 
-    // override IncludeFile to make walker pick up only .[865a] files
+    // override IncludeFile to make walker pick up only .[865] files
     walker.IncludeFile = func(s string) bool {
         return strings.HasSuffix(s, ".8") ||
             strings.HasSuffix(s, ".6") ||
-            strings.HasSuffix(s, ".5") ||
-            strings.HasSuffix(s, ".a")
-
+            strings.HasSuffix(s, ".5")
     }
 
     handy.DirOrExit(dir)

@@ -6,7 +6,7 @@ package walker /* texas ranger */
 
 import (
     "os"
-    "path"
+    "path/filepath"
 )
 
 // This package does something along the lines of: find PATH -type f
@@ -41,6 +41,6 @@ func (c *collect) VisitFile(path string, d *os.FileInfo) {
 func PathWalk(root string) []string {
     c := newCollect()
     errs := make(chan os.Error)
-    path.Walk(root, c, errs)
+    filepath.Walk(root, c, errs)
     return c.Files
 }

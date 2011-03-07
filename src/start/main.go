@@ -67,6 +67,7 @@ var strs  = []string{
     "-match",
     "-test-bin",
     "-lib",
+    "-main",
 }
 
 
@@ -99,6 +100,7 @@ func init() {
     getopt.StringOption("-tabwidth --tabwidth -tabwidth= --tabwidth=")
     getopt.StringOption("-rew-rule --rew-rule -rew-rule= --rew-rule=")
     getopt.StringOption("-o -o= -output --output -output= --output=")
+    getopt.StringOption("-M -M= -main --main -main= --main=")
     getopt.StringOption("-b -b= -bench --bench -bench= --bench=")
     getopt.StringOption("-m -m= -match --match -match= --match=")
     getopt.StringOption("-test-bin --test-bin -test-bin= --test-bin=")
@@ -187,6 +189,9 @@ func main() {
     for i := 0; i < len(includes); i++ {
         includes[i] = os.ShellExpand(includes[i]);
     }
+
+    // expand variables in -lib
+    global.SetString("-lib",os.ShellExpand(global.GetString("-lib")))
 
     // stuff that can be done without $GOROOT
     if global.GetBool("-list") {
@@ -409,6 +414,7 @@ func printHelp() {
   -T --time            print some timing results
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)
+  -M --main            regex to select main package
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests
@@ -447,6 +453,7 @@ func printListing() {
   -T --time            =>   %t
   -q --quiet           =>   %t
   -L --lib             =>   '%s'
+  -M --main            =>   '%s'
   -I                   =>   %v
   -dot                 =>   '%s'
   -t --test            =>   %t
@@ -485,6 +492,7 @@ func printListing() {
                global.GetBool("-time"),
                global.GetBool("-quiet"),
                global.GetString("-lib"),
+               global.GetString("-main"),
                includes,
                global.GetString("-dot"),
                global.GetBool("-test"),

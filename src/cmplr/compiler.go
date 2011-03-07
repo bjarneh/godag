@@ -11,6 +11,7 @@ import (
     "log"
     "exec"
     "strings"
+    "regexp"
     "utilz/walker"
     "utilz/stringset"
     "utilz/handy"
@@ -362,13 +363,27 @@ func ForkLink(output string, pkgs []*dag.Package) {
 
 func mainChoice(pkgs []*dag.Package) int {
 
+    var cnt int
+    var choice int
+
+    for i := 0; i < len(pkgs); i++ {
+        ok, _ := regexp.MatchString(global.GetString("-main"), pkgs[i].Name)
+        if ok {
+            cnt++
+            choice = i
+        }
+    }
+
+    if cnt == 1 {
+        return choice
+    }
+
     fmt.Println("\n More than one main package found\n")
 
     for i := 0; i < len(pkgs); i++ {
         fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].Name)
     }
 
-    var choice int
 
     fmt.Printf("\n type your choice: ")
 

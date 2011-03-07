@@ -418,8 +418,8 @@ func printHelp() {
   -dot                 create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests
-  -b --bench           pass argument to unit-test
-  -m --match           pass argument to unit-test
+  -b --bench           regex to select benchmarks
+  -m --match           regex to select unit-tests
   -V --verbose         verbose unit-test and goinstall
   --test-bin           name of test-binary (default: gdtest)
   -f --fmt             run gofmt on src and exit

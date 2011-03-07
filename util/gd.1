@@ -253,6 +253,21 @@ this program is a command line tool, i\&.e\&. learning a new syntax for configur
 .RE
 .\}
 .sp
+.SH "TESTING"
+.sp
+as long as all import statements are written relative to \fBsrc-root\fR, testing should be as simple as applying the \fB\-test\fR\& option. in order to read \fBtest\-data\fR, we need to calculate their placement. package relative descriptions such as \fB"./testdata/file1.txt"\fR will not help much since the test\-binary does not live in any of the package directories\&. there is a variable which is always set as tests are run, and that is the variable \fBSRCROOT\fR\&. using that variable, we can easily figure out the path\-name of test\-data\&. assume that you are testing a package which lives in \fBsrc/a/b/c\fR, and the test\-data we want to read is placed inside a directory called testdata, i\&.e\&. the path from src\-root to the file (file1\&.txt) is this \fBsrc/a/b/c/testdata/file1\&.txt\fR.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+root  := os.Getenv("SRCROOT")
+path1 := path.Join(root, "a", "b", "c", "testdata", "file1\&.txt")
+.fi
+.if n \{\
+.RE
+.\}
+.sp
 .SH "EXAMPLES"
 .sp
 .B

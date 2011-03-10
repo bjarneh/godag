@@ -2,9 +2,9 @@ package utilz_test
 
 import (
     "testing"
-    "path"
     "strings"
     "os"
+    "path/filepath"
     "utilz/stringset"
     "utilz/stringbuffer"
     "utilz/walker"
@@ -80,7 +80,7 @@ func TestStringBuffer(t *testing.T) {
 func TestWalker(t *testing.T){
 
     walker.IncludeDir = func(s string) bool {
-        _, dirname := path.Split(s)
+        _, dirname := filepath.Split(s)
         return dirname[0] != '.'
     }
     walker.IncludeFile = func(s string) bool {
@@ -97,22 +97,22 @@ func TestWalker(t *testing.T){
 
     // this is a bit static, will cause problems if
     // stuff is added or removed == not ideal..
-    ss.Add(path.Join(srcroot, "cmplr", "compiler.go"))
-    ss.Add(path.Join(srcroot, "cmplr", "dag.go"))
-    ss.Add(path.Join(srcroot, "parse", "gopt.go"))
-    ss.Add(path.Join(srcroot, "parse", "gopt_test.go"))
-    ss.Add(path.Join(srcroot, "parse", "option.go"))
-    ss.Add(path.Join(srcroot, "start", "main.go"))
-    ss.Add(path.Join(srcroot, "utilz", "handy.go"))
-    ss.Add(path.Join(srcroot, "utilz", "stringbuffer.go"))
-    ss.Add(path.Join(srcroot, "utilz", "stringset.go"))
-    ss.Add(path.Join(srcroot, "utilz", "utilz_test.go"))
-    ss.Add(path.Join(srcroot, "utilz", "walker.go"))
-    ss.Add(path.Join(srcroot, "utilz", "global.go"))
-    ss.Add(path.Join(srcroot, "utilz", "timer.go"))
-    ss.Add(path.Join(srcroot, "utilz", "say.go"))
+    ss.Add(filepath.Join(srcroot, "cmplr", "compiler.go"))
+    ss.Add(filepath.Join(srcroot, "cmplr", "dag.go"))
+    ss.Add(filepath.Join(srcroot, "parse", "gopt.go"))
+    ss.Add(filepath.Join(srcroot, "parse", "gopt_test.go"))
+    ss.Add(filepath.Join(srcroot, "parse", "option.go"))
+    ss.Add(filepath.Join(srcroot, "start", "main.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "handy.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "stringbuffer.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "stringset.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "utilz_test.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "walker.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "global.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "timer.go"))
+    ss.Add(filepath.Join(srcroot, "utilz", "say.go"))
 
-    files   := walker.PathWalk(path.Clean(srcroot))
+    files   := walker.PathWalk(filepath.Clean(srcroot))
 
     // make sure stringset == files
 

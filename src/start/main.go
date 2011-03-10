@@ -7,10 +7,10 @@ package main
 import (
     "os"
     "fmt"
-    "path"
     "log"
     "strings"
     "runtime"
+    "path/filepath"
     "utilz/walker"
     "cmplr/compiler"
     "cmplr/dag"
@@ -113,7 +113,7 @@ func init() {
 
     // override IncludeDir to make walker ignore 'hidden' directories
     walker.IncludeDir = func(s string) bool {
-        _, dirname := path.Split(s)
+        _, dirname := filepath.Split(s)
         return dirname[0] != '.'
     }
 
@@ -145,7 +145,7 @@ func main() {
     var config1, config2 string
 
     // default config location 1 $HOME/.gdrc
-    config1 = path.Join(os.Getenv("HOME"), ".gdrc")
+    config1 = filepath.Join(os.Getenv("HOME"), ".gdrc")
     argv, ok = handy.ConfigToArgv(config1)
 
     if ok {
@@ -156,7 +156,7 @@ func main() {
     }
 
     // default config location 2 $PWD/.gdrc
-    config2 = path.Join(os.Getenv("PWD"), ".gdrc")
+    config2 = filepath.Join(os.Getenv("PWD"), ".gdrc")
     argv, ok = handy.ConfigToArgv(config2)
 
     if ok {
@@ -215,7 +215,7 @@ func main() {
         if e != nil {
             cwd = os.Getenv("PWD")
         }
-        possibleSrc := path.Join(cwd, "src")
+        possibleSrc := filepath.Join(cwd, "src")
         _, e = os.Stat(possibleSrc)
         if e != nil {
             fmt.Printf("usage: gd [OPTIONS] src-directory\n")
@@ -240,7 +240,7 @@ func main() {
 
     handy.DirOrExit(srcdir)
     timer.Start("pathwalk")
-    files = walker.PathWalk(path.Clean(srcdir))
+    files = walker.PathWalk(filepath.Clean(srcdir))
     timer.Stop("pathwalk")
 
     // gofmt on all files gathered

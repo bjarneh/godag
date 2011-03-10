@@ -7,11 +7,11 @@ package compiler
 import (
     "os"
     "fmt"
-    "path"
     "log"
     "exec"
     "strings"
     "regexp"
+    "path/filepath"
     "utilz/walker"
     "utilz/stringset"
     "utilz/handy"
@@ -107,7 +107,7 @@ func CreateArgv(pkgs []*dag.Package) {
         }
         argv[i] = "-o"
         i++
-        argv[i] = path.Join(libroot, pkgs[y].Name) + suffix
+        argv[i] = filepath.Join(libroot, pkgs[y].Name) + suffix
         i++
 
         for z := 0; z < len(pkgs[y].Files); z++ {
@@ -129,7 +129,7 @@ func CreateLibArgv(pkgs []*dag.Package) {
     }
     slice := ss.Slice()
     for i := 0; i < len(slice); i++ {
-        slice[i] = path.Join(libroot, slice[i])
+        slice[i] = filepath.Join(libroot, slice[i])
         handy.DirOrMkdir(slice[i])
     }
 
@@ -286,7 +286,7 @@ func DeletePackages(pkgs []*dag.Package) bool {
             }
         }
         if ! global.GetBool("-dryrun") {
-            pcompile := path.Join(libroot, pkgs[i].Name) + suffix
+            pcompile := filepath.Join(libroot, pkgs[i].Name) + suffix
             e = os.Remove(pcompile)
             if e != nil {
                 ok = false
@@ -326,7 +326,7 @@ func ForkLink(output string, pkgs []*dag.Package) {
         staticXtra++
     }
 
-    compiled := path.Join(libroot, mainPKG.Name) + suffix
+    compiled := filepath.Join(libroot, mainPKG.Name) + suffix
 
     argv := make([]string, 6+(len(includes)*2)+staticXtra)
     i := 0
@@ -416,7 +416,7 @@ func CreateTestArgv() []string {
         log.Fatal("[ERROR] could not locate working directory\n")
     }
 
-    arg0 := path.Join(pwd, global.GetString("-test-bin"))
+    arg0 := filepath.Join(pwd, global.GetString("-test-bin"))
 
     if global.GetString("-bench") != "" {
         numArgs += 2
@@ -460,7 +460,7 @@ func Remove865(dir string, alsoDir bool) {
 
     handy.DirOrExit(dir)
 
-    compiled := walker.PathWalk(path.Clean(dir))
+    compiled := walker.PathWalk(filepath.Clean(dir))
 
     for i := 0; i < len(compiled); i++ {
 

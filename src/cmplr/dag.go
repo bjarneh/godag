@@ -8,7 +8,6 @@ import (
     "exec"
     "go/parser"
     "go/token"
-    "path"
     "go/ast"
     "os"
     "fmt"
@@ -16,6 +15,7 @@ import (
     "log"
     "strings"
     "regexp"
+    "path/filepath"
     "utilz/stringset"
     "utilz/stringbuffer"
     "utilz/handy"
@@ -68,15 +68,15 @@ func (d Dag) Parse(root string, files []string) {
     for i := 0; i < len(files); i++ {
         e = files[i]
         tree := getSyntaxTreeOrDie(e, parser.ImportsOnly)
-        dir, _ := path.Split(e)
+        dir, _ := filepath.Split(e)
         unroot := dir[len(root):len(dir)]
         shortname := tree.Name.String()
 
         // if package name == directory name -> assume stdlib organizing
-        if len(unroot) > 1 && path.Base(dir) == shortname {
+        if len(unroot) > 1 && filepath.Base(dir) == shortname {
             pkgname = unroot[:len(unroot)-1]
         }else{
-            pkgname = path.Join(unroot, shortname)
+            pkgname = filepath.Join(unroot, shortname)
         }
 
         _, ok := d[pkgname]
@@ -336,7 +336,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
         }
     }
 
-    tmpfile = path.Join(tmpdir, "main.go")
+    tmpfile = filepath.Join(tmpdir, "main.go")
 
     fil, e2 := os.Open(tmpfile, os.O_WRONLY|os.O_CREAT, 0777)
 
@@ -355,7 +355,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     fil.Close()
 
     p := newPackage()
-    p.Name = path.Join(tmpstub, "main")
+    p.Name = filepath.Join(tmpstub, "main")
     p.ShortName = "main"
     p.Files = append(p.Files, tmpfile)
 

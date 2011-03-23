@@ -234,6 +234,15 @@ function testok {
     cproot
 }
 
+# this target does not show up in help message :-)
+function rmstdlib {
+    for p in "${package[@]}";
+    do
+        echo "rm -rf ${GOROOT}/pkg/${GOOS}_${GOARCH}/${p}.*"
+        rm -rf "${GOROOT}/pkg/${GOOS}_${GOARCH}/${p}".*
+    done
+}
+
 # default target clean + build + move
 function triple {
     clean
@@ -294,6 +303,9 @@ case "$1" in
       ;;
       'move' | 'm' | '-m' | '--move' | '-move')
       time move
+      ;;
+      'del' | '--del' | '-del')
+      rmstdlib
       ;;
       *)
       time triple

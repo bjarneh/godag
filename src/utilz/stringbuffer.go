@@ -5,8 +5,8 @@
 package stringbuffer
 
 // Allocate a byte buffer to build strings from a set of
-// smaller strings, if added if added content exceeds 
-// maximal buffer size, the size of the stringbuffer doubles.
+// smaller strings, if added content exceeds maximal buffer 
+// size, the size of the stringbuffer doubles.
 
 type StringBuffer struct {
     current, max int
@@ -73,7 +73,7 @@ func (s *StringBuffer) String() string {
 
 func (s *StringBuffer) resize() {
 
-    s.buffer = append(s.buffer, make([]byte, s.max * 2)...)
+    s.buffer = append(s.buffer, make([]byte, s.max*2)...)
     s.max += s.max * 2
 
 }

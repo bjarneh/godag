@@ -57,7 +57,7 @@ var bools = []string{
 
 // keys for the string options
 // note: -I is handled seperately
-var strs  = []string{
+var strs = []string{
     "-arch",
     "-dot",
     "-tabwidth",
@@ -187,11 +187,11 @@ func main() {
 
     // expand variables in includes
     for i := 0; i < len(includes); i++ {
-        includes[i] = os.ShellExpand(includes[i]);
+        includes[i] = os.ShellExpand(includes[i])
     }
 
     // expand variables in -lib
-    global.SetString("-lib",os.ShellExpand(global.GetString("-lib")))
+    global.SetString("-lib", os.ShellExpand(global.GetString("-lib")))
 
     // stuff that can be done without $GOROOT
     if global.GetBool("-list") {
@@ -263,7 +263,7 @@ func main() {
 
     // draw graphviz dot graph
     if global.GetString("-dot") != "" {
-        dgrph.MakeDotGraph( global.GetString("-dot"))
+        dgrph.MakeDotGraph(global.GetString("-dot"))
         os.Exit(0)
     }
 
@@ -295,11 +295,11 @@ func main() {
     compiler.Init(srcdir, global.GetString("-arch"), includes)
     if global.GetString("-lib") != "" {
         compiler.CreateLibArgv(sorted)
-    }else{
+    } else {
         compiler.CreateArgv(sorted)
     }
 
-    if runtime.GOMAXPROCS(-1) > 1 && ! global.GetBool("-dryrun") {
+    if runtime.GOMAXPROCS(-1) > 1 && !global.GetBool("-dryrun") {
         compiler.ParallelCompile(sorted)
     } else {
         compiler.SerialCompile(sorted)
@@ -313,7 +313,7 @@ func main() {
         testMain, testDir := dgrph.MakeMainTest(srcdir)
         if global.GetString("-lib") != "" {
             compiler.CreateLibArgv(testMain)
-        }else{
+        } else {
             compiler.CreateArgv(testMain)
         }
         compiler.SerialCompile(testMain)
@@ -324,7 +324,7 @@ func main() {
             log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
         }
         testArgv := compiler.CreateTestArgv()
-        if ! global.GetBool("-dryrun") {
+        if !global.GetBool("-dryrun") {
             tstring := "testing  : "
             if global.GetBool("-verbose") {
                 tstring += "\n"
@@ -480,30 +480,30 @@ func printListing() {
     }
 
     fmt.Printf(listMSG,
-               global.GetBool("-help"),
-               global.GetBool("-version"),
-               global.GetBool("-print"),
-               global.GetBool("-sort"),
-               global.GetString("-output"),
-               global.GetBool("-static"),
-               archRepr,
-               global.GetBool("-dryrun"),
-               global.GetBool("-clean"),
-               global.GetBool("-time"),
-               global.GetBool("-quiet"),
-               global.GetString("-lib"),
-               global.GetString("-main"),
-               includes,
-               global.GetString("-dot"),
-               global.GetBool("-test"),
-               global.GetString("-bench"),
-               global.GetString("-match"),
-               global.GetBool("-verbose"),
-               global.GetString("-test-bin"),
-               global.GetBool("-fmt"),
-               global.GetString("-rew-rule"),
-               global.GetBool("-tab"),
-               tabRepr,
-               global.GetBool("-no-comments"),
-               global.GetBool("-external"))
+        global.GetBool("-help"),
+        global.GetBool("-version"),
+        global.GetBool("-print"),
+        global.GetBool("-sort"),
+        global.GetString("-output"),
+        global.GetBool("-static"),
+        archRepr,
+        global.GetBool("-dryrun"),
+        global.GetBool("-clean"),
+        global.GetBool("-time"),
+        global.GetBool("-quiet"),
+        global.GetString("-lib"),
+        global.GetString("-main"),
+        includes,
+        global.GetString("-dot"),
+        global.GetBool("-test"),
+        global.GetString("-bench"),
+        global.GetString("-match"),
+        global.GetBool("-verbose"),
+        global.GetString("-test-bin"),
+        global.GetBool("-fmt"),
+        global.GetString("-rew-rule"),
+        global.GetBool("-tab"),
+        tabRepr,
+        global.GetBool("-no-comments"),
+        global.GetBool("-external"))
 }

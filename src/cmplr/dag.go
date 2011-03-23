@@ -28,11 +28,11 @@ type Dag map[string]*Package // package-name -> Package object
 
 type Package struct {
     Indegree        int
-    Name, ShortName string               // absolute path, basename
-    Argv            []string             // command needed to compile package
-    Files           []string             // relative path of files
+    Name, ShortName string   // absolute path, basename
+    Argv            []string // command needed to compile package
+    Files           []string // relative path of files
     dependencies    *stringset.StringSet
-    children        []*Package           // packages that depend on this
+    children        []*Package // packages that depend on this
 }
 
 type TestCollector struct {
@@ -75,7 +75,7 @@ func (d Dag) Parse(root string, files []string) {
         // if package name == directory name -> assume stdlib organizing
         if len(unroot) > 1 && filepath.Base(dir) == shortname {
             pkgname = unroot[:len(unroot)-1]
-        }else{
+        } else {
             pkgname = filepath.Join(unroot, shortname)
         }
 
@@ -119,20 +119,19 @@ func (d Dag) External() {
     var argc int = 2
     var i int = 0
 
-
     set := stringset.New()
 
     for _, v := range d {
         for dep := range v.dependencies.Iter() {
-            if ! d.localDependency(dep) {
+            if !d.localDependency(dep) {
                 set.Add(dep)
             }
         }
     }
 
     for u := range set.Iter() {
-        if ! seemsExternal( u ) {
-            set.Remove( u )
+        if !seemsExternal(u) {
+            set.Remove(u)
         }
     }
 
@@ -158,7 +157,7 @@ func (d Dag) External() {
         argv[i] = u
         if global.GetBool("-dryrun") {
             fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
-        }else{
+        } else {
             say.Printf("goinstall: %s\n", u)
             handy.StdExecve(argv, true)
         }
@@ -172,13 +171,13 @@ func (d Dag) External() {
 //  github.com/
 //  [^.]+\.googlecode\.com/
 //  launchpad.net/
-func seemsExternal(imprt string) (bool) {
+func seemsExternal(imprt string) bool {
 
     if strings.HasPrefix(imprt, "bitbucket.org/") {
         return true
-    }else if strings.HasPrefix(imprt, "github.com/") {
+    } else if strings.HasPrefix(imprt, "github.com/") {
         return true
-    }else if strings.HasPrefix(imprt, "launchpad.net/") {
+    } else if strings.HasPrefix(imprt, "launchpad.net/") {
         return true
     }
 
@@ -233,7 +232,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     var sname, tmpdir, tmpstub, tmpfile string
 
     sbImports := stringbuffer.NewSize(300)
-    imprtSet  := stringset.New()
+    imprtSet := stringset.New()
     sbTests := stringbuffer.NewSize(1000)
     sbBench := stringbuffer.NewSize(1000)
 
@@ -241,7 +240,6 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     sbImports.Add("package main\n\n")
     imprtSet.Add("import \"regexp\"\n")
     imprtSet.Add("import \"testing\"\n")
-
 
     sbTests.Add("\n\nvar tests = []testing.InternalTest{\n")
     sbBench.Add("\n\nvar benchmarks = []testing.InternalBenchmark{\n")
@@ -308,7 +306,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     sbBench.Add("};\n\n")
 
     for im := range imprtSet.Iter() {
-        sbImports.Add( im )
+        sbImports.Add(im)
     }
 
     sbTotal := stringbuffer.NewSize(sbImports.Len() +
@@ -491,7 +489,7 @@ func (p *Package) Ready(local, compiled *stringset.StringSet) bool {
     return true
 }
 
-func (p *Package) ResetIndegree(){
+func (p *Package) ResetIndegree() {
     for i := 0; i < len(p.children); i++ {
         p.children[i].Indegree++
     }
@@ -503,7 +501,7 @@ func (p *Package) Visit(node ast.Node) (v ast.Visitor) {
     case *ast.BasicLit:
         bl, ok := node.(*ast.BasicLit)
         if ok {
-            stripped := string(bl.Value[1:len(bl.Value)-1])
+            stripped := string(bl.Value[1 : len(bl.Value)-1])
             p.dependencies.Add(stripped)
         }
     default: // nothing to do if not BasicLit

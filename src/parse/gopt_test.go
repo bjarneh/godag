@@ -42,8 +42,8 @@ func TestGetOpt(t *testing.T) {
 
     if !getopt.IsSet("-num=") {
         t.Fatal(" ! getopt.IsSet('-num=')\n")
-    }else{
-        n,e := getopt.GetInt("-num=")
+    } else {
+        n, e := getopt.GetInt("-num=")
         if e != nil {
             t.Fatalf(" getopt.GetInt error = %s\n", e)
         }

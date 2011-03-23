@@ -54,12 +54,12 @@ func TestStringBuffer(t *testing.T) {
     if ss.Len() != 4 {
         t.Fatal(" stringbuffer.Len() != 4\n")
     }
-    ss.Add("øæå"); // utf-8 multi-byte fun
+    ss.Add("øæå") // utf-8 multi-byte fun
     if ss.Len() != 10 {
-        t.Fatal(" stringbuffer.Len() != 10\n");
+        t.Fatal(" stringbuffer.Len() != 10\n")
     }
     if ss.String() != "entoøæå" {
-        t.Fatal(" stringbuffer.String() != 'entoøæå'\n");
+        t.Fatal(" stringbuffer.String() != 'entoøæå'\n")
     }
     ss.ClearSize(2)
     if ss.Len() != 0 {
@@ -77,7 +77,7 @@ func TestStringBuffer(t *testing.T) {
 }
 
 // SRCROOT variable is set during testing
-func TestWalker(t *testing.T){
+func TestWalker(t *testing.T) {
 
     walker.IncludeDir = func(s string) bool {
         _, dirname := filepath.Split(s)
@@ -112,24 +112,24 @@ func TestWalker(t *testing.T){
     ss.Add(filepath.Join(srcroot, "utilz", "timer.go"))
     ss.Add(filepath.Join(srcroot, "utilz", "say.go"))
 
-    files   := walker.PathWalk(filepath.Clean(srcroot))
+    files := walker.PathWalk(filepath.Clean(srcroot))
 
     // make sure stringset == files
 
     if len(files) != ss.Len() {
-        t.Fatalf("walker.Len() != files.Len()\n");
+        t.Fatalf("walker.Len() != files.Len()\n")
     }
 
     for i := 0; i < len(files); i++ {
-        if ! ss.Contains( files[i] ){
+        if !ss.Contains(files[i]) {
             t.Fatalf("walker picked up files not in SRCROOT\n")
         }
-        ss.Remove( files[i] )
+        ss.Remove(files[i])
     }
 
 }
 
-func TestTimer(t *testing.T){
+func TestTimer(t *testing.T) {
 
     timer.Start("is here")
     err := timer.Stop("not here")
@@ -151,7 +151,7 @@ func TestTimer(t *testing.T){
     }
 
     if delta < 0 {
-        t.Fatalf("delta = %d < 0 ns\n",delta)
+        t.Fatalf("delta = %d < 0 ns\n", delta)
     }
 
     delta = timer.Hour*4 + timer.Minute*7 + timer.Second*3 + timer.Millisecond*9
@@ -159,19 +159,19 @@ func TestTimer(t *testing.T){
     tid := timer.Nano2Time(delta)
 
     if tid.Hours != 4 {
-        t.Fatalf("timer.Nano2Time() 4 != %d\n",tid.Hours)
+        t.Fatalf("timer.Nano2Time() 4 != %d\n", tid.Hours)
     }
 
     if tid.Minutes != 7 {
-        t.Fatalf("timer.Nano2Time() 7 != %d\n",tid.Minutes)
+        t.Fatalf("timer.Nano2Time() 7 != %d\n", tid.Minutes)
     }
 
     if tid.Seconds != 3 {
-        t.Fatalf("timer.Nano2Time() 3 != %d\n",tid.Seconds)
+        t.Fatalf("timer.Nano2Time() 3 != %d\n", tid.Seconds)
     }
 
     if tid.Milliseconds != 9 {
-        t.Fatalf("timer.Nano2Time() 9 != %d\n",tid.Milliseconds)
+        t.Fatalf("timer.Nano2Time() 9 != %d\n", tid.Milliseconds)
     }
 
 }

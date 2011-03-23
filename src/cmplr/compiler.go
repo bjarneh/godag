@@ -29,7 +29,7 @@ var pathCompiler string
 var suffix string
 
 
-func Init(srcdir, arch string, include []string){
+func Init(srcdir, arch string, include []string) {
 
     var A string // a:architecture
     var err os.Error
@@ -71,13 +71,13 @@ func Init(srcdir, arch string, include []string){
         log.Fatalf("[ERROR] could not find linker: %s\n", L)
     }
 
-    suffix   = S
-    srcroot  = srcdir
+    suffix = S
+    srcroot = srcdir
     includes = include
 
     if global.GetString("-lib") != "" {
         libroot = global.GetString("-lib")
-    }else{
+    } else {
         libroot = srcroot
     }
 }
@@ -91,7 +91,7 @@ func CreateArgv(pkgs []*dag.Package) {
 
     for y := 0; y < len(pkgs); y++ {
 
-        argv = make([]string, 5 + len(pkgs[y].Files) + (includeLen*2))
+        argv = make([]string, 5+len(pkgs[y].Files)+(includeLen*2))
         i := 0
         argv[i] = pathCompiler
         i++
@@ -285,7 +285,7 @@ func DeletePackages(pkgs []*dag.Package) bool {
                 log.Printf("[ERROR] %s\n", e)
             }
         }
-        if ! global.GetBool("-dryrun") {
+        if !global.GetBool("-dryrun") {
             pcompile := filepath.Join(libroot, pkgs[i].Name) + suffix
             e = os.Remove(pcompile)
             if e != nil {
@@ -384,7 +384,6 @@ func mainChoice(pkgs []*dag.Package) int {
         fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].Name)
     }
 
-
     fmt.Printf("\n type your choice: ")
 
     n, e := fmt.Scanf("%d", &choice)
@@ -464,7 +463,7 @@ func Remove865(dir string, alsoDir bool) {
 
     for i := 0; i < len(compiled); i++ {
 
-        if ! global.GetBool("-dryrun") {
+        if !global.GetBool("-dryrun") {
 
             e := os.Remove(compiled[i])
             if e != nil {
@@ -480,12 +479,12 @@ func Remove865(dir string, alsoDir bool) {
 
     if alsoDir {
         // remove entire dir if empty after objects are deleted
-        walker.IncludeFile = func (s string) bool { return true }
-        walker.IncludeDir = func (s string) bool { return true }
-        if len( walker.PathWalk(dir) ) == 0 {
+        walker.IncludeFile = func(s string) bool { return true }
+        walker.IncludeDir = func(s string) bool { return true }
+        if len(walker.PathWalk(dir)) == 0 {
             if global.GetBool("-dryrun") {
-                fmt.Printf("[dryrun] rm: %s\n",dir)
-            }else{
+                fmt.Printf("[dryrun] rm: %s\n", dir)
+            } else {
                 say.Printf("rm: %s\n", dir)
                 e := os.RemoveAll(dir)
                 if e != nil {
@@ -551,7 +550,7 @@ func FormatFiles(files []string) {
 
     for y := 0; y < len(files); y++ {
         argv[i] = files[y]
-        if ! global.GetBool("-dryrun") {
+        if !global.GetBool("-dryrun") {
             say.Printf("gofmt : %s\n", files[y])
             _ = handy.StdExecve(argv, true)
         } else {

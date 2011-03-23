@@ -77,7 +77,7 @@ func (s *StringSet) String() string {
 func (s *StringSet) Slice() []string {
     i := 0
     slice := make([]string, len(s.elements))
-    for k,_ := range s.elements {
+    for k, _ := range s.elements {
         slice[i] = k
         i++
     }

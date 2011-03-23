@@ -4,7 +4,7 @@
 
 package say // Perl6 inspiration here :-)
 
-import(
+import (
     "fmt"
     "io"
     "os"
@@ -22,44 +22,44 @@ func Sound() {
     mute = false
 }
 
-func Print(args ...interface{})(int, os.Error) {
-    if ! mute {
+func Print(args ...interface{}) (int, os.Error) {
+    if !mute {
         return fmt.Print(args...)
     }
     return 0, nil
 }
 
-func Println(args ...interface{})(int, os.Error) {
-    if ! mute {
+func Println(args ...interface{}) (int, os.Error) {
+    if !mute {
         return fmt.Println(args...)
     }
     return 0, nil
 }
 
-func Printf(f string, args ...interface{})(int, os.Error) {
-    if ! mute {
+func Printf(f string, args ...interface{}) (int, os.Error) {
+    if !mute {
         return fmt.Printf(f, args...)
     }
     return 0, nil
 }
 
 
-func Fprint(w io.Writer, args ...interface{})(int, os.Error) {
-    if ! mute {
+func Fprint(w io.Writer, args ...interface{}) (int, os.Error) {
+    if !mute {
         return fmt.Fprint(w, args...)
     }
     return 0, nil
 }
 
-func Fprintln(w io.Writer, args ...interface{})(int, os.Error) {
-    if ! mute {
+func Fprintln(w io.Writer, args ...interface{}) (int, os.Error) {
+    if !mute {
         return fmt.Fprintln(w, args...)
     }
     return 0, nil
 }
 
-func Fprintf(w io.Writer, f string, args ...interface{})(int, os.Error) {
-    if ! mute {
+func Fprintf(w io.Writer, f string, args ...interface{}) (int, os.Error) {
+    if !mute {
         fmt.Fprintf(w, f, args...)
     }
     return 0, nil

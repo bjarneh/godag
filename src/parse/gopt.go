@@ -112,15 +112,15 @@ func (g *GetOpt) Get(o string) string {
 }
 
 func (g *GetOpt) GetFloat32(o string) (float32, os.Error) {
-    return strconv.Atof32( g.Get(o) )
+    return strconv.Atof32(g.Get(o))
 }
 
 func (g *GetOpt) GetFloat64(o string) (float64, os.Error) {
-    return strconv.Atof64( g.Get(o) )
+    return strconv.Atof64(g.Get(o))
 }
 
 func (g *GetOpt) GetInt(o string) (int, os.Error) {
-    return strconv.Atoi( g.Get(o) )
+    return strconv.Atoi(g.Get(o))
 }
 
 func (g *GetOpt) Reset() {

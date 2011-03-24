@@ -393,7 +393,8 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
         }
     }
 
-    if global.GetBool("-gcc") {
+    // make is static no matter what the user says :-)
+    if global.GetBool("-gcc") && ! global.GetBool("-static") {
         argv = append(argv, "-static")
     }
 

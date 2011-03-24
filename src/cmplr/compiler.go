@@ -31,6 +31,24 @@ var suffix string
 
 func Init(srcdir, arch string, include []string) {
 
+    srcroot = srcdir
+    includes = include
+
+    if global.GetString("-lib") != "" {
+        libroot = global.GetString("-lib")
+    } else {
+        libroot = srcroot
+    }
+
+    if global.GetBool("-gcc") {
+        gcc()
+    } else {
+        gc(arch)
+    }
+}
+
+func gc(arch string) {
+
     var A string // a:architecture
     var err os.Error
 
@@ -72,14 +90,22 @@ func Init(srcdir, arch string, include []string) {
     }
 
     suffix = S
-    srcroot = srcdir
-    includes = include
 
-    if global.GetString("-lib") != "" {
-        libroot = global.GetString("-lib")
-    } else {
-        libroot = srcroot
+}
+
+func gcc() {
+
+    var err os.Error
+
+    pathCompiler, err = exec.LookPath("gccgo")
+
+    if err != nil {
+        log.Fatalf("[ERROR] could not find compiler: %s\n", err)
     }
+
+    pathLinker = pathCompiler
+
+    suffix = ".o"
 }
 
 
@@ -91,28 +117,24 @@ func CreateArgv(pkgs []*dag.Package) {
 
     for y := 0; y < len(pkgs); y++ {
 
-        argv = make([]string, 5+len(pkgs[y].Files)+(includeLen*2))
-        i := 0
-        argv[i] = pathCompiler
-        i++
-        argv[i] = "-I"
-        i++
-        argv[i] = libroot
-        i++
+        argv = make([]string, 0)
+        argv = append(argv, pathCompiler)
+        argv = append(argv, "-I")
+        argv = append(argv, libroot)
         for y := 0; y < includeLen; y++ {
-            argv[i] = "-I"
-            i++
-            argv[i] = includes[y]
-            i++
+            argv = append(argv, "-I")
+            argv = append(argv, includes[y])
         }
-        argv[i] = "-o"
-        i++
-        argv[i] = filepath.Join(libroot, pkgs[y].Name) + suffix
-        i++
+
+        if global.GetBool("-gcc") {
+            argv = append(argv, "-c")
+        }
+
+        argv = append(argv, "-o")
+        argv = append(argv, filepath.Join(libroot, pkgs[y].Name)+suffix)
 
         for z := 0; z < len(pkgs[y].Files); z++ {
-            argv[i] = pkgs[y].Files[z]
-            i++
+            argv = append(argv, pkgs[y].Files[z])
         }
 
         pkgs[y].Argv = argv
@@ -321,37 +343,43 @@ func ForkLink(output string, pkgs []*dag.Package) {
         mainPKG = gotMain[0]
     }
 
-    staticXtra := 0
-    if global.GetBool("-static") {
-        staticXtra++
-    }
-
     compiled := filepath.Join(libroot, mainPKG.Name) + suffix
 
-    argv := make([]string, 6+(len(includes)*2)+staticXtra)
-    i := 0
-    argv[i] = pathLinker
-    i++
-    argv[i] = "-L"
-    i++
-    argv[i] = libroot
-    i++
-    argv[i] = "-o"
-    i++
-    argv[i] = output
-    i++
+    argv := make([]string, 0)
+    argv = append(argv, pathLinker)
+    if !global.GetBool("-gcc") {
+        argv = append(argv, "-L")
+        argv = append(argv, libroot)
+    }
+    argv = append(argv, "-o")
+    argv = append(argv, output)
+
     if global.GetBool("-static") {
-        argv[i] = "-d"
-        i++
+        if global.GetBool("-gcc") {
+            argv = append(argv, "-static")
+        } else {
+            argv = append(argv, "-d")
+        }
     }
+
     for y := 0; y < len(includes); y++ {
-        argv[i] = "-L"
-        i++
-        argv[i] = includes[y]
-        i++
+        argv = append(argv, "-L")
+        argv = append(argv, includes[y])
     }
-    argv[i] = compiled
-    i++
+
+    argv = append(argv, compiled)
+
+    if global.GetBool("-gcc") {
+
+        ss := stringset.New()
+        for j := 0; j < len(pkgs); j++ {
+            ss.Add(filepath.Join(libroot, pkgs[j].Name) + suffix)
+        }
+
+        ss.Remove(compiled)
+
+        argv = append(argv, ss.Slice()...)
+    }
 
     if global.GetBool("-dryrun") {
         fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
@@ -407,8 +435,6 @@ func mainChoice(pkgs []*dag.Package) int {
 
 func CreateTestArgv() []string {
 
-    var numArgs int = 1
-
     pwd, e := os.Getwd()
 
     if e != nil {
@@ -416,45 +442,31 @@ func CreateTestArgv() []string {
     }
 
     arg0 := filepath.Join(pwd, global.GetString("-test-bin"))
+    argv := make([]string, 0)
+    argv = append(argv, arg0)
 
     if global.GetString("-bench") != "" {
-        numArgs += 2
+        argv = append(argv, "-test.bench")
+        argv = append(argv, global.GetString("-bench"))
     }
     if global.GetString("-match") != "" {
-        numArgs += 2
+        argv = append(argv, "-test.run")
+        argv = append(argv, global.GetString("-match"))
     }
     if global.GetBool("-verbose") {
-        numArgs++
-    }
-
-    var i = 1
-    argv := make([]string, numArgs)
-    argv[0] = arg0
-    if global.GetString("-bench") != "" {
-        argv[i] = "-test.bench"
-        i++
-        argv[i] = global.GetString("-bench")
-        i++
-    }
-    if global.GetString("-match") != "" {
-        argv[i] = "-test.run"
-        i++
-        argv[i] = global.GetString("-match")
-        i++
-    }
-    if global.GetBool("-verbose") {
-        argv[i] = "-test.v"
+        argv = append(argv, "-test.v")
     }
     return argv
 }
 
-func Remove865(dir string, alsoDir bool) {
+func Remove865o(dir string, alsoDir bool) {
 
-    // override IncludeFile to make walker pick up only .[865] files
+    // override IncludeFile to make walker pick up only .[865o] files
     walker.IncludeFile = func(s string) bool {
         return strings.HasSuffix(s, ".8") ||
             strings.HasSuffix(s, ".6") ||
-            strings.HasSuffix(s, ".5")
+            strings.HasSuffix(s, ".5") ||
+            strings.HasSuffix(s, ".o")
     }
 
     handy.DirOrExit(dir)
@@ -498,7 +510,7 @@ func Remove865(dir string, alsoDir bool) {
 
 func FormatFiles(files []string) {
 
-    var i, argvLen int
+    var i int
     var argv []string
     var tabWidth string = "-tabwidth=4"
     var useTabs string = "-tabindent=false"
@@ -519,34 +531,24 @@ func FormatFiles(files []string) {
     if global.GetBool("-no-comments") {
         comments = "-comments=false"
     }
-    if rewRule != "" {
-        argvLen++
-    }
     if global.GetBool("-tab") {
         useTabs = "-tabindent=true"
     }
 
-    argv = make([]string, 6+argvLen)
+    argv = make([]string, 0)
 
-    if fmtexec == "" {
-        log.Fatal("[ERROR] could not find: gofmt\n")
-    }
-
-    argv[i] = fmtexec
-    i++
-    argv[i] = "-w=true"
-    i++
-    argv[i] = tabWidth
-    i++
-    argv[i] = useTabs
-    i++
-    argv[i] = comments
-    i++
+    argv = append(argv, fmtexec)
+    argv = append(argv, "-w=true")
+    argv = append(argv, tabWidth)
+    argv = append(argv, useTabs)
+    argv = append(argv, comments)
 
     if rewRule != "" {
-        argv[i] = fmt.Sprintf("-r='%s'", rewRule)
-        i++
+        argv = append(argv, fmt.Sprintf("-r='%s'", rewRule))
     }
+
+    argv = append(argv, "") // dummy
+    i = len(argv) - 1
 
     for y := 0; y < len(files); y++ {
         argv[i] = files[y]

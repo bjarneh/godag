@@ -47,6 +47,7 @@ var bools = []string{
     "-test",
     "-list",
     "-time",
+    "-gcc",
     "-verbose",
     "-fmt",
     "-no-comments",
@@ -83,6 +84,7 @@ func init() {
     getopt.BoolOption("-v -version --version version")
     getopt.BoolOption("-s -sort --sort sort")
     getopt.BoolOption("-p -print --print")
+    getopt.BoolOption("-g -gcc --gcc")
     getopt.BoolOption("-d -dryrun --dryrun")
     getopt.BoolOption("-t -test --test test")
     getopt.BoolOption("-T -time --time")
@@ -229,10 +231,10 @@ func main() {
 
     // delete all object/archive files
     if global.GetBool("-clean") {
-        compiler.Remove865(srcdir, false) // do not remove dir
+        compiler.Remove865o(srcdir, false) // do not remove dir
         if global.GetString("-lib") != "" {
             if handy.IsDir(global.GetString("-lib")) {
-                compiler.Remove865(global.GetString("-lib"), true)
+                compiler.Remove865o(global.GetString("-lib"), true)
             }
         }
         os.Exit(0)
@@ -413,6 +415,7 @@ func printHelp() {
   -c --clean           rm *.[865] from src-directory
   -T --time            print some timing results
   -q --quiet           silent, print only errors
+  -g --gcc             use gccgo to compile/link
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package
   -dot                 create a graphviz dot file
@@ -452,6 +455,7 @@ func printListing() {
   -c --clean           =>   %t
   -T --time            =>   %t
   -q --quiet           =>   %t
+  -g --gcc             =>   %t
   -L --lib             =>   '%s'
   -M --main            =>   '%s'
   -I                   =>   %v
@@ -491,6 +495,7 @@ func printListing() {
         global.GetBool("-clean"),
         global.GetBool("-time"),
         global.GetBool("-quiet"),
+        global.GetBool("-gcc"),
         global.GetString("-lib"),
         global.GetString("-main"),
         includes,

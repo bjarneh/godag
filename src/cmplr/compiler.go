@@ -320,7 +320,8 @@ func DeletePackages(pkgs []*dag.Package) bool {
     return ok
 }
 
-func ForkLink(output string, pkgs []*dag.Package) {
+
+func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
 
     var mainPKG *dag.Package
 
@@ -372,13 +373,28 @@ func ForkLink(output string, pkgs []*dag.Package) {
     if global.GetBool("-gcc") {
 
         ss := stringset.New()
-        for j := 0; j < len(pkgs); j++ {
-            ss.Add(filepath.Join(libroot, pkgs[j].Name) + suffix)
+
+        if len(extra) > 0 {
+            for j := 0; j < len(extra); j++ {
+                // main package untestable using GCC
+                if extra[j].ShortName != "main" {
+                    ss.Add(filepath.Join(libroot, extra[j].Name) + suffix)
+                }
+            }
+        }else{
+            for k := 0; k < len(pkgs); k++ {
+                ss.Add(filepath.Join(libroot, pkgs[k].Name) + suffix)
+            }
+            ss.Remove(compiled)
         }
 
-        ss.Remove(compiled)
+        if ss.Len() > 0 {
+            argv = append(argv, ss.Slice()...)
+        }
+    }
 
-        argv = append(argv, ss.Slice()...)
+    if global.GetBool("-gcc") {
+        argv = append(argv, "-static")
     }
 
     if global.GetBool("-dryrun") {

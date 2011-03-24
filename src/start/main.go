@@ -319,7 +319,11 @@ func main() {
             compiler.CreateArgv(testMain)
         }
         compiler.SerialCompile(testMain)
-        compiler.ForkLink(global.GetString("-test-bin"), testMain)
+        if global.GetBool("-gcc") {
+            compiler.ForkLink(global.GetString("-test-bin"),testMain,sorted)
+        }else{
+            compiler.ForkLink(global.GetString("-test-bin"), testMain, nil)
+        }
         compiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
         if rmError != nil {
@@ -346,7 +350,7 @@ func main() {
 
     if global.GetString("-output") != "" {
         timer.Start("linking")
-        compiler.ForkLink(global.GetString("-output"), sorted)
+        compiler.ForkLink(global.GetString("-output"), sorted, nil)
         timer.Stop("linking")
     }
 

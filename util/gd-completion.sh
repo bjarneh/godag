@@ -14,11 +14,11 @@ _gd(){
 
     local cur prev opts gd_long_opts gd_short_opts gd_short_explain
     # long options
-    gd_long_opts="--help --version --list --print --sort --output --static --arch --dryrun --clean --dot --test --benchmarks --match --verbose --test-bin --fmt --rew-rule --tab --tabwidth --no-comments --external --quiet --time --lib --main"
+    gd_long_opts="--help --version --list --print --sort --output --static --arch --dryrun --clean --dot --test --benchmarks --match --verbose --test-bin --fmt --rew-rule --tab --tabwidth --no-comments --external --quiet --time --lib --main --gcc"
     # short options + explain
-    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -a[--arch] -d[--dryrun] -c[--clean] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -e[--external] -q[--quiet] -T[--time] -L[--lib] -M[-main]"
+    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -a[--arch] -d[--dryrun] -c[--clean] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -e[--external] -q[--quiet] -T[--time] -L[--lib] -M[--main] -g[--gcc]"
     # short options
-    gd_short_opts="-h -v -l -p -s -o -S -a -d -c -I -t -b -m -V -f -q -T"
+    gd_short_opts="-h -v -l -p -s -o -S -a -d -c -I -t -b -m -V -f -q -T -g"
 
 
     COMPREPLY=()

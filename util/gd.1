@@ -118,6 +118,12 @@ silent, print only errors
 .RE
 .PP
 .B
+\-g, \-\-gcc
+.RS 4
+use \fBgccgo\fR to compile/link
+.RE
+.PP
+.B
 \-L, \-\-lib
 .RS 4
 write objects to another dir (!src)
@@ -283,7 +289,7 @@ compile and run unit\-tests on source\-code located in \fBsrc\fR
 .RE
 .PP
 .B
-gd  \-external src/
+gd \-external src/
 .RS 4
 compile source\-code in \fBsrc\fR, but \fBgoinstall\fR all external libraries first, these are found by \fBgd\fR by parsing imports
 .RE
@@ -307,19 +313,25 @@ compile and run unit\-tests and run benchmarks matching \fBsomething\fR on sourc
 .RE
 .PP
 .B
-gd  \-clean src/
+gd \-clean src/
 .RS 4
 delete all object files from \fBsrc\fR
 .RE
 .PP
 .B
-gd  \-lib _obj src/
+gd \-lib _obj src/
 .RS 4
 compile source\-code in \fBsrc\fR, and place objects in directory \fB_obj\fR
 .RE
 .PP
 .B
-gd  \-lib $GOROOT/pkg/$GOOS_$GOARCH src/
+gd \-gcc src/
+.RS 4
+compile source\-code in \fBsrc\fR, using \fBgccgo\fR
+.RE
+.PP
+.B
+gd \-lib $GOROOT/pkg/$GOOS_$GOARCH src/
 .RS 4
 compile source\-code in \fBsrc\fR, and place objects at official package root\&.this effectively installs a library, i\&.e\&. it can be used by any go\-program from now on
 .SH "BUGS"

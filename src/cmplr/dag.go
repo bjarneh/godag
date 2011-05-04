@@ -205,7 +205,7 @@ func (d Dag) MakeDotGraph(filename string) {
     }
 
     sb = stringbuffer.NewSize(500)
-    file, e = os.Open(filename, os.O_WRONLY|os.O_CREAT, 0644)
+    file, e = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0644)
 
     if e != nil {
         log.Fatalf("[ERROR] %s\n", e)
@@ -317,8 +317,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     sbTotal.Add(sbBench.String())
 
     sbTotal.Add("func main(){\n")
-    sbTotal.Add("testing.Main(regexp.MatchString, tests);\n")
-    sbTotal.Add("testing.RunBenchmarks(regexp.MatchString, benchmarks);\n}\n\n")
+    sbTotal.Add("testing.Main(regexp.MatchString, tests, benchmarks);\n}\n\n")
 
     tmpstub = fmt.Sprintf("tmp%d", time.Seconds())
     tmpdir = fmt.Sprintf("%s%s", addSeparatorPath(root), tmpstub)
@@ -336,7 +335,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
     tmpfile = filepath.Join(tmpdir, "main.go")
 
-    fil, e2 := os.Open(tmpfile, os.O_WRONLY|os.O_CREAT, 0777)
+    fil, e2 := os.OpenFile(tmpfile, os.O_WRONLY|os.O_CREATE, 0777)
 
     if e2 != nil {
         log.Fatalf("[ERROR] %s\n", e2)
@@ -393,7 +392,7 @@ func (d Dag) Topsort() []*Package {
     }
 
     if cnt < len(d) {
-        log.Fatal("[ERROR] loop in dependency graph")
+        log.Fatal("[ERROR] loop in dependency graph\n")
     }
 
     return done

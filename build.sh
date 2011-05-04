@@ -250,6 +250,13 @@ function triple {
     move
 }
 
+# create a debian package of godag
+function debian {
+    echo "TODO create a debian package"
+    # build || 
+    return 0
+}
+
 # main
 {
 [ "$GOROOT" ] || die "GOROOT"
@@ -306,6 +313,9 @@ case "$1" in
       ;;
       'del' | '--del' | '-del')
       rmstdlib
+      ;;
+      'debian' | '--debian' | '-debian')
+      debian
       ;;
       *)
       time triple

@@ -47,7 +47,6 @@ var bools = []string{
     "-test",
     "-list",
     "-time",
-    "-gcc",
     "-verbose",
     "-fmt",
     "-no-comments",
@@ -69,6 +68,7 @@ var strs = []string{
     "-test-bin",
     "-lib",
     "-main",
+    "-backend",
 }
 
 
@@ -84,7 +84,6 @@ func init() {
     getopt.BoolOption("-v -version --version version")
     getopt.BoolOption("-s -sort --sort sort")
     getopt.BoolOption("-p -print --print")
-    getopt.BoolOption("-g -gcc --gcc")
     getopt.BoolOption("-d -dryrun --dryrun")
     getopt.BoolOption("-t -test --test test")
     getopt.BoolOption("-T -time --time")
@@ -106,6 +105,7 @@ func init() {
     getopt.StringOption("-b -b= -bench --bench -bench= --bench=")
     getopt.StringOption("-m -m= -match --match -match= --match=")
     getopt.StringOption("-test-bin --test-bin -test-bin= --test-bin=")
+    getopt.StringOption("-B -B= -backend --backend -backend= --backend=")
 
     // override IncludeFile to make walker pick up only .go files
     walker.IncludeFile = func(s string) bool {
@@ -128,13 +128,17 @@ func init() {
     }
 
     global.SetString("-test-bin", "gdtest")
+    global.SetString("-backend", "gc")
     global.SetString("-I", "")
 
 }
 
+// ignore GOROOT for gccgo and express
 func gotRoot() {
-    if os.Getenv("GOROOT") == "" {
-        log.Fatal("[ERROR] missing GOROOT\n")
+    if global.GetString("-backend") == "gc" {
+        if os.Getenv("GOROOT") == "" {
+            log.Fatal("[ERROR] missing GOROOT\n")
+        }
     }
 }
 
@@ -194,6 +198,9 @@ func main() {
 
     // expand variables in -lib
     global.SetString("-lib", os.ShellExpand(global.GetString("-lib")))
+
+    // expand variables in -output
+    global.SetString("-output", os.ShellExpand(global.GetString("-output")))
 
     // stuff that can be done without $GOROOT
     if global.GetBool("-list") {
@@ -269,7 +276,7 @@ func main() {
         os.Exit(0)
     }
 
-    gotRoot() //?
+    gotRoot() //? (only matters to gc, gccgo and express ignores it)
 
     // build all external dependencies
     if global.GetBool("-external") {
@@ -319,10 +326,15 @@ func main() {
             compiler.CreateArgv(testMain)
         }
         compiler.SerialCompile(testMain)
-        if global.GetBool("-gcc") {
-            compiler.ForkLink(global.GetString("-test-bin"),testMain,sorted)
-        }else{
+        switch global.GetString("-backend") {
+        case "gc":
             compiler.ForkLink(global.GetString("-test-bin"), testMain, nil)
+        case "gccgo", "gcc":
+            compiler.ForkLink(global.GetString("-test-bin"), testMain, sorted)
+        case "express":
+            log.Fatal("TODO")
+        default:
+            log.Fatalf("[ERROR] '%s' unknown back-end\n", global.GetString("-backend"))
         }
         compiler.DeletePackages(testMain)
         rmError := os.Remove(testDir)
@@ -435,6 +447,7 @@ func printHelp() {
   --tabwidth           pass -tabwidth to gofmt (default: 4)
   --no-comments        pass -comments=false to gofmt
   -e --external        goinstall all external dependencies
+  -B --backend         [gc,gccgo,express] (default: gc)
     `
 
     fmt.Println(helpMSG)
@@ -459,7 +472,6 @@ func printListing() {
   -c --clean           =>   %t
   -T --time            =>   %t
   -q --quiet           =>   %t
-  -g --gcc             =>   %t
   -L --lib             =>   '%s'
   -M --main            =>   '%s'
   -I                   =>   %v
@@ -475,6 +487,7 @@ func printListing() {
   --tabwidth           =>   %s
   --no-comments        =>   %t
   -e --external        =>   %t
+  -B --backend         =>   '%s'
 
 `
     tabRepr := "4"
@@ -499,7 +512,6 @@ func printListing() {
         global.GetBool("-clean"),
         global.GetBool("-time"),
         global.GetBool("-quiet"),
-        global.GetBool("-gcc"),
         global.GetString("-lib"),
         global.GetString("-main"),
         includes,
@@ -514,5 +526,6 @@ func printListing() {
         global.GetBool("-tab"),
         tabRepr,
         global.GetBool("-no-comments"),
-        global.GetBool("-external"))
+        global.GetBool("-external"),
+        global.GetString("-backend"))
 }

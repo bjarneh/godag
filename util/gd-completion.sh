@@ -48,4 +48,5 @@ _gd(){
     fi
 }
 
-complete -d -F _gd gd
+## directories only -d was a bit to strict
+complete -o default -F _gd gd

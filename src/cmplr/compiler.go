@@ -40,11 +40,36 @@ func Init(srcdir, arch string, include []string) {
         libroot = srcroot
     }
 
-    if global.GetBool("-gcc") {
+    switch global.GetString("-backend") {
+    case "gcc", "gccgo":
         gcc()
-    } else {
+    case "gc":
         gc(arch)
+    case "express":
+        express()
+    default:
+        log.Fatalf("[ERROR] '%s' unknown backend\n",
+            global.GetString("-backend"))
     }
+}
+
+func express() {
+
+    var err os.Error
+
+    pathCompiler, err = exec.LookPath("vmgc")
+
+    if err != nil {
+        log.Fatalf("[ERROR] could not find compiler: %s\n", pathCompiler)
+    }
+
+    pathLinker, err = exec.LookPath("vmld")
+
+    if err != nil {
+        log.Fatalf("[ERROR] could not find linker: %s\n", pathLinker)
+    }
+
+    suffix = ".vmo"
 }
 
 func gc(arch string) {
@@ -126,7 +151,8 @@ func CreateArgv(pkgs []*dag.Package) {
             argv = append(argv, includes[y])
         }
 
-        if global.GetBool("-gcc") {
+        switch global.GetString("-backend") {
+        case "gcc", "gccgo":
             argv = append(argv, "-c")
         }
 
@@ -348,29 +374,45 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
 
     argv := make([]string, 0)
     argv = append(argv, pathLinker)
-    if !global.GetBool("-gcc") {
+
+    switch global.GetString("-backend") {
+    case "gc", "express":
         argv = append(argv, "-L")
         argv = append(argv, libroot)
     }
+
     argv = append(argv, "-o")
     argv = append(argv, output)
 
-    if global.GetBool("-static") {
-        if global.GetBool("-gcc") {
-            argv = append(argv, "-static")
-        } else {
-            argv = append(argv, "-d")
-        }
+    // gcc get's this no matter what...
+    if global.GetString("-backend") == "gcc" ||
+        global.GetString("-backend") == "gccgo" {
+        argv = append(argv, "-static")
+    } else if global.GetBool("-static") {
+        argv = append(argv, "-d")
     }
 
-    for y := 0; y < len(includes); y++ {
-        argv = append(argv, "-L")
-        argv = append(argv, includes[y])
+    switch global.GetString("-backend") {
+    case "gccgo", "gcc":
+        walker.IncludeFile = func(s string) bool {
+            return strings.HasSuffix(s, ".o")
+        }
+        walker.IncludeDir = func(s string) bool { return true }
+
+        for y := 0; y < len(includes); y++ {
+            argv = append(argv, walker.PathWalk(includes[y])...)
+        }
+    case "gc", "express":
+        for y := 0; y < len(includes); y++ {
+            argv = append(argv, "-L")
+            argv = append(argv, includes[y])
+        }
     }
 
     argv = append(argv, compiled)
 
-    if global.GetBool("-gcc") {
+    if global.GetString("-backend") == "gcc" ||
+        global.GetString("-backend") == "gccgo" {
 
         ss := stringset.New()
 
@@ -381,7 +423,7 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
                     ss.Add(filepath.Join(libroot, extra[j].Name) + suffix)
                 }
             }
-        }else{
+        } else {
             for k := 0; k < len(pkgs); k++ {
                 ss.Add(filepath.Join(libroot, pkgs[k].Name) + suffix)
             }
@@ -391,11 +433,6 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
         if ss.Len() > 0 {
             argv = append(argv, ss.Slice()...)
         }
-    }
-
-    // make is static no matter what the user says :-)
-    if global.GetBool("-gcc") && ! global.GetBool("-static") {
-        argv = append(argv, "-static")
     }
 
     if global.GetBool("-dryrun") {
@@ -478,12 +515,13 @@ func CreateTestArgv() []string {
 
 func Remove865o(dir string, alsoDir bool) {
 
-    // override IncludeFile to make walker pick up only .[865o] files
+    // override IncludeFile to make walker pick up only .[865o] .vmo files
     walker.IncludeFile = func(s string) bool {
         return strings.HasSuffix(s, ".8") ||
             strings.HasSuffix(s, ".6") ||
             strings.HasSuffix(s, ".5") ||
-            strings.HasSuffix(s, ".o")
+            strings.HasSuffix(s, ".o") ||
+            strings.HasSuffix(s, ".vmo")
     }
 
     handy.DirOrExit(dir)
@@ -570,7 +608,7 @@ func FormatFiles(files []string) {
     for y := 0; y < len(files); y++ {
         argv[i] = files[y]
         if !global.GetBool("-dryrun") {
-            say.Printf("gofmt : %s\n", files[y])
+            say.Printf("gofmt: %s\n", files[y])
             _ = handy.StdExecve(argv, true)
         } else {
             fmt.Printf(" %s\n", strings.Join(argv, " "))

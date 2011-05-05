@@ -69,7 +69,7 @@ package=(
 
 
 function build(){
-    echo -n "build"
+    echo -n "build "
     cd src/utilz && $COMPILER walker.go || exit 1
     $COMPILER handy.go || exit 1
     $COMPILER stringset.go || exit 1
@@ -82,7 +82,7 @@ function build(){
     $COMPILER -I $IDIR compiler.go || exit 1
     cd $HERE/src/start && $COMPILER -I $IDIR main.go || exit 1
     cd $HERE && $LINKY -o gd -L src src/start/main.? || exit 1
-    echo " ...done"
+    echo "...done"
 }
 
 function clean(){
@@ -145,12 +145,13 @@ targets:
   cproot  : copy modified (pure go) part of \$GOROOT/src/pkg
   stdlib  : copy original (pure go) part of \$GOROOT/src/pkg
   testok  : copy partial stdlib that can be tested without modification
+  debian  : build a debian package (godag_0.2-0_${GOARCH}.deb)
 
 EOH
 }
 
 function die(){
-    echo "variable: $1 not set"
+    echo "$1"
     exit 1
 }
 
@@ -160,7 +161,7 @@ function die(){
 # NOTE main packages are also removed, these are used for testing
 # and since too many of these end up in the same name-space, they
 # are all removed here..
-function recursive_copy {
+function recursive_copy(){
 
     mkdir "$2"
 
@@ -185,7 +186,7 @@ function recursive_copy {
 
 # move all go packages up one level, and give them
 # a fitting header based on directory..
-function up_one_level {
+function up_one_level(){
 
     for element in $(ls $1);
     do
@@ -203,7 +204,7 @@ function up_one_level {
     return 1
 }
 
-function cproot {
+function cproot(){
 
     mkdir "$CPROOT";
     echo "cp *.go: \$GOROOT/src/pkg  ->  $CPROOT"
@@ -224,7 +225,7 @@ function cproot {
     exit 0
 }
 
-function testok {
+function testok(){
     cnt=15
     for((i = 0; i < cnt; i++))
     do
@@ -235,7 +236,7 @@ function testok {
 }
 
 # this target does not show up in help message :-)
-function rmstdlib {
+function rmstdlib(){
     for p in "${package[@]}";
     do
         echo "rm -rf ${GOROOT}/pkg/${GOOS}_${GOARCH}/${p}.*"
@@ -244,25 +245,125 @@ function rmstdlib {
 }
 
 # default target clean + build + move
-function triple {
+function triple(){
     clean
     build
     move
 }
 
-# create a debian package of godag
-function debian {
-    echo "TODO create a debian package"
-    # build || 
-    return 0
+# Make sure we have all binaries needed in order to build debian package
+function sanity(){
+    pathfind 'hg'       || die "[ERROR] missing 'hg (mercurial)'"
+    pathfind 'gzip'     || die "[ERROR] missing 'gzip'"
+    pathfind 'md5sum'   || die "[ERROR] missing 'md5sum'"
+    pathfind 'dpkg-deb' || die "[ERROR] missing 'dpkg-deb'"
+    pathfind 'fakeroot' || die "[ERROR] missing 'fakeroot'"
+    # Not too many systems lacking these (coreutils) but still
+    pathfind 'cp'       || die "[ERROR] missing 'cp'"
+    pathfind 'mkdir'    || die "[ERROR] missing 'mkdir'"
+    pathfind 'mv'       || die "[ERROR] missing 'mv'"
+    pathfind 'du'       || die "[ERROR] missing 'du'"
+    pathfind 'chmod'    || die "[ERROR] missing 'chmod'"
+    pathfind 'printf'   || die "[ERROR] missing 'printf'"
+}
+
+# Taken from Debian Developers Reference Chapter 6
+function pathfind(){
+     OLDIFS="$IFS"
+     IFS=:
+     for p in $PATH; do
+         if [ -x "$p/$*" ]; then
+             IFS="$OLDIFS"
+             return 0
+         fi
+     done
+     IFS="$OLDIFS"
+     return 1
+}
+
+# create a debian package of godag, not the prettiest function..
+function debian() {
+
+# do you have what it takes to build a deb?
+
+    sanity
+
+# NOTE: does not depend on anything yet :-)
+DEBCONTROL="Package: godag
+Version: 0.2
+Section: devel
+Priority: optional
+Architecture: %s
+Depends:
+Suggests: gccgo,golang
+Conflicts:
+Replaces:
+Installed-Size: %d
+Maintainer: Bjarne Holen <bjarneh@ifi.uio.no>
+Description: Golang/Go compiler front-end.
+ Godag automatically builds projects written in golang,
+ by inspecting source-code imports to calculate compile order.
+ Unit-testing, formatting and installation of external 
+ libraries are also automated. The default back-end is gc,
+ other back-ends have partial support: gccgo, express.
+"
+
+DEBCOPYRIGHT="Name: godag
+Maintainer: bjarne holen <bjarneh@ifi.uio.no>
+Source: https://godag.googlecode.com/hg
+
+Files: *
+Copyright: 2011, bjarne holen <bjarneh@ifi.uio.no>
+License: GPL-3
+
+License: GPL-3
+On Debian systems, the complete text of the GNU General Public License
+version 3 can be found in '/usr/share/common-licenses/GPL-3'.
+"
+
+DEBCHANGELOG="godag (0.2.0) devel; urgency=low
+
+    * The actual changelog can be found in changelog...
+
+ -- Bjarne Holen <bjarneh@ifi.uio.no>  Thu, 05 May 2011 14:07:28 -0400
+"
+
+    if [ "$GOARCH" = "386" ]; then
+        DEBARCH="i386"
+    else
+        DEBARCH="$GOARCH"
+    fi
+
+    build
+
+    mkdir -p ./debian/DEBIAN
+    mkdir -p ./debian/usr/bin
+    mkdir -p ./debian/usr/share/man/man1
+    mkdir -p ./debian/usr/share/doc/godag
+    mkdir -p ./debian/etc/bash_completion.d
+
+    mv gd ./debian/usr/bin
+    cp ./util/gd-completion.sh ./debian/etc/bash_completion.d/gd
+    cat ./util/gd.1 | gzip --best - > ./debian/usr/share/man/man1/gd.1.gz
+    cat ./util/gd.1 | gzip --best - > ./debian/usr/share/man/man1/godag.1.gz
+    echo "$DEBCOPYRIGHT" > ./debian/usr/share/doc/godag/copyright
+    hg log | gzip --best - > ./debian/usr/share/doc/godag/changelog.gz
+    echo "$DEBCHANGELOG" | gzip --best - > ./debian/usr/share/doc/godag/changelog.Debian.gz
+    arr=($(du -s ./debian))
+    printf "$DEBCONTROL" "$DEBARCH" "${arr[0]}" > ./debian/DEBIAN/control
+    echo "/etc/bash_completion.d/gd" > ./debian/DEBIAN/conffiles
+    fakeroot dpkg-deb --build ./debian
+    mv debian.deb "godag_0.2-0_$DEBARCH.deb"
+    rm -rf ./debian
+
 }
 
 # main
 {
-[ "$GOROOT" ] || die "GOROOT"
-[ "$GOARCH" ] || die "GOARCH"
-[ "$GOOS" ]   || die "GOOS"
-[ "$GOBIN" ]  || die "GOBIN"
+[ "$GOROOT" ] || die "[ERROR] missing \$GOROOT"
+[ "$GOARCH" ] || die "[ERROR] missing \$GOARCH"
+[ "$GOOS" ]   || die "[ERROR] missing \$GOOS"
+[ "$GOBIN" ]  || die "[ERROR] missing \$GOBIN"
 
 case "$GOARCH" in
     '386')
@@ -322,4 +423,3 @@ case "$1" in
       ;;
 esac
 }
-

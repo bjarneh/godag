@@ -49,7 +49,6 @@ var bools = []string{
     "-time",
     "-verbose",
     "-fmt",
-    "-no-comments",
     "-quiet",
     "-tab",
     "-external",
@@ -91,7 +90,6 @@ func init() {
     getopt.BoolOption("-q -quiet --quiet")
     getopt.BoolOption("-V -verbose --verbose")
     getopt.BoolOption("-f -fmt --fmt")
-    getopt.BoolOption("-no-comments --no-comments")
     getopt.BoolOption("-tab --tab")
     getopt.BoolOption("-e -external --external")
     getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
@@ -445,7 +443,6 @@ func printHelp() {
   --rew-rule           pass rewrite rule to gofmt
   --tab                pass -tabindent=true to gofmt
   --tabwidth           pass -tabwidth to gofmt (default: 4)
-  --no-comments        pass -comments=false to gofmt
   -e --external        goinstall all external dependencies
   -B --backend         [gc,gccgo,express] (default: gc)
     `
@@ -485,7 +482,6 @@ func printListing() {
   --rew-rule           =>   '%s'
   --tab                =>   %t
   --tabwidth           =>   %s
-  --no-comments        =>   %t
   -e --external        =>   %t
   -B --backend         =>   '%s'
 
@@ -525,7 +521,6 @@ func printListing() {
         global.GetString("-rew-rule"),
         global.GetBool("-tab"),
         tabRepr,
-        global.GetBool("-no-comments"),
         global.GetBool("-external"),
         global.GetString("-backend"))
 }

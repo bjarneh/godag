@@ -569,7 +569,6 @@ func FormatFiles(files []string) {
     var argv []string
     var tabWidth string = "-tabwidth=4"
     var useTabs string = "-tabindent=false"
-    var comments string = "-comments=true"
     var rewRule string = global.GetString("-rew-rule")
     var fmtexec string
     var err os.Error
@@ -583,9 +582,6 @@ func FormatFiles(files []string) {
     if global.GetString("-tabwidth") != "" {
         tabWidth = "-tabwidth=" + global.GetString("-tabwidth")
     }
-    if global.GetBool("-no-comments") {
-        comments = "-comments=false"
-    }
     if global.GetBool("-tab") {
         useTabs = "-tabindent=true"
     }
@@ -596,7 +592,6 @@ func FormatFiles(files []string) {
     argv = append(argv, "-w=true")
     argv = append(argv, tabWidth)
     argv = append(argv, useTabs)
-    argv = append(argv, comments)
 
     if rewRule != "" {
         argv = append(argv, fmt.Sprintf("-r='%s'", rewRule))

@@ -7,7 +7,7 @@
 .\"  Language: English
 .\"      Misc: I took this man page from git, and modified it
 .\"
-.TH "gd" "1" "03/3/2011" "godag 0\&.2\&.1" "godag manual"
+.TH "gd" "1" "05/5/2011" "godag 0\&.2\&.0" "godag manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -118,12 +118,6 @@ silent, print only errors
 .RE
 .PP
 .B
-\-g, \-\-gcc
-.RS 4
-use \fBgccgo\fR to compile/link
-.RE
-.PP
-.B
 \-L, \-\-lib
 .RS 4
 write objects to another dir (!src)
@@ -211,6 +205,13 @@ pass \-comments=false to \fBgofmt\fR
 \-e, \-\-external
 .RS 4
 \fBgoinstall\fR all external dependencies
+.RE
+.PP
+.B
+\-B, \-\-backend
+.RS 4
+\fBgc\fR, \fBgccgo\fR, \fBexpress\fR (default:gc)
+.RE
 .SH "ORGANIZATION"
 .sp
 source\-code is organized in a \fBdirectory tree structure\fR. where each package is either placed according to its namespace, or in a directory with the same name as the package\&. the default location of the source\-code is \fBsrc\fR, i\&.e\&. no source directory has to be specified if source\-code is placed in a directory called \fBsrc\fR\&. assume that the file c\&.go has the header \fBpackage c\fR, and that the files d1\&.go and d2\&.go has the header \fBpackage d\fR\&. from anywhere inside this project, the \fBd\fR package, could be imported as \fBimport "a/d"\fR, since it resides in a directory with the same name as the package itself\&. the package \fBc\fR, can be imported as \fBimport "a/b/c"\fR, since it does \fBnot\fR reside in a directory with the same name as the package\&.
@@ -325,7 +326,7 @@ compile source\-code in \fBsrc\fR, and place objects in directory \fB_obj\fR
 .RE
 .PP
 .B
-gd \-gcc src/
+gd \-B gccgo src/
 .RS 4
 compile source\-code in \fBsrc\fR, using \fBgccgo\fR
 .RE

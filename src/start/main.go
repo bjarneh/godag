@@ -278,9 +278,8 @@ func main() {
 
     // build all external dependencies
     if global.GetBool("-external") {
-        timer.Start("goinstall")
         dgrph.External()
-        timer.Stop("goinstall")
+        os.Exit(0)
     }
 
     // sort graph based on dependencies
@@ -429,7 +428,6 @@ func printHelp() {
   -c --clean           rm *.[865] from src-directory
   -T --time            print some timing results
   -q --quiet           silent, print only errors
-  -g --gcc             use gccgo to compile/link
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package
   -dot                 create a graphviz dot file

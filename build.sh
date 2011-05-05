@@ -91,6 +91,7 @@ function clean(){
     rm -rf src/utilz/walker.?
     rm -rf src/utilz/stringset.?
     rm -rf src/utilz/stringbuffer.?
+    rm -rf src/utilz/global.?
     rm -rf src/utilz/utilz_test.?
     rm -rf src/utilz/handy.?
     rm -rf src/utilz/timer.?

@@ -348,6 +348,7 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
     cat ./util/gd.1 | gzip --best - > ./debian/usr/share/man/man1/gd.1.gz
     cat ./util/gd.1 | gzip --best - > ./debian/usr/share/man/man1/godag.1.gz
     echo "$DEBCOPYRIGHT" > ./debian/usr/share/doc/godag/copyright
+
     if [ -d ".hg" ];then
         hg log | gzip --best - > ./debian/usr/share/doc/godag/changelog.gz
     else # we are git
@@ -357,6 +358,9 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
     arr=($(du -s ./debian))
     printf "$DEBCONTROL" "$DEBARCH" "${arr[0]}" > ./debian/DEBIAN/control
     echo "/etc/bash_completion.d/gd" > ./debian/DEBIAN/conffiles
+
+    chmod -R 755 ./debian
+
     fakeroot dpkg-deb --build ./debian
     mv debian.deb "godag_0.2-0_$DEBARCH.deb"
     rm -rf ./debian

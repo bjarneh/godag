@@ -343,6 +343,8 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
     mkdir -p ./debian/usr/share/doc/godag
     mkdir -p ./debian/etc/bash_completion.d
 
+    chmod -R 755 ./debian
+
     mv gd ./debian/usr/bin
     cp ./util/gd-completion.sh ./debian/etc/bash_completion.d/gd
     cat ./util/gd.1 | gzip --best - > ./debian/usr/share/man/man1/gd.1.gz
@@ -351,15 +353,13 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
 
     if [ -d ".hg" ];then
         hg log | gzip --best - > ./debian/usr/share/doc/godag/changelog.gz
-    else # we are git
+    else # git
         git log | gzip --best - > ./debian/usr/share/doc/godag/changelog.gz
     fi
     echo "$DEBCHANGELOG" | gzip --best - > ./debian/usr/share/doc/godag/changelog.Debian.gz
     arr=($(du -s ./debian))
     printf "$DEBCONTROL" "$DEBARCH" "${arr[0]}" > ./debian/DEBIAN/control
     echo "/etc/bash_completion.d/gd" > ./debian/DEBIAN/conffiles
-
-    chmod -R 755 ./debian
 
     fakeroot dpkg-deb --build ./debian
     mv debian.deb "godag_0.2-0_$DEBARCH.deb"

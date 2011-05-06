@@ -52,7 +52,7 @@ $ gd -s src       # will print legal compile order
 $ gd src -test    # will run unit-tests
 $ gd src -fmt     # will format (gofmt) the source-code
 $ gd src -o gd    # will compile and link executable
-$ gd -e src       # will goinstall dependencies + compile src
+$ gd -e src       # will goinstall external dependencies
 
 
 

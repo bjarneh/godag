@@ -52,6 +52,7 @@ var bools = []string{
     "-quiet",
     "-tab",
     "-external",
+    "-update",
 }
 
 // keys for the string options
@@ -92,6 +93,7 @@ func init() {
     getopt.BoolOption("-f -fmt --fmt")
     getopt.BoolOption("-tab --tab")
     getopt.BoolOption("-e -external --external")
+    getopt.BoolOption("-u -update --update")
     getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
     getopt.StringOption("-dot -dot= --dot --dot=")
     getopt.StringOption("-L -L= -lib -lib= --lib --lib=")
@@ -276,8 +278,8 @@ func main() {
 
     gotRoot() //? (only matters to gc, gccgo and express ignores it)
 
-    // build all external dependencies
-    if global.GetBool("-external") {
+    // build or update all external dependencies
+    if global.GetBool("-external") || global.GetBool("-update") {
         dgrph.External()
         os.Exit(0)
     }
@@ -442,6 +444,7 @@ func printHelp() {
   --tab                pass -tabindent=true to gofmt
   --tabwidth           pass -tabwidth to gofmt (default: 4)
   -e --external        goinstall all external dependencies
+  -u --update          update external dependencies (goinstall)
   -B --backend         [gc,gccgo,express] (default: gc)
     `
 
@@ -481,6 +484,7 @@ func printListing() {
   --tab                =>   %t
   --tabwidth           =>   %s
   -e --external        =>   %t
+  -u --update          =>   %t
   -B --backend         =>   '%s'
 
 `
@@ -520,5 +524,6 @@ func printListing() {
         global.GetBool("-tab"),
         tabRepr,
         global.GetBool("-external"),
+        global.GetBool("-update"),
         global.GetString("-backend"))
 }

@@ -116,10 +116,11 @@ func (d Dag) External() {
 
     var err os.Error
     var argv []string
-    var argc int = 2
+    var tmp string
+    var set *stringset.StringSet
     var i int = 0
 
-    set := stringset.New()
+    set = stringset.New()
 
     for _, v := range d {
         for dep := range v.dependencies.Iter() {
@@ -135,23 +136,26 @@ func (d Dag) External() {
         }
     }
 
-    if global.GetBool("-verbose") {
-        argc++
-    }
+    argv = make([]string,0)
 
-    argv = make([]string, argc)
-
-    argv[i], err = exec.LookPath("goinstall")
-    i++
+    tmp, err = exec.LookPath("goinstall")
 
     if err != nil {
         log.Fatalf("[ERROR] %s\n", err)
     }
 
+    argv = append(argv, tmp)
+
     if global.GetBool("-verbose") {
-        argv[i] = "-v=true"
-        i++
+        argv = append(argv, "-v=true")
     }
+
+    if global.GetBool("-update") {
+        argv = append(argv, "-u=true")
+    }
+
+    i = len(argv)
+    argv = append(argv, "dummy")
 
     for u := range set.Iter() {
         argv[i] = u

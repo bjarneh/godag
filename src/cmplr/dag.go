@@ -150,9 +150,8 @@ func (d Dag) External() {
         argv = append(argv, "-v=true")
     }
 
-    if global.GetBool("-update") {
-        argv = append(argv, "-u=true")
-    }
+    argv = append(argv, "-u=true")
+    argv = append(argv, "-clean=true")
 
     i = len(argv)
     argv = append(argv, "dummy")

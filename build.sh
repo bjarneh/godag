@@ -254,7 +254,11 @@ function triple(){
 
 # Make sure we have all binaries needed in order to build debian package
 function sanity(){
-    pathfind 'hg'       || die "[ERROR] missing 'hg (mercurial)'"
+    if [ -d ".hg" ];then
+        pathfind 'hg'   || die "[ERROR] missing 'hg (mercurial)'"
+    else # git
+        pathfind 'git'  || die "[ERROR] missing 'hg (mercurial)'"
+    fi
     pathfind 'gzip'     || die "[ERROR] missing 'gzip'"
     pathfind 'md5sum'   || die "[ERROR] missing 'md5sum'"
     pathfind 'dpkg-deb' || die "[ERROR] missing 'dpkg-deb'"

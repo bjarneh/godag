@@ -108,7 +108,8 @@ func init() {
     // override IncludeFile to make walker pick up only .go files
     walker.IncludeFile = func(s string) bool {
         return strings.HasSuffix(s, ".go") &&
-            !strings.HasSuffix(s, "_test.go")
+            !strings.HasSuffix(s, "_test.go") &&
+            !strings.HasPrefix(filepath.Base(s), "_")
     }
 
     // override IncludeDir to make walker ignore 'hidden' directories

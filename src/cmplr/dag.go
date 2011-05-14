@@ -336,7 +336,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
         }
     }
 
-    tmpfile = filepath.Join(tmpdir, "main.go")
+    tmpfile = filepath.Join(tmpdir, "_main.go")
 
     fil, e2 := os.OpenFile(tmpfile, os.O_WRONLY|os.O_CREATE, 0777)
 

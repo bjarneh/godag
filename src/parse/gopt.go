@@ -223,7 +223,7 @@ func (g *GetOpt) juxtaBoolOption(opt string) ([]string, bool) {
 
     var tmp string
 
-    if ! strings.HasPrefix(opt, "-") {
+    if ! strings.HasPrefix(opt, "-") || len(opt) < 3 {
         return nil, false
     }
 

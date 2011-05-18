@@ -46,7 +46,6 @@ var bools = []string{
     "-dryrun",
     "-test",
     "-list",
-    "-time",
     "-verbose",
     "-fmt",
     "-quiet",
@@ -85,7 +84,6 @@ func init() {
     getopt.BoolOption("-p -print --print")
     getopt.BoolOption("-d -dryrun --dryrun")
     getopt.BoolOption("-t -test --test test")
-    getopt.BoolOption("-T -time --time")
     getopt.BoolOption("-l -list --list")
     getopt.BoolOption("-q -quiet --quiet")
     getopt.BoolOption("-V -verbose --verbose")
@@ -141,6 +139,12 @@ func gotRoot() {
     }
 }
 
+func reportTime(){
+    timer.Stop("everything")
+    delta, _ := timer.Delta("everything")
+    say.Printf("time used: %s\n", timer.Nano2Time(delta))
+}
+
 
 func main() {
 
@@ -148,6 +152,9 @@ func main() {
     var e os.Error
     var argv, args []string
     var config1, config2 string
+
+    timer.Start("everything")
+    defer reportTime()
 
     // default config location 1 $HOME/.gdrc
     config1 = filepath.Join(os.Getenv("HOME"), ".gdrc")
@@ -247,9 +254,7 @@ func main() {
     }
 
     handy.DirOrExit(srcdir)
-    timer.Start("pathwalk")
     files = walker.PathWalk(filepath.Clean(srcdir))
-    timer.Stop("pathwalk")
 
     // gofmt on all files gathered
     if global.GetBool("-fmt") {
@@ -259,9 +264,7 @@ func main() {
 
     // parse the source code, look for dependencies
     dgrph := dag.New()
-    timer.Start("parsing")
     dgrph.Parse(srcdir, files)
-    timer.Stop("parsing")
 
     // print collected dependency info
     if global.GetBool("-print") {
@@ -285,9 +288,7 @@ func main() {
 
     // sort graph based on dependencies
     dgrph.GraphBuilder()
-    timer.Start("topsort")
     sorted := dgrph.Topsort()
-    timer.Stop("topsort")
 
     // print packages sorted
     if global.GetBool("-sort") {
@@ -298,7 +299,6 @@ func main() {
     }
 
     // compile
-    timer.Start("compiling")
     compiler.Init(srcdir, global.GetString("-arch"), includes)
     if global.GetString("-lib") != "" {
         compiler.CreateLibArgv(sorted)
@@ -311,11 +311,9 @@ func main() {
     } else {
         compiler.SerialCompile(sorted)
     }
-    timer.Stop("compiling")
 
     // test
     if global.GetBool("-test") {
-        timer.Start("testing")
         os.Setenv("SRCROOT", srcdir)
         testMain, testDir := dgrph.MakeMainTest(srcdir)
         if global.GetString("-lib") != "" {
@@ -355,18 +353,12 @@ func main() {
                 os.Exit(1)
             }
         }
-        timer.Stop("testing")
     }
 
     if global.GetString("-output") != "" {
-        timer.Start("linking")
         compiler.ForkLink(global.GetString("-output"), sorted, nil)
-        timer.Stop("linking")
     }
 
-    if global.GetBool("-time") {
-        timer.Print(os.Stdout)
-    }
 }
 
 
@@ -466,7 +458,6 @@ func printListing() {
   -a --arch            =>   %v
   -d --dryrun          =>   %t
   -c --clean           =>   %t
-  -T --time            =>   %t
   -q --quiet           =>   %t
   -L --lib             =>   '%s'
   -M --main            =>   '%s'
@@ -505,7 +496,6 @@ func printListing() {
         archRepr,
         global.GetBool("-dryrun"),
         global.GetBool("-clean"),
-        global.GetBool("-time"),
         global.GetBool("-quiet"),
         global.GetString("-lib"),
         global.GetString("-main"),

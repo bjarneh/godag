@@ -419,7 +419,6 @@ func printHelp() {
   -a --arch            architecture (amd64,arm,386)
   -d --dryrun          print what gd would do (stdout)
   -c --clean           rm *.[865] from src-directory
-  -T --time            print some timing results
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package

@@ -515,7 +515,7 @@ func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
     switch node.(type) {
     case *ast.FuncDecl:
         fdecl, ok := node.(*ast.FuncDecl)
-        if ok {
+	if ok && fdecl.Recv == nil {  // node is a function
             t.Names = append(t.Names, fdecl.Name.Name)
         }
     default: // nothing to do if not FuncDecl

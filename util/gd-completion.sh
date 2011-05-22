@@ -14,11 +14,12 @@ _gd(){
 
     local cur prev opts gd_long_opts gd_short_opts gd_short_explain
     # long options
-    gd_long_opts="--help --version --list --print --sort --output --static --arch --dryrun --clean --dot --test --benchmarks --match --verbose --test-bin --fmt --rew-rule --tab --tabwidth --no-comments --external --quiet --time --lib --main --backend"
+    gd_long_opts="--help --version --list --print --sort --output --static --arch --dryrun --clean --dot --test --benchmarks --match --verbose --test-bin --fmt --rew-rule --tab --tabwidth --no-comments --external --quiet --lib --main --backend"
     # short options + explain
-    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -a[--arch] -d[--dryrun] -c[--clean] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -e[--external] -q[--quiet] -T[--time] -L[--lib] -M[--main] -B[--backend]"
+    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -a[--arch] -d[--dryrun] -c[--clean] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -e[--external] -q[--quiet] -L[--lib] -M[--main] -B[--backend]"
     # short options
-    gd_short_opts="-h -v -l -p -s -o -S -a -d -c -I -t -b -m -V -f -q -T -B"
+    gd_short_opts="-h -v -l -p -s -o -S -a -d -c -I -t -b -m -V -f -q -B"
+    gd_special="clean test"
 
 
     COMPREPLY=()
@@ -37,6 +38,9 @@ _gd(){
             COMPREPLY=( $(compgen -W "${gd_short_explain}" -- "${cur}") )
         fi
         return 0
+    fi
+    if [[ "${cur}" == c* || "${cur}" == t* ]]; then
+        COMPREPLY=( $(compgen -W "${gd_special}" -- "${cur}") )
     fi
     if [[ "${prev}" == -* ]]; then
         case "${prev}" in

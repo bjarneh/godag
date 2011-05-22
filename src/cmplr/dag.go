@@ -79,6 +79,8 @@ func (d Dag) Parse(root string, files []string) {
             pkgname = filepath.Join(unroot, shortname)
         }
 
+        pkgname = filepath.ToSlash(pkgname)
+
         _, ok := d[pkgname]
         if !ok {
             d[pkgname] = newPackage()

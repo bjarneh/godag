@@ -381,7 +381,8 @@ func parseArgv(argv []string) (args []string) {
     if getopt.IsSet("-test") || getopt.IsSet("-fmt") {
         // override IncludeFile to make walker pick _test.go files
         walker.IncludeFile = func(s string) bool {
-            return strings.HasSuffix(s, ".go")
+            return strings.HasSuffix(s, ".go") &&
+                  !strings.HasPrefix(filepath.Base(s), "_")
         }
     }
 

@@ -495,9 +495,17 @@ func CreateTestArgv() []string {
         log.Fatal("[ERROR] could not locate working directory\n")
     }
 
-    arg0 := filepath.Join(pwd, global.GetString("-test-bin"))
     argv := make([]string, 0)
-    argv = append(argv, arg0)
+
+    if global.GetString("-backend") == "express" {
+        vmrun, e := exec.LookPath("vmrun")
+        if e != nil {
+            log.Fatalf("[ERROR] %s\n",e)
+        }
+        argv = append(argv, vmrun)
+    }
+
+    argv = append(argv,filepath.Join(pwd, global.GetString("-test-bin")))
 
     if global.GetString("-bench") != "" {
         argv = append(argv, "-test.bench")

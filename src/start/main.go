@@ -323,12 +323,10 @@ func main() {
         }
         compiler.SerialCompile(testMain)
         switch global.GetString("-backend") {
-        case "gc":
+        case "gc","express":
             compiler.ForkLink(global.GetString("-test-bin"), testMain, nil)
         case "gccgo", "gcc":
             compiler.ForkLink(global.GetString("-test-bin"), testMain, sorted)
-        case "express":
-            log.Fatal("TODO")
         default:
             log.Fatalf("[ERROR] '%s' unknown back-end\n", global.GetString("-backend"))
         }
@@ -352,6 +350,8 @@ func main() {
             if !ok {
                 os.Exit(1)
             }
+        }else{
+            say.Printf("%s\n", strings.Join(testArgv, " "))
         }
     }
 

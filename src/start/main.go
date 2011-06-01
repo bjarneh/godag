@@ -189,10 +189,7 @@ func main() {
         if srcdir == "." {
             srcdir, e = os.Getwd()
             if e != nil {
-                srcdir = os.Getenv("PWD")
-                if srcdir == "" {
-                    log.Fatal("[ERROR] can't find working directory\n")
-                }
+                log.Fatal("[ERROR] can't find working directory\n")
             }
         }
     }

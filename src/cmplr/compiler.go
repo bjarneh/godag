@@ -538,17 +538,25 @@ func Remove865o(dir string, alsoDir bool) {
 
     for i := 0; i < len(compiled); i++ {
 
+        shortName := compiled[i]
+        pwd, e    := os.Getwd()
+        if e == nil {
+            if strings.HasPrefix(compiled[i], pwd){
+                shortName = shortName[len(pwd)+1:]
+            }
+        }
+
         if !global.GetBool("-dryrun") {
 
             e := os.Remove(compiled[i])
             if e != nil {
                 log.Printf("[ERROR] could not delete file: %s\n", compiled[i])
             } else {
-                say.Printf("rm: %s\n", compiled[i])
+                say.Printf("rm: %s\n", shortName)
             }
 
         } else {
-            fmt.Printf("[dryrun] rm: %s\n", compiled[i])
+            fmt.Printf("[dryrun] rm: %s\n", shortName)
         }
     }
 

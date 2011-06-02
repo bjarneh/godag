@@ -13,6 +13,7 @@ IDIR=$HERE/src
 CPROOT=`date +"tmp-pkgroot-%s"`
 SRCROOT="$GOROOT/src/pkg"
 UP_ONE=""
+ONLYGCC=""
 
 # array to store packages which are pure go
 declare -a package;
@@ -69,6 +70,7 @@ package=(
 
 
 function build(){
+    gcsanity
     echo -n "build "
     cd src/utilz && $COMPILER walker.go || exit 1
     $COMPILER handy.go || exit 1
@@ -82,6 +84,28 @@ function build(){
     $COMPILER -I $IDIR compiler.go || exit 1
     cd $HERE/src/start && $COMPILER -I $IDIR main.go || exit 1
     cd $HERE && $LINKY -o gd -L src src/start/main.? || exit 1
+    echo "...done"
+}
+
+function gccbuild(){
+    echo -n "gccgo "
+    gccgo -I src -c -o src/utilz/stringbuffer.o src/utilz/stringbuffer.go || exit 1
+    gccgo -I src -c -o src/utilz/walker.o src/utilz/walker.go || exit 1
+    gccgo -I src -c -o src/utilz/stringset.o src/utilz/stringset.go || exit 1
+    gccgo -I src -c -o src/utilz/timer.o src/utilz/timer.go || exit 1
+    gccgo -I src -c -o src/parse/gopt.o src/parse/gopt.go src/parse/option.go || exit 1
+    gccgo -I src -c -o src/utilz/global.o src/utilz/global.go || exit 1
+    gccgo -I src -c -o src/utilz/handy.o src/utilz/handy.go || exit 1
+    gccgo -I src -c -o src/utilz/say.o src/utilz/say.go || exit 1
+    gccgo -I src -c -o src/cmplr/dag.o src/cmplr/dag.go || exit 1
+    gccgo -I src -c -o src/cmplr/compiler.o src/cmplr/compiler.go || exit 1
+    gccgo -I src -c -o src/start/main.o src/start/main.go || exit 1
+    gccgo -o gd -static src/start/main.o src/parse/gopt.o\
+        src/utilz/stringset.o src/utilz/handy.o\
+        src/utilz/stringbuffer.o src/utilz/walker.o\
+        src/cmplr/dag.o src/utilz/say.o\
+        src/utilz/global.o src/cmplr/compiler.o\
+        src/utilz/timer.o || exit 1
     echo "...done"
 }
 
@@ -141,12 +165,15 @@ targets:
   help    : print this menu and exit
   clean   : rm *.[865a] from src + rm gd \$HOME/bin/gd \$GOBIN/gd
   build   : compile source code in ./src
+  gbuild  : compile source code in ./src using gccgo
   move    : move 'gd' to \$HOME/bin (\$GOBIN fallback)
   install : clean + build + move (DEFAULT)
+  ginstall: clean + gbuild + move 
   cproot  : copy modified (pure go) part of \$GOROOT/src/pkg
   stdlib  : copy original (pure go) part of \$GOROOT/src/pkg
   testok  : copy partial stdlib that can be tested without modification
   debian  : build a debian package (godag_0.2-0_${GOARCH}.deb)
+  gdebian : build a debian package (godag_0.2-0_${GOARCH}.deb) using gccgo
 
 EOH
 }
@@ -207,6 +234,8 @@ function up_one_level(){
 
 function cproot(){
 
+    gcsanity
+
     mkdir "$CPROOT";
     echo "cp *.go: \$GOROOT/src/pkg  ->  $CPROOT"
     echo "this may take some time..."
@@ -250,6 +279,13 @@ function triple(){
     clean
     build
     move
+}
+
+# same as triple but build with gccgo
+function gtriple(){
+   clean
+   gccbuild
+   move
 }
 
 # Make sure we have all binaries needed in order to build debian package
@@ -339,7 +375,11 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
         DEBARCH="$GOARCH"
     fi
 
-    build
+    if [ "$ONLYGCC" ];then
+        gccbuild
+    else
+        build
+    fi
 
     mkdir -p ./debian/DEBIAN
     mkdir -p ./debian/usr/bin
@@ -371,8 +411,8 @@ DEBCHANGELOG="godag (0.2.0) devel; urgency=low
 
 }
 
-# main
-{
+function gcsanity(){
+
 [ "$GOROOT" ] || die "[ERROR] missing \$GOROOT"
 [ "$GOARCH" ] || die "[ERROR] missing \$GOARCH"
 [ "$GOOS" ]   || die "[ERROR] missing \$GOOS"
@@ -396,11 +436,15 @@ case "$GOARCH" in
     ;;
     *)
     echo "architecture not: 'amd64' '386' 'arm'"
-    echo "architecture was ${GOARC}"
+    echo "architecture was: ${GOARCH}"
     exit 1
     ;;
 esac
 
+}
+
+# main
+{
 
 case "$1" in
      'help' | '-h' | '--help' | '-help')
@@ -422,6 +466,9 @@ case "$1" in
       'build' | 'b' | '-b' | '--build' | '-build')
       time build
       ;;
+      'gbuild' | 'g' | '-g' | '--gbuild' | '-gbuild')
+      time gccbuild
+      ;;
       'move' | 'm' | '-m' | '--move' | '-move')
       time move
       ;;
@@ -430,6 +477,13 @@ case "$1" in
       ;;
       'debian' | '--debian' | '-debian')
       debian
+      ;;
+      'gdebian' | '--gdebian' | '-gdebian')
+      ONLYGCC="yes"
+      debian
+      ;;
+      'ginstall' | '--ginstall' | '-ginstall')
+      time gtriple
       ;;
       *)
       time triple

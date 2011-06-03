@@ -522,29 +522,14 @@ func CreateTestArgv() []string {
 }
 
 func Remove865o(dir string, alsoDir bool) {
-
-    switch global.GetString("-backend") {
-    case "gc":
-        // override IncludeFile to make walker pick up only .[865]
-        walker.IncludeFile = func(s string) bool {
-            return strings.HasSuffix(s, ".8") ||
-                strings.HasSuffix(s, ".6") ||
-                strings.HasSuffix(s, ".5")
-        }
-    case "gcc","gccgo":
-        // override IncludeFile to make walker pick up only .o
-        walker.IncludeFile = func(s string) bool {
-            return strings.HasSuffix(s, ".o")
-        }
-    case "express":
-        // override IncludeFile to make walker pick up only .vmo files
-        walker.IncludeFile = func(s string) bool {
-            return strings.HasSuffix(s, ".vmo")
-        }
-    default:
-        log.Fatalf("[ERROR] uknown backend: %s\n", global.GetString("-backend"))
+    // override IncludeFile to make walker pick up .[865] .o .vmo
+    walker.IncludeFile = func(s string) bool {
+        return strings.HasSuffix(s, ".8") ||
+               strings.HasSuffix(s, ".6") ||
+               strings.HasSuffix(s, ".5") ||
+               strings.HasSuffix(s, ".o") ||
+               strings.HasSuffix(s, ".vmo")
     }
-
 
     handy.DirOrExit(dir)
 

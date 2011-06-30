@@ -16,42 +16,51 @@ import (
 
 // some utility functions
 
-func StdExecve(argv []string, stopOnTrouble bool) (ok bool) {
+func StdExecve(argv []string, stopOnTrouble bool) bool {
 
     var err os.Error
     var cmd *exec.Cmd
-    var pt int = exec.PassThrough
-    var wmsg *os.Waitmsg
-    ok = true
-    cmd, err = exec.Run(argv[0], argv, os.Environ(), "", pt, pt, pt)
+
+    switch len(argv) {
+    case 0:
+        if stopOnTrouble {
+            log.Fatalf("[ERROR] len(argv) == 0\n")
+        }
+        return false
+    case 1:
+        cmd = exec.Command(argv[0])
+    default:
+        cmd = exec.Command(argv[0], argv[1:]...)
+    }
+
+    // pass-through
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    cmd.Stdin = os.Stdin
+
+    err = cmd.Start()
 
     if err != nil {
         if stopOnTrouble {
             log.Fatalf("[ERROR] %s\n", err)
         } else {
             log.Printf("[ERROR] %s\n", err)
-        }
-        ok = false
-
-    } else {
-
-        wmsg, err = cmd.Wait(0)
-
-        if err != nil || wmsg.WaitStatus.ExitStatus() != 0 {
-
-            if err != nil {
-                log.Printf("[ERROR] %s\n", err)
-            }
-
-            if stopOnTrouble {
-                os.Exit(1)
-            }
-
-            ok = false
+            return false
         }
     }
 
-    return ok
+    err = cmd.Wait()
+
+    if err != nil {
+        if stopOnTrouble {
+            log.Fatalf("[ERROR] %s\n", err)
+        } else {
+            log.Printf("[ERROR] %s\n", err)
+            return false
+        }
+    }
+
+    return true
 }
 
 
@@ -119,7 +128,7 @@ func ConfigToArgv(pathname string) (argv []string, ok bool) {
         return nil, false
     }
 
-    argv = strings.Split(pureOptions, " ", -1)
+    argv = strings.Split(pureOptions, " ")
 
     return argv, true
 }
@@ -139,18 +148,19 @@ func DirOrExit(pathname string) {
 
 // Mkdir if not dir
 
-func DirOrMkdir(pathname string) {
+func DirOrMkdir(pathname string) bool {
 
     fileInfo, err := os.Stat(pathname)
 
     if err == nil && fileInfo.IsDirectory() {
-        return
+        return true
     } else {
         err = os.MkdirAll(pathname, 0777)
         if err != nil {
             log.Fatalf("[ERROR] %s\n", err)
         }
     }
+    return false
 }
 
 func IsDir(pathname string) bool {
@@ -159,4 +169,48 @@ func IsDir(pathname string) bool {
         return false
     }
     return true
+}
+
+func IsFile(pathname string) bool {
+    fileInfo, err := os.Stat(pathname)
+    if err != nil || !fileInfo.IsRegular() {
+        return false
+    }
+    return true
+}
+
+func Delete(pathname string, die bool) (ok bool) {
+    ok = true
+    e := os.Remove(pathname)
+    if e != nil {
+        log.Printf("[ERROR]: %s\n", e)
+        if die {
+            os.Exit(1)
+        }
+        ok = false
+    }
+    return
+}
+
+func RmRf(pathname string, die bool) (ok bool) {
+    ok = true
+    e := os.RemoveAll(pathname)
+    if e != nil {
+        log.Printf("[ERROR]: %s\n", e)
+        if die {
+            os.Exit(1)
+        }
+        ok = false
+    }
+    return
+}
+
+func ModifyTimestamp(pathname string) (ts int64) {
+    finfo, e := os.Stat(pathname)
+    if e != nil {
+        log.Fatalf("[ERROR]: %s - not a file\n", pathname)
+    } else {
+        ts = finfo.Mtime_ns
+    }
+    return
 }

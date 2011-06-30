@@ -20,7 +20,7 @@ func TestGetOpt(t *testing.T) {
     getopt.StringOption("-num=")
     getopt.StringOption("-I")
 
-    argv := strings.Split("-h -num=7 -version not-option -fsomething -I/dir1 -I/dir2", " ", -1)
+    argv := strings.Split("-h -num=7 -version not-option -fsomething -I/dir1 -I/dir2", " ")
 
     args := getopt.Parse(argv)
 

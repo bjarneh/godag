@@ -138,7 +138,7 @@ func (d Dag) External() {
         }
     }
 
-    argv = make([]string,0)
+    argv = make([]string, 0)
 
     tmp, err = exec.LookPath("goinstall")
 
@@ -230,11 +230,11 @@ func (d Dag) MakeDotGraph(filename string) {
 
 }
 
-func (d Dag) MakeMainTest(root string) ([]*Package, string) {
+func (d Dag) MakeMainTest(root string) ([]*Package, string, string) {
 
     var max, i int
     var isTest bool
-    var sname, tmpdir, tmpstub, tmpfile string
+    var lname, sname, tmplib, tmpdir, tmpstub, tmpfile string
 
     sbImports := stringbuffer.NewSize(300)
     imprtSet := stringset.New()
@@ -253,6 +253,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
         isTest = false
         sname = v.ShortName
+        lname = v.ShortName
         max = len(v.ShortName)
 
         if max > 5 && sname[max-5:] == "_test" {
@@ -264,15 +265,20 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
             if len(collector.Names) > 0 {
                 isTest = true
-                imprtSet.Add(fmt.Sprintf("import \"%s\"\n", v.Name))
+                if hasSlash(v.Name) {
+                    lname = removeSlashAndDot(v.Name)
+                    imprtSet.Add(fmt.Sprintf("import %s \"%s\"\n", lname, v.Name))
+                } else {
+                    imprtSet.Add(fmt.Sprintf("import \"%s\"\n", v.Name))
+                }
                 for i = 0; i < len(collector.Names); i++ {
                     testFunc := collector.Names[i]
                     if len(testFunc) >= 4 && testFunc[0:4] == "Test" {
                         sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
-                            sname, testFunc, sname, testFunc))
+                            sname, testFunc, lname, testFunc))
                     } else if len(testFunc) >= 9 && testFunc[0:9] == "Benchmark" {
                         sbBench.Add(fmt.Sprintf("testing.InternalBenchmark{\"%s.%s\", %s.%s },\n",
-                            sname, testFunc, sname, testFunc))
+                            sname, testFunc, lname, testFunc))
 
                     }
                 }
@@ -292,15 +298,20 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
             }
 
             if len(collector.Names) > 0 {
-                imprtSet.Add(fmt.Sprintf("import \"%s\"\n", v.Name))
+                if hasSlash(v.Name) {
+                    lname = removeSlashAndDot(v.Name)
+                    imprtSet.Add(fmt.Sprintf("import %s \"%s\"\n", lname, v.Name))
+                } else {
+                    imprtSet.Add(fmt.Sprintf("import \"%s\"\n", v.Name))
+                }
                 for i = 0; i < len(collector.Names); i++ {
                     testFunc := collector.Names[i]
                     if len(testFunc) >= 4 && testFunc[0:4] == "Test" {
                         sbTests.Add(fmt.Sprintf("testing.InternalTest{\"%s.%s\", %s.%s },\n",
-                            sname, testFunc, sname, testFunc))
+                            sname, testFunc, lname, testFunc))
                     } else if len(testFunc) >= 9 && testFunc[0:9] == "Benchmark" {
                         sbBench.Add(fmt.Sprintf("testing.InternalBenchmark{\"%s.%s\", %s.%s },\n",
-                            sname, testFunc, sname, testFunc))
+                            sname, testFunc, lname, testFunc))
                     }
                 }
             }
@@ -316,7 +327,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
     sbTotal := stringbuffer.NewSize(sbImports.Len() +
         sbTests.Len() +
-        sbBench.Len() + 5)
+        sbBench.Len() + 100)
     sbTotal.Add(sbImports.String())
     sbTotal.Add(sbTests.String())
     sbTotal.Add(sbBench.String())
@@ -325,7 +336,10 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
     sbTotal.Add("testing.Main(regexp.MatchString, tests, benchmarks);\n}\n\n")
 
     tmpstub = fmt.Sprintf("tmp%d", time.Seconds())
-    tmpdir = fmt.Sprintf("%s%s", addSeparatorPath(root), tmpstub)
+    tmpdir = filepath.Join(root, tmpstub)
+    if global.GetString("-lib") != "" {
+        tmplib = filepath.Join(global.GetString("-lib"), tmpstub)
+    }
 
     dir, e1 := os.Stat(tmpdir)
 
@@ -363,7 +377,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string) {
 
     vec := make([]*Package, 1)
     vec[0] = p
-    return vec, tmpdir
+    return vec, tmpdir, tmplib
 }
 
 func (d Dag) Topsort() []*Package {
@@ -479,6 +493,15 @@ func (p *Package) UpToDate() bool {
         }
     }
 
+    // package contains _test.go files + testing => not UpToDate
+    if global.GetBool("-test") {
+        for i = 0; i < len(p.Files); i++ {
+            if strings.HasSuffix(p.Files[i], "_test.go") {
+                return false
+            }
+        }
+    }
+
     return true
 }
 
@@ -517,7 +540,7 @@ func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
     switch node.(type) {
     case *ast.FuncDecl:
         fdecl, ok := node.(*ast.FuncDecl)
-	if ok && fdecl.Recv == nil {  // node is a function
+        if ok && fdecl.Recv == nil { // node is a function
             t.Names = append(t.Names, fdecl.Name.Name)
         }
     default: // nothing to do if not FuncDecl
@@ -530,6 +553,15 @@ func addSeparatorPath(root string) string {
         root = root + "/"
     }
     return root
+}
+
+func hasSlash(s string) bool {
+    return strings.Index(s, "/") != -1
+}
+
+func removeSlashAndDot(s string) string {
+    noslash := strings.Replace(s, "/", "", -1)
+    return strings.Replace(noslash, ".", "", -1)
 }
 
 func getSyntaxTreeOrDie(file string, mode uint) *ast.File {

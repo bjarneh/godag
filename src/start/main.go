@@ -139,7 +139,7 @@ func gotRoot() {
     }
 }
 
-func reportTime(){
+func reportTime() {
     timer.Stop("everything")
     delta, _ := timer.Delta("everything")
     say.Printf("time used: %s\n", timer.Nano2Time(delta))
@@ -148,7 +148,7 @@ func reportTime(){
 
 func main() {
 
-    var ok bool
+    var ok, up2date bool
     var e os.Error
     var argv, args []string
     var config1, config2 string
@@ -224,9 +224,6 @@ func main() {
     if len(args) == 0 {
         // give nice feedback if missing input dir
         cwd, e := os.Getwd()
-        if e != nil {
-            cwd = os.Getenv("PWD")
-        }
         possibleSrc := filepath.Join(cwd, "src")
         _, e = os.Stat(possibleSrc)
         if e != nil {
@@ -237,17 +234,6 @@ func main() {
 
     if global.GetBool("-quiet") {
         say.Mute()
-    }
-
-    // delete all object/archive files
-    if global.GetBool("-clean") {
-        compiler.Remove865o(srcdir, false) // do not remove dir
-        if global.GetString("-lib") != "" {
-            if handy.IsDir(global.GetString("-lib")) {
-                compiler.Remove865o(global.GetString("-lib"), true)
-            }
-        }
-        os.Exit(0)
     }
 
     handy.DirOrExit(srcdir)
@@ -287,6 +273,12 @@ func main() {
     dgrph.GraphBuilder()
     sorted := dgrph.Topsort()
 
+    // clean only what we possibly could have generated…
+    if global.GetBool("-clean") {
+        compiler.DeleteObjects(srcdir, sorted)
+        os.Exit(0)
+    }
+
     // print packages sorted
     if global.GetBool("-sort") {
         for i := 0; i < len(sorted); i++ {
@@ -303,16 +295,17 @@ func main() {
         compiler.CreateArgv(sorted)
     }
 
+    // up2date == true => 0 packages needed to be compiled
     if runtime.GOMAXPROCS(-1) > 1 && !global.GetBool("-dryrun") {
-        compiler.ParallelCompile(sorted)
+        up2date = compiler.ParallelCompile(sorted)
     } else {
-        compiler.SerialCompile(sorted)
+        up2date = compiler.SerialCompile(sorted)
     }
 
     // test
     if global.GetBool("-test") {
         os.Setenv("SRCROOT", srcdir)
-        testMain, testDir := dgrph.MakeMainTest(srcdir)
+        testMain, testDir, testLib := dgrph.MakeMainTest(srcdir)
         if global.GetString("-lib") != "" {
             compiler.CreateLibArgv(testMain)
         } else {
@@ -320,40 +313,37 @@ func main() {
         }
         compiler.SerialCompile(testMain)
         switch global.GetString("-backend") {
-        case "gc","express":
-            compiler.ForkLink(global.GetString("-test-bin"), testMain, nil)
+        case "gc", "express":
+            compiler.ForkLink(global.GetString("-test-bin"), testMain, nil, false)
         case "gccgo", "gcc":
-            compiler.ForkLink(global.GetString("-test-bin"), testMain, sorted)
+            compiler.ForkLink(global.GetString("-test-bin"), testMain, sorted, false)
         default:
             log.Fatalf("[ERROR] '%s' unknown back-end\n", global.GetString("-backend"))
         }
         compiler.DeletePackages(testMain)
-        rmError := os.Remove(testDir)
-        if rmError != nil {
-            log.Printf("[ERROR] failed to remove testdir: %s\n", testDir)
+        handy.Delete(testDir, false)
+        if testLib != "" {
+            handy.Delete(testLib, false)
         }
         testArgv := compiler.CreateTestArgv()
         if !global.GetBool("-dryrun") {
-            tstring := "testing  : "
+            say.Printf("testing  : ")
             if global.GetBool("-verbose") {
-                tstring += "\n"
+                say.Printf("\n")
             }
-            say.Printf(tstring)
             ok = handy.StdExecve(testArgv, false)
-            e = os.Remove(global.GetString("-test-bin"))
-            if e != nil {
-                log.Printf("[ERROR] %s\n", e)
-            }
+            handy.Delete(global.GetString("-test-bin"), false)
             if !ok {
                 os.Exit(1)
             }
-        }else{
+        } else {
             say.Printf("%s\n", strings.Join(testArgv, " "))
         }
     }
 
+    // link if ! up2date
     if global.GetString("-output") != "" {
-        compiler.ForkLink(global.GetString("-output"), sorted, nil)
+        compiler.ForkLink(global.GetString("-output"), sorted, nil, up2date)
     }
 
 }
@@ -375,11 +365,11 @@ func parseArgv(argv []string) (args []string) {
         }
     }
 
-    if getopt.IsSet("-test") || getopt.IsSet("-fmt") {
+    if getopt.IsSet("-test") || getopt.IsSet("-fmt") || getopt.IsSet("-clean") {
         // override IncludeFile to make walker pick _test.go files
         walker.IncludeFile = func(s string) bool {
             return strings.HasSuffix(s, ".go") &&
-                  !strings.HasPrefix(filepath.Base(s), "_")
+                !strings.HasPrefix(filepath.Base(s), "_")
         }
     }
 
@@ -416,7 +406,7 @@ func printHelp() {
   -S --static          statically link binary
   -a --arch            architecture (amd64,arm,386)
   -d --dryrun          print what gd would do (stdout)
-  -c --clean           rm *.[865] from src-directory
+  -c --clean           delete generated object code
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package

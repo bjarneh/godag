@@ -179,11 +179,11 @@ func (g *GetOpt) Parse(argv []string) (args []string) {
                 if ok {
 
                     for i := 0; i < len(boolopts); i++ {
-                        boolopt,_ := g.isOption(boolopts[i]).(*BoolOption)
+                        boolopt, _ := g.isOption(boolopts[i]).(*BoolOption)
                         boolopt.setFlag()
                     }
 
-                }else{
+                } else {
                     args = append(args, argv[i])
                 }
             }
@@ -223,14 +223,14 @@ func (g *GetOpt) juxtaBoolOption(opt string) ([]string, bool) {
 
     var tmp string
 
-    if ! strings.HasPrefix(opt, "-") || len(opt) < 3 {
+    if !strings.HasPrefix(opt, "-") || len(opt) < 3 {
         return nil, false
     }
 
     bopts := make([]string, 0)
-    couldBe := strings.Split(opt[1:],"", -1)
+    couldBe := strings.Split(opt[1:], "")
 
-    for i := 0; i < len(couldBe); i++  {
+    for i := 0; i < len(couldBe); i++ {
 
         tmp = "-" + couldBe[i]
         opt := g.isOption(tmp)
@@ -239,10 +239,10 @@ func (g *GetOpt) juxtaBoolOption(opt string) ([]string, bool) {
             _, ok := opt.(*BoolOption)
             if ok {
                 bopts = append(bopts, tmp)
-            }else{
+            } else {
                 return nil, false
             }
-        }else{
+        } else {
             return nil, false
         }
     }
@@ -262,7 +262,7 @@ func (g *GetOpt) IsSet(o string) bool {
 }
 
 func (g *GetOpt) BoolOption(optstr string) {
-    ops := strings.Split(optstr, " ", -1)
+    ops := strings.Split(optstr, " ")
     boolopt := newBoolOption(ops)
     for i := range ops {
         g.cache[ops[i]] = boolopt
@@ -271,7 +271,7 @@ func (g *GetOpt) BoolOption(optstr string) {
 }
 
 func (g *GetOpt) StringOption(optstr string) {
-    ops := strings.Split(optstr, " ", -1)
+    ops := strings.Split(optstr, " ")
     stringopt := newStringOption(ops)
     for i := range ops {
         g.cache[ops[i]] = stringopt

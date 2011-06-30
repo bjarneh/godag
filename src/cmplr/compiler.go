@@ -185,7 +185,7 @@ func CreateLibArgv(pkgs []*dag.Package) {
 
 }
 
-func SerialCompile(pkgs []*dag.Package) {
+func SerialCompile(pkgs []*dag.Package) bool {
 
     var oldPkgFound bool = false
 
@@ -203,9 +203,11 @@ func SerialCompile(pkgs []*dag.Package) {
             }
         }
     }
+
+    return !oldPkgFound
 }
 
-func ParallelCompile(pkgs []*dag.Package) {
+func ParallelCompile(pkgs []*dag.Package) bool {
 
     var localDeps *stringset.StringSet
     var compiledDeps *stringset.StringSet
@@ -259,9 +261,10 @@ func ParallelCompile(pkgs []*dag.Package) {
     }
 
     if len(parallel) > 0 {
-        _ = compileMultipe(parallel, oldPkgFound)
+        oldPkgFound = compileMultipe(parallel, oldPkgFound)
     }
 
+    return !oldPkgFound
 }
 
 func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
@@ -322,24 +325,15 @@ func gCompile(argv []string, c chan bool) {
 func DeletePackages(pkgs []*dag.Package) bool {
 
     var ok = true
-    var e os.Error
 
     for i := 0; i < len(pkgs); i++ {
 
         for y := 0; y < len(pkgs[i].Files); y++ {
-            e = os.Remove(pkgs[i].Files[y])
-            if e != nil {
-                ok = false
-                log.Printf("[ERROR] %s\n", e)
-            }
+            handy.Delete(pkgs[i].Files[y], false)
         }
         if !global.GetBool("-dryrun") {
             pcompile := filepath.Join(libroot, pkgs[i].Name) + suffix
-            e = os.Remove(pcompile)
-            if e != nil {
-                ok = false
-                log.Printf("[ERROR] %s\n", e)
-            }
+            ok = handy.Delete(pcompile, false)
         }
     }
 
@@ -347,7 +341,7 @@ func DeletePackages(pkgs []*dag.Package) bool {
 }
 
 
-func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
+func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date bool) {
 
     var mainPKG *dag.Package
 
@@ -371,6 +365,13 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package) {
     }
 
     compiled := filepath.Join(libroot, mainPKG.Name) + suffix
+
+    if  up2date && ! global.GetBool("-dryrun") && handy.IsFile(output) {
+        if handy.ModifyTimestamp(compiled) < handy.ModifyTimestamp(output) {
+            say.Printf("up 2 date: %s\n", output)
+            return
+        }
+    }
 
     argv := make([]string, 0)
     argv = append(argv, pathLinker)
@@ -500,12 +501,12 @@ func CreateTestArgv() []string {
     if global.GetString("-backend") == "express" {
         vmrun, e := exec.LookPath("vmrun")
         if e != nil {
-            log.Fatalf("[ERROR] %s\n",e)
+            log.Fatalf("[ERROR] %s\n", e)
         }
         argv = append(argv, vmrun)
     }
 
-    argv = append(argv,filepath.Join(pwd, global.GetString("-test-bin")))
+    argv = append(argv, filepath.Join(pwd, global.GetString("-test-bin")))
 
     if global.GetString("-bench") != "" {
         argv = append(argv, "-test.bench")
@@ -519,62 +520,6 @@ func CreateTestArgv() []string {
         argv = append(argv, "-test.v")
     }
     return argv
-}
-
-func Remove865o(dir string, alsoDir bool) {
-    // override IncludeFile to make walker pick up .[865] .o .vmo
-    walker.IncludeFile = func(s string) bool {
-        return strings.HasSuffix(s, ".8") ||
-               strings.HasSuffix(s, ".6") ||
-               strings.HasSuffix(s, ".5") ||
-               strings.HasSuffix(s, ".o") ||
-               strings.HasSuffix(s, ".vmo")
-    }
-
-    handy.DirOrExit(dir)
-
-    compiled := walker.PathWalk(filepath.Clean(dir))
-
-    for i := 0; i < len(compiled); i++ {
-
-        shortName := compiled[i]
-        pwd, e    := os.Getwd()
-        if e == nil {
-            if strings.HasPrefix(compiled[i], pwd){
-                shortName = shortName[len(pwd)+1:]
-            }
-        }
-
-        if !global.GetBool("-dryrun") {
-
-            e := os.Remove(compiled[i])
-            if e != nil {
-                log.Printf("[ERROR] could not delete file: %s\n", compiled[i])
-            } else {
-                say.Printf("rm: %s\n", shortName)
-            }
-
-        } else {
-            fmt.Printf("[dryrun] rm: %s\n", shortName)
-        }
-    }
-
-    if alsoDir {
-        // remove entire dir if empty after objects are deleted
-        walker.IncludeFile = func(s string) bool { return true }
-        walker.IncludeDir = func(s string) bool { return true }
-        if len(walker.PathWalk(dir)) == 0 {
-            if global.GetBool("-dryrun") {
-                fmt.Printf("[dryrun] rm: %s\n", dir)
-            } else {
-                say.Printf("rm: %s\n", dir)
-                e := os.RemoveAll(dir)
-                if e != nil {
-                    log.Fatalf("[ERROR] %s\n", e)
-                }
-            }
-        }
-    }
 }
 
 
@@ -622,6 +567,50 @@ func FormatFiles(files []string) {
             _ = handy.StdExecve(argv, true)
         } else {
             fmt.Printf(" %s\n", strings.Join(argv, " "))
+        }
+    }
+}
+
+func DeleteObjects(dir string, pkgs []*dag.Package) {
+
+    var stub, tmp string
+
+    suffixes := []string{".8", ".6", ".5", ".o", ".vmo"}
+
+    libdir := global.GetString("-lib")
+
+    if libdir != "" {
+        dir = libdir
+    }
+
+    for i := 0; i < len(pkgs); i++ {
+        stub = filepath.Join(dir, pkgs[i].Name)
+        for j := 0; j < len(suffixes); j++ {
+            tmp = stub + suffixes[j]
+            if handy.IsFile(tmp) {
+                if global.GetBool("-dryrun") {
+                    say.Printf("[dryrun] rm: %s\n", tmp)
+                } else {
+                    say.Printf("rm: %s\n", tmp)
+                    handy.Delete(tmp, false)
+                }
+            }
+        }
+    }
+
+    // remove entire dir if empty after objects are deleted.
+    // only do this if -lib is present, there is no reason to
+    // do this (extra treewalk) if objects are in src directory
+    if libdir != "" && handy.IsDir(dir) {
+        walker.IncludeFile = func(s string) bool { return true }
+        walker.IncludeDir = func(s string) bool { return true }
+        if len(walker.PathWalk(dir)) == 0 {
+            if global.GetBool("-dryrun") {
+                fmt.Printf("[dryrun] rm: %s\n", dir)
+            } else {
+                say.Printf("rm: %s\n", dir)
+                handy.RmRf(dir, true) // die on error
+            }
         }
     }
 }

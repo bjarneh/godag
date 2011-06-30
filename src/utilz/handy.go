@@ -128,7 +128,7 @@ func ConfigToArgv(pathname string) (argv []string, ok bool) {
         return nil, false
     }
 
-    argv = strings.Split(pureOptions, " ")
+    argv = strings.Split(pureOptions, " ", -1)
 
     return argv, true
 }

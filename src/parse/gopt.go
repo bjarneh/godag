@@ -228,7 +228,7 @@ func (g *GetOpt) juxtaBoolOption(opt string) ([]string, bool) {
     }
 
     bopts := make([]string, 0)
-    couldBe := strings.Split(opt[1:], "")
+    couldBe := strings.Split(opt[1:], "", -1)
 
     for i := 0; i < len(couldBe); i++ {
 
@@ -262,7 +262,7 @@ func (g *GetOpt) IsSet(o string) bool {
 }
 
 func (g *GetOpt) BoolOption(optstr string) {
-    ops := strings.Split(optstr, " ")
+    ops := strings.Split(optstr, " ", -1)
     boolopt := newBoolOption(ops)
     for i := range ops {
         g.cache[ops[i]] = boolopt
@@ -271,7 +271,7 @@ func (g *GetOpt) BoolOption(optstr string) {
 }
 
 func (g *GetOpt) StringOption(optstr string) {
-    ops := strings.Split(optstr, " ")
+    ops := strings.Split(optstr, " ", -1)
     stringopt := newStringOption(ops)
     for i := range ops {
         g.cache[ops[i]] = stringopt

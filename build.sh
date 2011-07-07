@@ -81,6 +81,7 @@ function build(){
     $COMPILER say.go || exit 1
     cd $HERE/src/parse && $COMPILER -o gopt.$OBJ option.go gopt.go || exit 1
     cd $HERE/src/cmplr && $COMPILER -I $IDIR dag.go || exit 1
+    $COMPILER -I $IDIR gdmake.go || exit 1
     $COMPILER -I $IDIR compiler.go || exit 1
     cd $HERE/src/start && $COMPILER -I $IDIR main.go || exit 1
     cd $HERE && $LINKY -o gd -L src src/start/main.? || exit 1
@@ -98,12 +99,13 @@ function gccbuild(){
     gccgo -I src -c -o src/utilz/handy.o src/utilz/handy.go || exit 1
     gccgo -I src -c -o src/utilz/say.o src/utilz/say.go || exit 1
     gccgo -I src -c -o src/cmplr/dag.o src/cmplr/dag.go || exit 1
+    gccgo -I src -c -o src/cmplr/gdmake.o src/cmplr/gdmake.go || exit 1
     gccgo -I src -c -o src/cmplr/compiler.o src/cmplr/compiler.go || exit 1
     gccgo -I src -c -o src/start/main.o src/start/main.go || exit 1
     gccgo -o gd -static src/start/main.o src/parse/gopt.o\
         src/utilz/stringset.o src/utilz/handy.o\
         src/utilz/stringbuffer.o src/utilz/walker.o\
-        src/cmplr/dag.o src/utilz/say.o\
+        src/cmplr/dag.o src/cmplr/gdmake.o src/utilz/say.o\
         src/utilz/global.o src/cmplr/compiler.o\
         src/utilz/timer.o || exit 1
     echo "...done"
@@ -121,6 +123,7 @@ function clean(){
     rm -rf src/utilz/timer.?
     rm -rf src/utilz/say.?
     rm -rf src/cmplr/dag.?
+    rm -rf src/cmplr/gdmake.?
     rm -rf src/cmplr/compiler.?
     rm -rf src/parse/gopt.?
     rm -rf src/parse/gopt_test.?

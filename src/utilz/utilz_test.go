@@ -99,6 +99,7 @@ func TestWalker(t *testing.T) {
     // stuff is added or removed == not ideal..
     ss.Add(filepath.Join(srcroot, "cmplr", "compiler.go"))
     ss.Add(filepath.Join(srcroot, "cmplr", "dag.go"))
+    ss.Add(filepath.Join(srcroot, "cmplr", "gdmake.go"))
     ss.Add(filepath.Join(srcroot, "parse", "gopt.go"))
     ss.Add(filepath.Join(srcroot, "parse", "gopt_test.go"))
     ss.Add(filepath.Join(srcroot, "parse", "option.go"))
@@ -135,13 +136,13 @@ func TestTimer(t *testing.T) {
     err := timer.Stop("not here")
 
     if err == nil {
-        t.Fatalf("job: 'not here' is not here\n")
+        t.Fatalf("job: 'not here' is here\n")
     }
 
     err = timer.Stop("is here")
 
     if err != nil {
-        t.Fatalf("job: 'is here' is here\n")
+        t.Fatalf("job: 'is here' is not here\n")
     }
 
     delta, err := timer.Delta("is here")

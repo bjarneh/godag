@@ -31,19 +31,22 @@ func NewSize(size int) *StringBuffer {
 func (s *StringBuffer) Add(more string) {
 
     if (len(more) + s.current) > s.max {
+
         s.resize()
         s.Add(more)
 
     } else {
 
-        var lenmore int = len(more)
-
-        for i := 0; i < lenmore; i++ {
+        for i := 0; i < len(more); i++ {
             s.buffer[i+s.current] = more[i]
         }
 
-        s.current += lenmore
+        s.current += len(more)
     }
+}
+
+func (s *StringBuffer) AddBytes(b []byte) {
+    s.Add(string(b))
 }
 
 func (s *StringBuffer) Clear() {
@@ -67,8 +70,12 @@ func (s *StringBuffer) Len() int {
 }
 
 func (s *StringBuffer) String() string {
-    slice := s.buffer[0:s.current]
+    slice := s.buffer[:s.current]
     return string(slice)
+}
+
+func (s *StringBuffer) Bytes() []byte {
+    return s.buffer[:s.current]
 }
 
 func (s *StringBuffer) resize() {

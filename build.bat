@@ -58,6 +58,7 @@ CHDIR ..\parse
 8g.exe -o gopt.8 option.go gopt.go
 cd ..\cmplr
 8g.exe -I ..\ dag.go
+8g.exe -I ..\ gdmake.go
 8g.exe -I ..\ compiler.go
 CHDIR ..\start
 8g.exe -I ..\ main.go

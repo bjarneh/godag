@@ -14,6 +14,7 @@ import (
     "utilz/walker"
     "cmplr/compiler"
     "cmplr/dag"
+    "cmplr/gdmake"
     "parse/gopt"
     "utilz/handy"
     "utilz/global"
@@ -67,6 +68,7 @@ var strs = []string{
     "-lib",
     "-main",
     "-backend",
+    "-gdmake",
 }
 
 
@@ -94,6 +96,7 @@ func init() {
     getopt.StringOption("-dot -dot= --dot --dot=")
     getopt.StringOption("-L -L= -lib -lib= --lib --lib=")
     getopt.StringOption("-I -I=")
+    getopt.StringOption("-g -g= -gdmake -gdmake= --gdmake --gdmake=")
     getopt.StringOption("-tabwidth --tabwidth -tabwidth= --tabwidth=")
     getopt.StringOption("-rew-rule --rew-rule -rew-rule= --rew-rule=")
     getopt.StringOption("-o -o= -output --output -output= --output=")
@@ -104,11 +107,7 @@ func init() {
     getopt.StringOption("-B -B= -backend --backend -backend= --backend=")
 
     // override IncludeFile to make walker pick up only .go files
-    walker.IncludeFile = func(s string) bool {
-        return strings.HasSuffix(s, ".go") &&
-            !strings.HasSuffix(s, "_test.go") &&
-            !strings.HasPrefix(filepath.Base(s), "_")
-    }
+    walker.IncludeFile = noTestFilesFilter
 
     // override IncludeDir to make walker ignore 'hidden' directories
     walker.IncludeDir = func(s string) bool {
@@ -124,10 +123,29 @@ func init() {
         global.SetString(skey, "")
     }
 
-    global.SetString("-test-bin", "gdtest")
+    // Testing on Windows requires .exe ending
+    if os.Getenv("GOOS") == "windows" {
+        global.SetString("-test-bin", "gdtest.exe")
+    }else{
+        global.SetString("-test-bin", "gdtest")
+    }
+
     global.SetString("-backend", "gc")
     global.SetString("-I", "")
 
+}
+
+// utility func for walker: *.go unless start = '_' || end = _test.go
+func noTestFilesFilter(s string) bool {
+    return strings.HasSuffix(s, ".go") &&
+        !strings.HasSuffix(s, "_test.go") &&
+        !strings.HasPrefix(filepath.Base(s), "_")
+}
+
+// utility func for walker: *.go unless start = '_'
+func allGoFilesFilter(s string) bool {
+    return strings.HasSuffix(s, ".go") &&
+        !strings.HasPrefix(filepath.Base(s), "_")
 }
 
 // ignore GOROOT for gccgo and express
@@ -144,7 +162,6 @@ func reportTime() {
     delta, _ := timer.Delta("everything")
     say.Printf("time used: %s\n", timer.Nano2Time(delta))
 }
-
 
 func main() {
 
@@ -287,15 +304,21 @@ func main() {
         os.Exit(0)
     }
 
-    // compile
-    compiler.Init(srcdir, global.GetString("-arch"), includes)
+    // compile argv
+    compiler.Init(srcdir, includes)
     if global.GetString("-lib") != "" {
         compiler.CreateLibArgv(sorted)
     } else {
         compiler.CreateArgv(sorted)
     }
 
-    // up2date == true => 0 packages needed to be compiled
+    // gdmake
+    if global.GetString("-gdmake") != "" {
+        gdmake.Make(global.GetString("-gdmake"), sorted, dgrph.Alien().Slice())
+        os.Exit(0)
+    }
+
+    // compile; up2date == true => 0 packages modified
     if runtime.GOMAXPROCS(-1) > 1 && !global.GetBool("-dryrun") {
         up2date = compiler.ParallelCompile(sorted)
     } else {
@@ -367,10 +390,13 @@ func parseArgv(argv []string) (args []string) {
 
     if getopt.IsSet("-test") || getopt.IsSet("-fmt") || getopt.IsSet("-clean") {
         // override IncludeFile to make walker pick _test.go files
-        walker.IncludeFile = func(s string) bool {
-            return strings.HasSuffix(s, ".go") &&
-                !strings.HasPrefix(filepath.Base(s), "_")
-        }
+        walker.IncludeFile = allGoFilesFilter
+    }
+
+    if getopt.IsSet("-gdmake") {
+        global.SetString("-lib", "_obj")
+        // gdmake does not support testing
+        walker.IncludeFile = noTestFilesFilter
     }
 
     if getopt.IsSet("-I") {
@@ -382,6 +408,7 @@ func parseArgv(argv []string) (args []string) {
     }
 
     getopt.Reset()
+
     return args
 }
 
@@ -404,7 +431,7 @@ func printHelp() {
   -s --sort            print legal compile order
   -o --output          link main package -> output
   -S --static          statically link binary
-  -a --arch            architecture (amd64,arm,386)
+  -g --gdmake          create a go makefile for project
   -d --dryrun          print what gd would do (stdout)
   -c --clean           delete generated object code
   -q --quiet           silent, print only errors
@@ -429,7 +456,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.2")
+    fmt.Println("godag 0.2 (r.58)")
 }
 
 func printListing() {
@@ -442,7 +469,7 @@ func printListing() {
   -s --sort            =>   %t
   -o --output          =>   '%s'
   -S --static          =>   %t
-  -a --arch            =>   %v
+  -g --gdmake          =>   '%s'
   -d --dryrun          =>   %t
   -c --clean           =>   %t
   -q --quiet           =>   %t
@@ -468,11 +495,6 @@ func printListing() {
         tabRepr = global.GetString("-tabwidth")
     }
 
-    archRepr := "$GOARCH"
-    if global.GetString("-arch") != "" {
-        archRepr = global.GetString("-arch")
-    }
-
     fmt.Printf(listMSG,
         global.GetBool("-help"),
         global.GetBool("-version"),
@@ -480,7 +502,7 @@ func printListing() {
         global.GetBool("-sort"),
         global.GetString("-output"),
         global.GetBool("-static"),
-        archRepr,
+        global.GetString("-gdmake"),
         global.GetBool("-dryrun"),
         global.GetBool("-clean"),
         global.GetBool("-quiet"),

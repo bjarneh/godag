@@ -114,13 +114,7 @@ func (d Dag) GraphBuilder() {
     }
 }
 
-func (d Dag) External() {
-
-    var err os.Error
-    var argv []string
-    var tmp string
-    var set *stringset.StringSet
-    var i int = 0
+func (d Dag) Alien() (set *stringset.StringSet) {
 
     set = stringset.New()
 
@@ -137,6 +131,19 @@ func (d Dag) External() {
             set.Remove(u)
         }
     }
+
+    return set
+}
+
+func (d Dag) External() {
+
+    var err os.Error
+    var argv []string
+    var tmp string
+    var set *stringset.StringSet
+    var i int = 0
+
+    set = d.Alien()
 
     argv = make([]string, 0)
 
@@ -457,6 +464,44 @@ func (p *Package) DotGraph(sb *stringbuffer.StringBuffer) {
     }
 }
 
+func (p *Package) Rep() string {
+
+    sb := make([]string, 0)
+    sb = append(sb, "&Package{")
+    sb = append(sb, "    name:   \""+p.ShortName+"\",")
+    sb = append(sb, "    loc:    \""+p.Name+"\",")
+    sb = append(sb, "    output: \"_obj/"+p.Name+"\",")
+
+    // special case: build from PWD (srcdir == .)
+    files := make([]string, len(p.Files))
+    for i := 0; i < len(p.Files); i++ {
+        files[i] = p.Files[i]
+    }
+
+    pwd, e := os.Getwd()
+    if e == nil {
+        pwd = pwd + string(filepath.Separator)
+        for i := 0; i < len(files); i++ {
+            if strings.HasPrefix(files[i], pwd) {
+                files[i] = files[i][len(pwd):]
+            }
+        }
+    }
+
+    fs := make([]string, 0)
+    for i := 0; i < len(p.Files); i++ {
+        fs = append(fs, "\""+filepath.ToSlash(files[i])+"\"")
+    }
+
+    sb = append(sb, "    files:  []string{"+strings.Join(fs, ",")+"},")
+    sb = append(sb, "},\n")
+
+    for i := 0; i < len(sb); i++ {
+        sb[i] = "    " + sb[i]
+    }
+
+    return strings.Join(sb, "\n")
+}
 
 func (p *Package) UpToDate() bool {
 
@@ -493,7 +538,7 @@ func (p *Package) UpToDate() bool {
         }
     }
 
-    // package contains _test.go files + testing => not UpToDate
+    // package contains _test.go and -test => not UpToDate
     if global.GetBool("-test") {
         for i = 0; i < len(p.Files); i++ {
             if strings.HasSuffix(p.Files[i], "_test.go") {

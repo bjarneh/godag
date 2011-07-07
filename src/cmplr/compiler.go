@@ -29,7 +29,7 @@ var pathCompiler string
 var suffix string
 
 
-func Init(srcdir, arch string, include []string) {
+func Init(srcdir string, include []string) {
 
     srcroot = srcdir
     includes = include
@@ -44,7 +44,7 @@ func Init(srcdir, arch string, include []string) {
     case "gcc", "gccgo":
         gcc()
     case "gc":
-        gc(arch)
+        gc()
     case "express":
         express()
     default:
@@ -72,16 +72,12 @@ func express() {
     suffix = ".vmo"
 }
 
-func gc(arch string) {
+func gc() {
 
     var A string // a:architecture
     var err os.Error
 
-    if arch == "" {
-        A = os.Getenv("GOARCH")
-    } else {
-        A = arch
-    }
+    A = os.Getenv("GOARCH")
 
     var S, C, L string // S:suffix, C:compiler, L:linker
 
@@ -98,6 +94,8 @@ func gc(arch string) {
         S = ".8"
         C = "8g"
         L = "8l"
+    case "":
+        log.Fatalf("[ERROR] missing GOARCH variable\n")
     default:
         log.Fatalf("[ERROR] unknown architecture: %s\n", A)
     }
@@ -366,7 +364,7 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date 
 
     compiled := filepath.Join(libroot, mainPKG.Name) + suffix
 
-    if  up2date && ! global.GetBool("-dryrun") && handy.IsFile(output) {
+    if up2date && !global.GetBool("-dryrun") && handy.IsFile(output) {
         if handy.ModifyTimestamp(compiled) < handy.ModifyTimestamp(output) {
             say.Printf("up 2 date: %s\n", output)
             return

@@ -135,8 +135,10 @@ func hasModifiedImports(fname string) (string, bool) {
     set := stringset.New()
 
     set.Add(`"os"`)
+    set.Add(`"io"`)
     set.Add(`"fmt"`)
-    set.Add(`"io/ioutil"`)
+    set.Add(`"compress/gzip"`)
+    set.Add(`"bytes"`)
     set.Add(`"regexp"`)
     set.Add(`"exec"`)
     set.Add(`"log"`)
@@ -195,8 +197,10 @@ package main
 var ImportsTmpl = `
 import (
     "os"
+    "io"
+    "compress/gzip"
     "fmt"
-    "io/ioutil"
+    "bytes"
     "regexp"
     "exec"
     "log"
@@ -446,11 +450,11 @@ func compile(pkgs []*Package) {
 
     for i := 0; i < len(pkgs); i++ {
         if oldPkgFound || !pkgs[i].up2date() {
-            say.Printf("compiling: %s\n", pkgs[i].loc)
+            say.Printf("compiling: %s\n", pkgs[i].full)
             pkgs[i].compile()
             oldPkgFound = true
         } else {
-            say.Printf("up 2 date: %s\n", pkgs[i].loc)
+            say.Printf("up 2 date: %s\n", pkgs[i].full)
         }
     }
 }
@@ -482,6 +486,10 @@ func delete(pkgs []*Package) {
 }
 
 func link(pkgs []*Package) {
+
+    if output == "" {
+        return
+    }
 
     var mainPackage *Package
     var mainPkgs = make([]*Package, 0)
@@ -541,7 +549,7 @@ func mainChoice(pkgs []*Package) *Package {
     var cnt, choice int
 
     for i := 0; i < len(pkgs); i++ {
-        ok, _ := regexp.MatchString(match, pkgs[i].loc)
+        ok, _ := regexp.MatchString(match, pkgs[i].full)
         if ok {
             cnt++
             choice = i
@@ -555,7 +563,7 @@ func mainChoice(pkgs []*Package) *Package {
     fmt.Println("\n More than one main package found\n")
 
     for i := 0; i < len(pkgs); i++ {
-        fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].loc)
+        fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].full)
     }
 
     fmt.Printf("\n type your choice: ")
@@ -573,7 +581,7 @@ func mainChoice(pkgs []*Package) *Package {
         log.Fatalf(" bad choice: %d\n", choice)
     }
 
-    fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].loc)
+    fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].full)
 
     return pkgs[choice]
 }
@@ -673,12 +681,47 @@ func quitter(e os.Error) {
 }
 
 
-// very basic copy function, dies on error
-func cp(from, to string) {
-    fromBytes, e := ioutil.ReadFile(from)
-    quitter(e)
-    e = ioutil.WriteFile(to, fromBytes, 0644)
-    quitter(e)
+func copyGzipStringBuffer(from string, to string, gzipFile bool) {
+    buf := bytes.NewBufferString(from)
+    copyGzipReader(buf, to, gzipFile)
+}
+
+func copyGzipByteBuffer(from []byte, to string, gzipFile bool){
+    buf := bytes.NewBuffer(from)
+    copyGzipReader(buf, to, gzipFile)
+}
+
+func copyGzip(from, to string, gzipFile bool) {
+
+    var err os.Error
+    var fromFile *os.File
+
+    fromFile, err = os.Open(from)
+    quitter(err)
+
+    defer fromFile.Close()
+
+    copyGzipReader(fromFile, to, gzipFile)
+}
+
+func copyGzipReader(fromReader io.Reader, to string, gzipFile bool) {
+
+    var err os.Error
+    var toFile io.WriteCloser
+
+    toFile, err = os.Create(to)
+    quitter(err)
+
+    if gzipFile {
+        toFile, err = gzip.NewWriterLevel(toFile, gzip.BestCompression)
+        quitter(err)
+    }
+
+    defer toFile.Close()
+
+    _, err = io.Copy(toFile, fromReader)
+
+    quitter(err)
 }
 
 func listTargets() {
@@ -698,9 +741,9 @@ var PackageDefTmpl = `
 //-------------------------------------------------------------------
 
 type Package struct {
-    name, loc, output string
-    osified           bool
-    files             []string
+    name, full, output string
+    osified            bool
+    files              []string
 }
 
 func (p *Package) up2date() bool {
@@ -727,6 +770,10 @@ func (p *Package) compile() {
     argv = append(argv, "-I")
     for _, inc := range includeDirs {
         argv = append(argv, inc)
+    }
+    if backend == "express" {
+        argv = append(argv, "-I")
+        argv = append(argv, root)
     }
     if backend == "gccgo" {
         argv = append(argv, "-c")
@@ -764,32 +811,21 @@ func main() {
     doFirst()
     defer doLast()
 
-
-    if help {
-        flag.Usage()
-        os.Exit(0)
-    }
-
     if quiet {
         say = Say(false)
     }
 
-    if clean {
-
+    switch {
+    case help:
+        flag.Usage()
+    case clean:
         delete(packages)
-
-    } else {
-
-        if external {
-            goinstall()
-        }
-
+    case external:
+        goinstall()
+    default:
         compile(packages)
-
-        if output != "" {
-            link(packages)
-        }
-
+        link(packages)
     }
+
 }
 `

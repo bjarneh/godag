@@ -88,9 +88,9 @@ statically link binary
 .RE
 .PP
 .B
-\-a, \-\-arch
+\-g, \-\-gdmake
 .RS 4
-architecture (amd64,arm,386)
+create a go makefile for project
 .RE
 .PP
 .B
@@ -103,12 +103,6 @@ print what gd would do (to stdout)
 \-c, \-\-clean
 .RS 4
 \fBrm\fR *\&.[a865] from src (or lib) directory
-.RE
-.PP
-.B
-\-T, \-\-time
-.RS 4
-print some timing results
 .RE
 .PP
 .B
@@ -251,8 +245,6 @@ this program is a command line tool, i\&.e\&. learning a new syntax for configur
 
 --lib _obj             # place objects in _obj not src directory
 
---static               # produce statically linked binaries
-
 -I $HOME/some/golib    # look in this directory for libraries
 
 .fi
@@ -317,6 +309,12 @@ compile and run unit\-tests and run benchmarks matching \fBsomething\fR on sourc
 gd \-clean src/
 .RS 4
 delete all object files from \fBsrc\fR
+.RE
+.PP
+.B
+gd \-g gdmake.go src/
+.RS 4
+create a \fBpure\fR go makefile for project in src
 .RE
 .PP
 .B

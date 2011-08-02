@@ -296,7 +296,7 @@ function sanity(){
     if [ -d ".hg" ];then
         pathfind 'hg'   || die "[ERROR] missing 'hg' (mercurial)"
     else # git
-        pathfind 'git'  || die "[ERROR] missing 'hg' (mercurial)"
+        pathfind 'git'  || die "[ERROR] missing 'git'"
     fi
     if [ "$ONLYGCC" ];then
         pathfind 'gccgo' || die "[ERROR] missing 'gccgo'"
@@ -428,17 +428,17 @@ case "$GOARCH" in
     '386')
     COMPILER="8g"
     LINKY="8l"
-	OBJ="8"
+    OBJ="8"
     ;;
     'arm')
     COMPILER="5g"
     LINKY="5l"
-	OBJ="5"
+    OBJ="5"
     ;;
     'amd64')
     COMPILER="6g"
     LINKY="6l"
-	OBJ="6"
+    OBJ="6"
     ;;
     *)
     echo "architecture not: 'amd64' '386' 'arm'"

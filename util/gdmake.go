@@ -1,4 +1,4 @@
-/* Built : Thu Jul  7 08:32:39 UTC 2011 */
+/* Built : Tue Aug  2 01:03:34 UTC 2011 */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -7,13 +7,15 @@
 package main
 
 import(
+    "io"
     "os"
     "fmt"
     "regexp"
     "exec"
+    "bytes"
     "log"
     "flag"
-    "io/ioutil"
+    "compress/gzip"
     "path/filepath"
     "time"
     "strings"
@@ -75,7 +77,7 @@ var targets = map[string]*Target{
         last:  nil,
     },
     "build": &Target{
-        desc:  "compile code in src and link 'gd'",
+        desc:  "compile and link 'gd' (alias for -o=gd)",
         first: buildDoFirst,
         last:  nil,
     },
@@ -90,10 +92,163 @@ var targets = map[string]*Target{
         last:  nil,
     },
     "release": &Target{
-        desc:  "update godag to latest release",
+        desc:  "update golang to latest release if necessary",
         first: releaseDoFirst,
         last:  nil,
     },
+    "debian": &Target{
+        desc:  "create a debian package of godag",
+        first: debianDoFirst,
+        last:  debianDoLast,
+    },
+}
+
+// debian target
+func debianDoFirst() {
+
+    // see if required executables can be found
+    debianSanity()
+
+    // normail build first, i.e. build 'gd'
+    buildDoFirst()
+}
+
+var debianCopyright=`Name: godag
+Maintainer: bjarne holen <bjarneh@ifi.uio.no>
+Source: https://godag.googlecode.com/hg
+
+Files: *
+Copyright: 2011, bjarne holen <bjarneh@ifi.uio.no>
+License: GPL-3
+
+License: GPL-3
+On Debian systems, the complete text of the GNU General Public License
+version 3 can be found in '/usr/share/common-licenses/GPL-3'.
+`
+
+var debianChangelog =`godag (0.2.0) devel; urgency=low
+
+    * The actual changelog can be found in changelog...
+
+ -- Bjarne Holen <bjarneh@ifi.uio.no>  Thu, 05 May 2011 14:07:28 -0400
+`
+
+var debianControl=`Package: godag
+Version: 0.2
+Section: devel
+Priority: optional
+Architecture: %s
+Depends:
+Suggests: gccgo,golang
+Conflicts:
+Replaces:
+Installed-Size: %d
+Maintainer: Bjarne Holen <bjarneh@ifi.uio.no>
+Description: Golang/Go compiler front-end.
+ Godag automatically builds projects written in golang,
+ by inspecting source-code imports to calculate compile order.
+ Unit-testing, formatting and installation of external 
+ libraries are also automated. The default back-end is gc,
+ other back-ends have partial support: gccgo, express.
+`
+
+func debianDoLast() {
+
+    var debArch string
+    var dirs []string
+
+    switch os.Getenv("GOARCH") {
+    case "386":
+        debArch = "i386"
+    case "":
+        log.Fatalf("[ERROR] GOARCH == ''\n")
+    default:
+        debArch = os.Getenv("GOARCH")
+    }
+
+    dirs = []string{"debian/DEBIAN",
+                    "debian/usr/bin",
+                    "debian/usr/share/man/man1",
+                    "debian/usr/share/doc/godag",
+                    "debian/etc/bash_completion.d",}
+
+    say.Println("debian   : make structure")
+
+    for i := 0; i < len(dirs); i++ {
+        e := os.MkdirAll(dirs[i], 0755)
+        quitter(e)
+    }
+
+    e := os.Rename("gd", "debian/usr/bin/gd")
+    quitter(e)
+
+    say.Println("debian   : copy files")
+
+    // copyGzip( from, to, gzipfile )
+    copyGzip("util/gd-completion.sh", "debian/etc/bash_completion.d/gd", false)
+    e = os.Chmod("debian/etc/bash_completion.d/gd", 0755)
+    quitter(e)
+    copyGzip("util/gdmake-completion.sh", "debian/etc/bash_completion.d/gdmake", false)
+    e = os.Chmod("debian/etc/bash_completion.d/gdmake", 0755)
+    quitter(e)
+    copyGzip("util/gd.1", "debian/usr/share/man/man1/gd.1.gz", true)
+    copyGzip("util/gd.1", "debian/usr/share/man/man1/godag.1.gz", true)
+    copyGzipStringBuffer(debianCopyright, "debian/usr/share/doc/godag/copyright", false)
+    copyGzipStringBuffer(debianChangelog, "debian/usr/share/doc/godag/changelog.Debian.gz", true)
+    copyGzipStringBuffer("/etc/bash_completion.d/gd\n/etc/bash_completion.d/gdmake\n", "debian/DEBIAN/conffiles", false)
+
+    if isDir(".hg") {
+        hglog, e := exec.Command("hg", "log").CombinedOutput()
+        quitter(e)
+        copyGzipByteBuffer(hglog, "debian/usr/share/doc/godag/changelog.gz", true)
+    }else{// git
+        gitlog, e := exec.Command("git", "log").CombinedOutput()
+        quitter(e)
+        copyGzipByteBuffer(gitlog, "debian/usr/share/doc/godag/changelog.gz", true)
+    }
+
+    // find size of debian package
+    var totalSize int64 = int64(len(debianControl))
+
+    errs := make(chan os.Error)
+    collect := &collector{make([]string, 0)}
+    filepath.Walk("debian", collect, errs)
+
+    for i := 0; i < len(collect.files); i++ {
+        finfo, e := os.Stat(collect.files[i])
+        quitter(e)
+        totalSize += finfo.Size
+    }
+
+    tmpBuf := fmt.Sprintf(debianControl, debArch, totalSize)
+    copyGzipStringBuffer(tmpBuf, "debian/DEBIAN/control", false)
+
+    run([]string{"fakeroot", "dpkg-deb", "--build", "debian"})
+    e = os.Rename("debian.deb",  "godag_0.2-0_" + debArch + ".deb")
+    quitter(e)
+
+    e = os.RemoveAll("debian")
+    quitter(e)
+}
+
+func debianSanity() {
+
+    executables := []string{"dpkg-deb", "fakeroot"}
+
+    if isDir(".hg") {
+        executables = append(executables, "hg")
+    } else if isDir(".git") {
+        executables = append(executables, "git")
+    } else {
+        log.Fatalf("[ERROR] neither .hg or .git was found (needed for changelog)\n")
+    }
+
+    for i := 0; i < len(executables); i++ {
+        _, e := exec.LookPath(executables[i])
+        if e != nil {
+            log.Fatalf("[ERROR] missing: %s\n", executables[i])
+        }
+    }
 }
 
 // build target
@@ -142,7 +297,7 @@ var golibs = []string{
     "tabwriter",
     "template",
     "io",
-// packages above this line cannot be tested without modification
+    // packages above this line cannot be tested without modification
     "asn1",
     "bufio",
     "cmath",
@@ -177,6 +332,8 @@ var golibs = []string{
 // testok target
 func testokDoFirst() {
 
+    say.Printf("[ testok ] ")
+
     goroot := os.Getenv("GOROOT")
 
     if goroot == "" {
@@ -189,8 +346,8 @@ func testokDoFirst() {
         return strings.HasSuffix(s, ".go")
     }
 
-    from := filepath.Join(goroot,"src","pkg")
-    to   := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
+    from := filepath.Join(goroot, "src", "pkg")
+    to := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
 
     say.Printf("testable part of stdlib -> %s\n", to)
 
@@ -198,8 +355,8 @@ func testokDoFirst() {
 
     for i := 0; i < len(testable); i++ {
         recCopyStrip(filepath.Join(from, testable[i]),
-                     filepath.Join(to, testable[i]),
-                     fileReq, dirReq)
+            filepath.Join(to, testable[i]),
+            fileReq, dirReq)
     }
 
     os.Exit(0)
@@ -208,6 +365,8 @@ func testokDoFirst() {
 
 // stdlib target
 func stdlibDoFirst() {
+
+    say.Printf("[ stdlib ]  ")
 
     goroot := os.Getenv("GOROOT")
 
@@ -223,28 +382,28 @@ func stdlibDoFirst() {
         return strings.HasSuffix(s, ".go") && !strings.HasSuffix(s, "_test.go")
     }
 
-    from := filepath.Join(goroot,"src","pkg")
-    to   := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
+    from := filepath.Join(goroot, "src", "pkg")
+    to := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
 
     say.Printf("pure go part of stdlib -> %s\n", to)
 
     for i := 0; i < len(golibs); i++ {
         recCopyStrip(filepath.Join(from, golibs[i]),
-                     filepath.Join(to, golibs[i]),
-                     fileReq, dirReq)
+            filepath.Join(to, golibs[i]),
+            fileReq, dirReq)
     }
 
     os.Exit(0)
 }
 
 // recursive copy that strips away main packages + testdata
-func recCopyStrip(from, to string, fileReq, dirReq func(s string)bool) {
+func recCopyStrip(from, to string, fileReq, dirReq func(s string) bool) {
 
-    if ! isDir(from){
+    if !isDir(from) {
         return
     }
 
-    if ! isDir(to){
+    if !isDir(to) {
         e := os.MkdirAll(to, 0777)
         quitter(e)
     }
@@ -259,10 +418,10 @@ func recCopyStrip(from, to string, fileReq, dirReq func(s string)bool) {
     for i := 0; i < len(dirnames); i++ {
         next := filepath.Join(from, dirnames[i])
         if isFile(next) && fileReq(next) {
-            cp(next, filepath.Join(to, dirnames[i]))
+            copyGzip(next, filepath.Join(to, dirnames[i]), false)
         }
         if isDir(next) && dirReq(dirnames[i]) {
-            recCopyStrip(next, filepath.Join(to, dirnames[i]), fileReq,dirReq)
+            recCopyStrip(next, filepath.Join(to, dirnames[i]), fileReq, dirReq)
         }
     }
 }
@@ -306,7 +465,7 @@ func uninstallDoFirst() {
 var self = []*Package{
     &Package{
         name:   "main",
-        loc:    "main",
+        full:   "main",
         output: "util/main",
         files:  []string{"util/gdmake.go"},
     },
@@ -328,16 +487,46 @@ func updateDoFirst() {
 }
 
 // hgup
-func releaseDoFirst(){
+func releaseDoFirst() {
 
-    pull := []string{"hg", "pull"}
-    upRelease := []string{"hg", "update", "release"}
+    platform := os.Getenv("GOOS")
+    if platform == "windows" {
+        log.Fatalf("[ERROR] this target only works on Linux/Unix\n")
+    }
 
-    say.Println("[hg pull]")
-    run(pull)
+    goroot := os.Getenv("GOROOT")
 
-    say.Println("[hg update release]")
-    run(upRelease)
+    if goroot == "" {
+        log.Fatalf("[ERROR] missing GOROOT variable\n")
+    }
+
+    srcdir := filepath.Join(goroot, "src")
+
+    say.Printf("> \u001B[32mcd $GOROOT/src\u001B[0m\n")
+    e := os.Chdir(srcdir)
+    quitter(e)
+
+    current, e := exec.Command("hg", "id", "-i").CombinedOutput()
+    quitter(e)
+
+    say.Println("> \u001B[32mhg pull\u001B[0m")
+    run([]string{"hg", "pull"})
+
+    say.Println("> \u001B[32mhg update release\u001B[0m")
+    run([]string{"hg", "update", "release"})
+
+    updated, e := exec.Command("hg", "id", "-i").CombinedOutput()
+
+    if e != nil {
+        log.Fatalf("[ERROR] %s\n", e)
+    }
+
+    if string(current) != string(updated) {
+        say.Println("> \u001B[32mbash make.bash\u001B[0m")
+        run([]string{"bash", "make.bash"})
+    } else {
+        say.Println("[\u001B[32m already at release version\u001B[0m ]")
+    }
 
     os.Exit(0)
 }
@@ -531,11 +720,11 @@ func compile(pkgs []*Package) {
 
     for i := 0; i < len(pkgs); i++ {
         if oldPkgFound || !pkgs[i].up2date() {
-            say.Printf("compiling: %s\n", pkgs[i].loc)
+            say.Printf("compiling: %s\n", pkgs[i].full)
             pkgs[i].compile()
             oldPkgFound = true
         } else {
-            say.Printf("up 2 date: %s\n", pkgs[i].loc)
+            say.Printf("up 2 date: %s\n", pkgs[i].full)
         }
     }
 }
@@ -567,6 +756,10 @@ func delete(pkgs []*Package) {
 }
 
 func link(pkgs []*Package) {
+
+    if output == "" {
+        return
+    }
 
     var mainPackage *Package
     var mainPkgs = make([]*Package, 0)
@@ -626,7 +819,7 @@ func mainChoice(pkgs []*Package) *Package {
     var cnt, choice int
 
     for i := 0; i < len(pkgs); i++ {
-        ok, _ := regexp.MatchString(match, pkgs[i].loc)
+        ok, _ := regexp.MatchString(match, pkgs[i].full)
         if ok {
             cnt++
             choice = i
@@ -640,7 +833,7 @@ func mainChoice(pkgs []*Package) *Package {
     fmt.Println("\n More than one main package found\n")
 
     for i := 0; i < len(pkgs); i++ {
-        fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].loc)
+        fmt.Printf(" type %2d  for: %s\n", i, pkgs[i].full)
     }
 
     fmt.Printf("\n type your choice: ")
@@ -658,7 +851,7 @@ func mainChoice(pkgs []*Package) *Package {
         log.Fatalf(" bad choice: %d\n", choice)
     }
 
-    fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].loc)
+    fmt.Printf(" chosen main-package: %s\n\n", pkgs[choice].full)
 
     return pkgs[choice]
 }
@@ -758,12 +951,47 @@ func quitter(e os.Error) {
 }
 
 
-// very basic copy function, dies on error
-func cp(from, to string) {
-    fromBytes, e := ioutil.ReadFile(from)
-    quitter(e)
-    e = ioutil.WriteFile(to, fromBytes, 0644)
-    quitter(e)
+func copyGzipStringBuffer(from string, to string, gzipFile bool) {
+    buf := bytes.NewBufferString(from)
+    copyGzipReader(buf, to, gzipFile)
+}
+
+func copyGzipByteBuffer(from []byte, to string, gzipFile bool){
+    buf := bytes.NewBuffer(from)
+    copyGzipReader(buf, to, gzipFile)
+}
+
+func copyGzip(from, to string, gzipFile bool) {
+
+    var err os.Error
+    var fromFile *os.File
+
+    fromFile, err = os.Open(from)
+    quitter(err)
+
+    defer fromFile.Close()
+
+    copyGzipReader(fromFile, to, gzipFile)
+}
+
+func copyGzipReader(fromReader io.Reader, to string, gzipFile bool) {
+
+    var err os.Error
+    var toFile io.WriteCloser
+
+    toFile, err = os.Create(to)
+    quitter(err)
+
+    if gzipFile {
+        toFile, err = gzip.NewWriterLevel(toFile, gzip.BestCompression)
+        quitter(err)
+    }
+
+    defer toFile.Close()
+
+    _, err = io.Copy(toFile, fromReader)
+
+    quitter(err)
 }
 
 func listTargets() {
@@ -781,9 +1009,9 @@ func listTargets() {
 //-------------------------------------------------------------------
 
 type Package struct {
-    name, loc, output string
-    osified           bool
-    files             []string
+    name, full, output string
+    osified            bool
+    files              []string
 }
 
 func (p *Package) up2date() bool {
@@ -811,6 +1039,10 @@ func (p *Package) compile() {
     for _, inc := range includeDirs {
         argv = append(argv, inc)
     }
+    if backend == "express" {
+        argv = append(argv, "-I")
+        argv = append(argv, root)
+    }
     if backend == "gccgo" {
         argv = append(argv, "-c")
     }
@@ -830,73 +1062,73 @@ func (p *Package) compile() {
 var packages = []*Package{
     &Package{
         name:   "stringbuffer",
-        loc:    "utilz/stringbuffer",
+        full:    "utilz/stringbuffer",
         output: "_obj/utilz/stringbuffer",
         files:  []string{"src/utilz/stringbuffer.go"},
     },
     &Package{
         name:   "walker",
-        loc:    "utilz/walker",
+        full:    "utilz/walker",
         output: "_obj/utilz/walker",
         files:  []string{"src/utilz/walker.go"},
     },
     &Package{
         name:   "stringset",
-        loc:    "utilz/stringset",
+        full:    "utilz/stringset",
         output: "_obj/utilz/stringset",
         files:  []string{"src/utilz/stringset.go"},
     },
     &Package{
         name:   "timer",
-        loc:    "utilz/timer",
+        full:    "utilz/timer",
         output: "_obj/utilz/timer",
         files:  []string{"src/utilz/timer.go"},
     },
     &Package{
         name:   "gopt",
-        loc:    "parse/gopt",
+        full:    "parse/gopt",
         output: "_obj/parse/gopt",
         files:  []string{"src/parse/gopt.go","src/parse/option.go"},
     },
     &Package{
         name:   "global",
-        loc:    "utilz/global",
+        full:    "utilz/global",
         output: "_obj/utilz/global",
         files:  []string{"src/utilz/global.go"},
     },
     &Package{
         name:   "handy",
-        loc:    "utilz/handy",
+        full:    "utilz/handy",
         output: "_obj/utilz/handy",
         files:  []string{"src/utilz/handy.go"},
     },
     &Package{
         name:   "say",
-        loc:    "utilz/say",
+        full:    "utilz/say",
         output: "_obj/utilz/say",
         files:  []string{"src/utilz/say.go"},
     },
     &Package{
         name:   "dag",
-        loc:    "cmplr/dag",
+        full:    "cmplr/dag",
         output: "_obj/cmplr/dag",
         files:  []string{"src/cmplr/dag.go"},
     },
     &Package{
         name:   "gdmake",
-        loc:    "cmplr/gdmake",
+        full:    "cmplr/gdmake",
         output: "_obj/cmplr/gdmake",
         files:  []string{"src/cmplr/gdmake.go"},
     },
     &Package{
         name:   "compiler",
-        loc:    "cmplr/compiler",
+        full:    "cmplr/compiler",
         output: "_obj/cmplr/compiler",
         files:  []string{"src/cmplr/compiler.go"},
     },
     &Package{
         name:   "main",
-        loc:    "start/main",
+        full:    "start/main",
         output: "_obj/start/main",
         files:  []string{"src/start/main.go"},
     },
@@ -917,31 +1149,20 @@ func main() {
     doFirst()
     defer doLast()
 
-
-    if help {
-        flag.Usage()
-        os.Exit(0)
-    }
-
     if quiet {
         say = Say(false)
     }
 
-    if clean {
-
+    switch {
+    case help:
+        flag.Usage()
+    case clean:
         delete(packages)
-
-    } else {
-
-        if external {
-            goinstall()
-        }
-
+    case external:
+        goinstall()
+    default:
         compile(packages)
-
-        if output != "" {
-            link(packages)
-        }
-
+        link(packages)
     }
+
 }

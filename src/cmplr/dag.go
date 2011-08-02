@@ -469,7 +469,7 @@ func (p *Package) Rep() string {
     sb := make([]string, 0)
     sb = append(sb, "&Package{")
     sb = append(sb, "    name:   \""+p.ShortName+"\",")
-    sb = append(sb, "    loc:    \""+p.Name+"\",")
+    sb = append(sb, "    full:    \""+p.Name+"\",")
     sb = append(sb, "    output: \"_obj/"+p.Name+"\",")
 
     // special case: build from PWD (srcdir == .)
@@ -540,10 +540,14 @@ func (p *Package) UpToDate() bool {
 
     // package contains _test.go and -test => not UpToDate
     if global.GetBool("-test") {
+        testpkgs := 0
         for i = 0; i < len(p.Files); i++ {
             if strings.HasSuffix(p.Files[i], "_test.go") {
-                return false
+                testpkgs++
             }
+        }
+        if testpkgs > 0 && testpkgs != len(p.Files) {
+            return false
         }
     }
 

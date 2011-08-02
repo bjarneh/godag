@@ -12,12 +12,18 @@
 
 _gdmake(){
 
-    local cur prev opts gdmake_targets
-    gdmake_targets=$(${PWD}/gdmake --list)
+    local cur gdmake_targets gdmake_binary
+
+    gdmake_binary="${PWD}/gdmake"
+
+    if [ -x "$gdmake_binary" ];then
+        gdmake_targets=$(${gdmake_binary} --list)
+    else
+        gdmake_targets=""
+    fi
 
     COMPREPLY=()
 
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
     cur="${COMP_WORDS[COMP_CWORD]}"
 
     COMPREPLY=( $(compgen -W "${gdmake_targets}" -- "${cur}") )

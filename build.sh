@@ -39,6 +39,7 @@ package=(
 ## packages above this line cannot be tested without modification
 'asn1'
 'bufio'
+'csv'
 'cmath'
 'ebnf'
 'encoding'
@@ -49,6 +50,7 @@ package=(
 'index'
 'json'
 'log'
+'mail'
 'netchan'
 'rand'
 'reflect'

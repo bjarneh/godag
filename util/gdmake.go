@@ -301,6 +301,7 @@ var golibs = []string{
     "asn1",
     "bufio",
     "cmath",
+    "csv",
     "ebnf",
     "encoding",
     "expvar",
@@ -310,6 +311,7 @@ var golibs = []string{
     "index",
     "json",
     "log",
+    "mail",
     "netchan",
     "rand",
     "reflect",
@@ -477,7 +479,12 @@ func updateDoFirst() {
     output = "gdmake"
 
     if os.Getenv("GOOS") == "windows" {
-        output += ".exe"
+        fmt.Println("update target does not work on Windows")
+        fmt.Println("you are not allowed to write to a file")
+        fmt.Println("which is currently being executed")
+        fmt.Println("you need to compile and link 'gdmake.go'")
+        fmt.Println("manually using the go compiler + linker")
+        os.Exit(1)
     }
 
     compile(self)

@@ -308,7 +308,6 @@ var golibs = []string{
     "expvar",
     "fmt",
     "gob",
-    "hash",
     "index",
     "json",
     "log",

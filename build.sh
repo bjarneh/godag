@@ -46,7 +46,6 @@ package=(
 'expvar'
 'fmt'
 'gob'
-'hash'
 'index'
 'json'
 'log'

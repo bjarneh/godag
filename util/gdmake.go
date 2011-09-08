@@ -1,4 +1,4 @@
-/* Built : Tue Aug  2 01:03:34 UTC 2011 */
+/* Built : Mon Aug 29 17:53:09 UTC 2011 */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -211,7 +211,7 @@ func debianDoLast() {
     var totalSize int64 = int64(len(debianControl))
 
     errs := make(chan os.Error)
-    collect := &collector{make([]string, 0)}
+    collect := &collector{make([]string, 0), nil}
     filepath.Walk("debian", collect, errs)
 
     for i := 0; i < len(collect.files); i++ {
@@ -227,6 +227,7 @@ func debianDoLast() {
     e = os.Rename("debian.deb",  "godag_0.2-0_" + debArch + ".deb")
     quitter(e)
 
+    say.Println("debian   : rm -rf ./debian")
     e = os.RemoveAll("debian")
     quitter(e)
 }
@@ -479,11 +480,15 @@ func updateDoFirst() {
     output = "gdmake"
 
     if os.Getenv("GOOS") == "windows" {
-        fmt.Println("update target does not work on Windows")
-        fmt.Println("you are not allowed to write to a file")
-        fmt.Println("which is currently being executed")
-        fmt.Println("you need to compile and link 'gdmake.go'")
-        fmt.Println("manually using the go compiler + linker")
+        fmt.Println("\n[ update ]\n")
+        fmt.Println(" this target does not work on Windows,")
+        fmt.Println(" to update 'gdmake' run these commands\n")
+        fmt.Printf(" %s gdmake.go\n", compiler)
+        if linker == "8l" {
+            fmt.Println(" 8g -o gdmake.exe gdmake.8\n")
+        }else{
+            fmt.Println(" 6g -o gdmake.exe gdmake.6\n")
+        }
         os.Exit(1)
     }
 
@@ -496,9 +501,10 @@ func updateDoFirst() {
 // hgup
 func releaseDoFirst() {
 
-    platform := os.Getenv("GOOS")
-    if platform == "windows" {
-        log.Fatalf("[ERROR] this target only works on Linux/Unix\n")
+    if os.Getenv("GOOS") == "windows" {
+        fmt.Println("\n[ release ]\n")
+        fmt.Println(" this target only works on Linux/Unix/Mac\n")
+        os.Exit(1)
     }
 
     goroot := os.Getenv("GOROOT")
@@ -612,8 +618,7 @@ func init() {
 
     flag.StringVar(&backend, "backend", "gc", "select from [gc,gccgo,express]")
     flag.StringVar(&backend, "B", "gc", "alias for --backend option")
-    flag.StringVar(&root, "r", "", "alias for -root (express go-root)")
-    flag.StringVar(&root, "root", "", "express go-root, ignores %GOROOT%")
+    flag.StringVar(&root, "I", "", "import package directory")
     flag.StringVar(&match, "M", "", "regex to match main package")
     flag.StringVar(&match, "main", "", "regex to match main package")
     flag.StringVar(&output, "o", "", "link main package -> output")
@@ -638,8 +643,8 @@ func init() {
         fmt.Println("  -M --main         regex to match main package")
         fmt.Println("  -c --clean        delete object files")
         fmt.Println("  -q --quiet        quiet unless errors occur")
-        fmt.Println("  -r --root         GOROOT for backend express")
-        fmt.Println("  -e --external     goinstall external dependencies\n")
+        fmt.Println("  -e --external     goinstall external dependencies")
+        fmt.Println("  -I                import package directory\n")
 
         if len(targets) > 0 {
             fmt.Println(" targets:\n")
@@ -805,6 +810,10 @@ func link(pkgs []*Package) {
             argv = append(argv, "-L")
             argv = append(argv, includeDirs[i])
         }
+        if root != "" {
+            argv = append(argv, "-L")
+            argv = append(argv, root)
+        }
     }
 
     argv = append(argv, "-o")
@@ -813,6 +822,17 @@ func link(pkgs []*Package) {
     if backend == "gccgo" {
         for i := 0; i < len(pkgs); i++ {
             argv = append(argv, pkgs[i].output)
+        }
+        if root != "" {
+            errs := make(chan os.Error)
+            collect := &collector{make([]string, 0), nil}
+            collect.filter = func(s string)bool{
+                return strings.HasSuffix(s, ".o")
+            }
+            filepath.Walk(root, collect, errs)
+            for i := 0; i < len(collect.files); i++ {
+                argv = append(argv, collect.files[i])
+            }
         }
     }else{
         argv = append(argv, mainPackage.output)
@@ -884,6 +904,7 @@ func goinstall() {
 
 type collector struct{
     files []string
+    filter func(string)bool
 }
 
 func (c *collector) VisitDir(pathname string, d *os.FileInfo) bool {
@@ -891,7 +912,13 @@ func (c *collector) VisitDir(pathname string, d *os.FileInfo) bool {
 }
 
 func (c *collector) VisitFile(pathname string, d *os.FileInfo) {
-     c.files = append(c.files, pathname)
+    if c.filter != nil {
+        if c.filter(pathname) {
+            c.files = append(c.files, pathname)
+        }
+    }else{
+        c.files = append(c.files, pathname)
+    }
 }
 
 func emptyDir(pathname string) bool {
@@ -899,7 +926,7 @@ func emptyDir(pathname string) bool {
         return false
     }
     errs := make(chan os.Error)
-    collect := &collector{make([]string, 0)}
+    collect := &collector{make([]string, 0), nil}
     filepath.Walk(pathname, collect, errs)
     return len(collect.files) == 0
 }
@@ -1046,7 +1073,7 @@ func (p *Package) compile() {
     for _, inc := range includeDirs {
         argv = append(argv, inc)
     }
-    if backend == "express" {
+    if root != "" {
         argv = append(argv, "-I")
         argv = append(argv, root)
     }

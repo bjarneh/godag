@@ -137,6 +137,7 @@ func hasModifiedImports(fname string) (string, bool) {
     set.Add(`"os"`)
     set.Add(`"io"`)
     set.Add(`"fmt"`)
+    set.Add(`"strings"`)
     set.Add(`"compress/gzip"`)
     set.Add(`"bytes"`)
     set.Add(`"regexp"`)
@@ -198,6 +199,7 @@ var ImportsTmpl = `
 import (
     "os"
     "io"
+    "strings"
     "compress/gzip"
     "fmt"
     "bytes"
@@ -235,8 +237,7 @@ type Target struct {
       of somefilename.go, i.e. you never loose the targets you
       create inside the playground..
   }else{
-      write somefilename.go with hello world + full target,
-      i.e. the default example targets
+      write somefilename.go with example targets
   }
 
 ********************************************************************/
@@ -245,17 +246,56 @@ type Target struct {
 
 var PlaygroundTmpl = `
 var targets = map[string]*Target{
-    "hello": &Target{
-        desc:  "target that says hello to the world",
-        first: func() { fmt.Println("hello world"); os.Exit(0) },
-        last:  nil,
-    },
     "full": &Target{
         desc:  "compile all packges (ignore !modified)",
         first: func() { oldPkgFound = true },
         last:  nil,
     },
+    "install": &Target{
+        desc:  "install package in a typical Go fashion",
+        first: installDoFirst,
+        last:  nil,
+    },
+    "uninstall": &Target{
+        desc:  "remove object files from GOPATH||GOROOT",
+        first: func() {
+            installDoFirst() // same setup
+            clean = true
+        },
+        last:  nil,
+    },
 }
+
+func installDoFirst(){
+
+    var placement string
+
+    var env = map[string]string{
+        "GOOS"   : os.Getenv("GOOS"),
+        "GOARCH" : os.Getenv("GOARCH"),
+        "GOROOT" : os.Getenv("GOROOT"),
+        "GOPATH" : os.Getenv("GOPATH"),
+    }
+
+    if env["GOARCH"] == "" || env["GOOS"] == "" || env["GOROOT"] == "" {
+        log.Fatalf("GOARCH, GOROOT and GOOS variables must be set\n")
+    }
+
+    stub := env["GOOS"] + "_" + env["GOARCH"]
+
+    if env["GOPATH"] != "" {
+        placement = filepath.Join(env["GOPATH"], "pkg", stub)
+    }else{
+        placement = filepath.Join(env["GOROOT"], "pkg", stub)
+    }
+
+    includeDir = placement
+
+    for i := 0; i < len(packages); i++ {
+        packages[i].output = placement + packages[i].output[4:]
+    }
+}
+
 
 `
 
@@ -322,7 +362,7 @@ var (
     oldPkgFound = false
 )
 
-var includeDirs = []string{"_obj"}
+var includeDir = "_obj"
 
 var say = Say(true)
 
@@ -331,8 +371,7 @@ func init() {
 
     flag.StringVar(&backend, "backend", "gc", "select from [gc,gccgo,express]")
     flag.StringVar(&backend, "B", "gc", "alias for --backend option")
-    flag.StringVar(&root, "r", "", "alias for -root (express go-root)")
-    flag.StringVar(&root, "root", "", "express go-root, ignores %GOROOT%")
+    flag.StringVar(&root, "I", "", "import package directory")
     flag.StringVar(&match, "M", "", "regex to match main package")
     flag.StringVar(&match, "main", "", "regex to match main package")
     flag.StringVar(&output, "o", "", "link main package -> output")
@@ -357,8 +396,8 @@ func init() {
         fmt.Println("  -M --main         regex to match main package")
         fmt.Println("  -c --clean        delete object files")
         fmt.Println("  -q --quiet        quiet unless errors occur")
-        fmt.Println("  -r --root         GOROOT for backend express")
-        fmt.Println("  -e --external     goinstall external dependencies\n")
+        fmt.Println("  -e --external     goinstall external dependencies")
+        fmt.Println("  -I                import package directory\n")
 
         if len(targets) > 0 {
             fmt.Println(" targets:\n")
@@ -473,13 +512,11 @@ func delete(pkgs []*Package) {
         }
     }
 
-    for i := 0; i < len(includeDirs); i++ {
-        if emptyDir(includeDirs[i]){
-            say.Printf("rm: %s\n", includeDirs[i])
-            e := os.RemoveAll(includeDirs[i])
-            if e != nil {
-                log.Fatalf("[ERROR] failed to remove: %s\n", includeDirs[i])
-            }
+    if emptyDir(includeDir){
+        say.Printf("rm: %s\n", includeDir)
+        e := os.RemoveAll(includeDir)
+        if e != nil {
+            log.Fatalf("[ERROR] failed to remove: %s\n", includeDir)
         }
     }
 
@@ -524,9 +561,13 @@ func link(pkgs []*Package) {
     argv = append(argv, linker)
 
     if backend != "gccgo" {
-        for i := 0; i < len(includeDirs); i++ {
+
+        argv = append(argv, "-L")
+        argv = append(argv, includeDir)
+
+        if root != "" {
             argv = append(argv, "-L")
-            argv = append(argv, includeDirs[i])
+            argv = append(argv, root)
         }
     }
 
@@ -536,6 +577,17 @@ func link(pkgs []*Package) {
     if backend == "gccgo" {
         for i := 0; i < len(pkgs); i++ {
             argv = append(argv, pkgs[i].output)
+        }
+        if root != "" {
+            errs := make(chan os.Error)
+            collect := &collector{make([]string, 0), nil}
+            collect.filter = func(s string)bool{
+                return strings.HasSuffix(s, ".o")
+            }
+            filepath.Walk(root, collect, errs)
+            for i := 0; i < len(collect.files); i++ {
+                argv = append(argv, collect.files[i])
+            }
         }
     }else{
         argv = append(argv, mainPackage.output)
@@ -607,6 +659,7 @@ func goinstall() {
 
 type collector struct{
     files []string
+    filter func(string)bool
 }
 
 func (c *collector) VisitDir(pathname string, d *os.FileInfo) bool {
@@ -614,7 +667,13 @@ func (c *collector) VisitDir(pathname string, d *os.FileInfo) bool {
 }
 
 func (c *collector) VisitFile(pathname string, d *os.FileInfo) {
-     c.files = append(c.files, pathname)
+    if c.filter != nil {
+        if c.filter(pathname) {
+            c.files = append(c.files, pathname)
+        }
+    }else{
+        c.files = append(c.files, pathname)
+    }
 }
 
 func emptyDir(pathname string) bool {
@@ -622,7 +681,7 @@ func emptyDir(pathname string) bool {
         return false
     }
     errs := make(chan os.Error)
-    collect := &collector{make([]string, 0)}
+    collect := &collector{make([]string, 0), nil}
     filepath.Walk(pathname, collect, errs)
     return len(collect.files) == 0
 }
@@ -768,10 +827,9 @@ func (p *Package) compile() {
     argv := make([]string, 0)
     argv = append(argv, compiler)
     argv = append(argv, "-I")
-    for _, inc := range includeDirs {
-        argv = append(argv, inc)
-    }
-    if backend == "express" {
+    argv = append(argv, includeDir)
+
+    if root != "" {
         argv = append(argv, "-I")
         argv = append(argv, root)
     }

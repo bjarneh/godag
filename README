@@ -1,42 +1,31 @@
 
 About:
 ------------------------------------------------------------
-This program will hopefully make it easier to compile 
-source code in the go programming language.
+This program will hopefully make it easier to compile
+source code written in the go programming language.
 A dependency graph is constructed from imports, this
 is sorted with a topological sort to figure out legal
-compile order. [865]g and [865]l is used to compile and
-link program. Testing and formatting is also automated.
+compile order. Testing, formatting and building reverse
+dependencies through goinstall are also automated.
 
 
-Install:  [Linux/Unix]
+Install:  [Linux/Unix/Mac/Windows]
 ------------------------------------------------------------
 
-
-Run the script ./build.sh
-
-
-1) compile (+link) the source code
-2) move binary (gd) to $HOME/bin
+Compile and link the makefile, you may want to substitute
+8g and 8l with 6g/5g and 6l/5l pending on your architecture
 
 
-NOTE: If $HOME/bin is not present, it falls
-      back to $GOBIN, which is required now.
+1) 8g gdmake.go
+2) 8l -o gdmake gdmake.8   # on Windows gdmake.exe
+3) ./gdmake install        # on Windows gdmake.exe install
+
+This will compile + link the binary (gd) and move it
+to $HOME/bin if it is present, if not it falls back to
+$GOBIN, which is required now.
 
 
-./build.sh help   to see all available targets
-
-
-
-Install:  [Windows] (experimental)
-------------------------------------------------------------
-
-
-Run the script ./build.bat install
-
-1) compile (+link) the source code
-2) move binary (gd) to $GOBIN
-
+./gdmake -help   to see all available targets
 
 
 Try it Out:
@@ -55,6 +44,14 @@ $ gd src -o gd    # will compile and link executable
 $ gd -e src       # will goinstall external dependencies
 
 
+Contributors
+------------------------------------------------------------
+
+Hans Stimer
+Markus Martin
+Robert Hencke
+Hunter Freyer
+
 
 Philosophy (Babble?)
 ------------------------------------------------------------
@@ -68,11 +65,10 @@ the Makefiles, but makes organisation far less intuitive than
 a directory-tree package-structure.
 
 
-
 Completion
 ------------------------------------------------------------
 
-A small completion script for bash is placed in util/
+Bash completion scripts for gd and gdmake are placed in util
 
 
 Logo

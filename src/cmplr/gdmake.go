@@ -228,7 +228,7 @@ type Target struct {
  Code inside playground is NOT auto generated, each time you run
  this command:
 
-     gd -gdmake=somefilename.go
+     gd -gdmk=somefilename.go
 
   this happens:
 
@@ -247,7 +247,7 @@ type Target struct {
 var PlaygroundTmpl = `
 var targets = map[string]*Target{
     "full": &Target{
-        desc:  "compile all packges (ignore !modified)",
+        desc:  "compile all packages (ignore !modified)",
         first: func() { oldPkgFound = true },
         last:  nil,
     },
@@ -387,7 +387,7 @@ func init() {
     flag.BoolVar(&list, "list", false, "list targets for bash autocomplete")
 
     flag.Usage = func() {
-        fmt.Println("\n gdmake.go - makefile in pure go\n")
+        fmt.Println("\n gdmk - makefile in pure go\n")
         fmt.Printf(" usage: %s [OPTIONS] [TARGET]\n\n", os.Args[0])
         fmt.Println(" options:\n")
         fmt.Println("  -h --help         print this menu and exit")

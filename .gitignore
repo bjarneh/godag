@@ -3,4 +3,4 @@ example
 mklib.sh
 tmp-pkgroot-*
 *.bak
-gdmake
+gdmk

@@ -4,9 +4,9 @@ About:
 This program will hopefully make it easier to compile
 source code written in the go programming language.
 A dependency graph is constructed from imports, this
-is sorted with a topological sort to figure out legal
+is sorted with a topological sort to figure out a legal
 compile order. Testing, formatting and building reverse
-dependencies through goinstall are also automated.
+dependencies are also automated.
 
 
 Install:  [Linux/Unix/Mac/Windows]
@@ -16,16 +16,17 @@ Compile and link the makefile, you may want to substitute
 8g and 8l with 6g/5g and 6l/5l pending on your architecture
 
 
-1) 8g gdmake.go
-2) 8l -o gdmake gdmake.8   # on Windows gdmake.exe
-3) ./gdmake install        # on Windows gdmake.exe install
+1) 8g _gdmk.go
+2) 8l -o gdmk _gdmk.8   # on Windows gdmk.exe
+3) ./gdmk install       # on Windows gdmk.exe
+
 
 This will compile + link the binary (gd) and move it
 to $HOME/bin if it is present, if not it falls back to
 $GOBIN, which is required now.
 
 
-./gdmake -help   to see all available targets
+./gdmk -help   to see all available targets/options
 
 
 Try it Out:
@@ -68,7 +69,7 @@ a directory-tree package-structure.
 Completion
 ------------------------------------------------------------
 
-Bash completion scripts for gd and gdmake are placed in util
+Bash completion scripts for gd and gdmk are placed in util
 
 
 Logo

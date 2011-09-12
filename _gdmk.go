@@ -1,4 +1,4 @@
-/* Built : Mon Aug 29 17:53:09 UTC 2011 */
+/* Built : Sun Sep 11 19:43:06 UTC 2011 */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -37,7 +37,7 @@ type Target struct {
  Code inside playground is NOT auto generated, each time you run
  this command:
 
-     gd -gdmake=somefilename.go
+     gd -gdmk=somefilename.go
 
   this happens:
 
@@ -46,8 +46,7 @@ type Target struct {
       of somefilename.go, i.e. you never loose the targets you
       create inside the playground..
   }else{
-      write somefilename.go with hello world + full target,
-      i.e. the default example targets
+      write somefilename.go with example targets
   }
 
 ********************************************************************/
@@ -57,7 +56,7 @@ type Target struct {
 
 var targets = map[string]*Target{
     "clean": &Target{
-        desc:  "rm -rf _obj/ util/gdmake.[856o]",
+        desc:  "rm -rf _obj/ _gdmk.[856o]",
         first: cleanDoFirst,
         last:  nil,
     },
@@ -188,14 +187,14 @@ func debianDoLast() {
     copyGzip("util/gd-completion.sh", "debian/etc/bash_completion.d/gd", false)
     e = os.Chmod("debian/etc/bash_completion.d/gd", 0755)
     quitter(e)
-    copyGzip("util/gdmake-completion.sh", "debian/etc/bash_completion.d/gdmake", false)
-    e = os.Chmod("debian/etc/bash_completion.d/gdmake", 0755)
+    copyGzip("util/gdmk-completion.sh", "debian/etc/bash_completion.d/gdmk", false)
+    e = os.Chmod("debian/etc/bash_completion.d/gdmk", 0755)
     quitter(e)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/gd.1.gz", true)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/godag.1.gz", true)
     copyGzipStringBuffer(debianCopyright, "debian/usr/share/doc/godag/copyright", false)
     copyGzipStringBuffer(debianChangelog, "debian/usr/share/doc/godag/changelog.Debian.gz", true)
-    copyGzipStringBuffer("/etc/bash_completion.d/gd\n/etc/bash_completion.d/gdmake\n", "debian/DEBIAN/conffiles", false)
+    copyGzipStringBuffer("/etc/bash_completion.d/gd\n/etc/bash_completion.d/gdmk\n", "debian/DEBIAN/conffiles", false)
 
     if isDir(".hg") {
         hglog, e := exec.Command("hg", "log").CombinedOutput()
@@ -468,25 +467,25 @@ var self = []*Package{
     &Package{
         name:   "main",
         full:   "main",
-        output: "util/main",
-        files:  []string{"util/gdmake.go"},
+        output: "_gdmk",
+        files:  []string{"_gdmk.go"},
     },
 }
 
 func updateDoFirst() {
 
     initBackend()
-    output = "gdmake"
+    output = "gdmk"
 
     if os.Getenv("GOOS") == "windows" {
         fmt.Println("\n[ update ]\n")
         fmt.Println(" this target does not work on Windows,")
-        fmt.Println(" to update 'gdmake' run these commands\n")
-        fmt.Printf(" %s gdmake.go\n", compiler)
+        fmt.Println(" to update 'gdmk' run these commands\n")
+        fmt.Printf(" %s _gdmk.go\n", compiler)
         if linker == "8l" {
-            fmt.Println(" 8g -o gdmake.exe gdmake.8\n")
+            fmt.Println(" 8l -o gdmk.exe _gdmk.8\n")
         }else{
-            fmt.Println(" 6g -o gdmake.exe gdmake.6\n")
+            fmt.Println(" 6l -o gdmk.exe _gdmk.6\n")
         }
         os.Exit(1)
     }
@@ -608,7 +607,7 @@ var (
     oldPkgFound = false
 )
 
-var includeDirs = []string{"_obj"}
+var includeDir = "_obj"
 
 var say = Say(true)
 
@@ -633,7 +632,7 @@ func init() {
     flag.BoolVar(&list, "list", false, "list targets for bash autocomplete")
 
     flag.Usage = func() {
-        fmt.Println("\n gdmake.go - makefile in pure go\n")
+        fmt.Println("\n gdmk - makefile in pure go\n")
         fmt.Printf(" usage: %s [OPTIONS] [TARGET]\n\n", os.Args[0])
         fmt.Println(" options:\n")
         fmt.Println("  -h --help         print this menu and exit")
@@ -754,13 +753,11 @@ func delete(pkgs []*Package) {
         }
     }
 
-    for i := 0; i < len(includeDirs); i++ {
-        if emptyDir(includeDirs[i]){
-            say.Printf("rm: %s\n", includeDirs[i])
-            e := os.RemoveAll(includeDirs[i])
-            if e != nil {
-                log.Fatalf("[ERROR] failed to remove: %s\n", includeDirs[i])
-            }
+    if emptyDir(includeDir){
+        say.Printf("rm: %s\n", includeDir)
+        e := os.RemoveAll(includeDir)
+        if e != nil {
+            log.Fatalf("[ERROR] failed to remove: %s\n", includeDir)
         }
     }
 
@@ -805,10 +802,10 @@ func link(pkgs []*Package) {
     argv = append(argv, linker)
 
     if backend != "gccgo" {
-        for i := 0; i < len(includeDirs); i++ {
-            argv = append(argv, "-L")
-            argv = append(argv, includeDirs[i])
-        }
+
+        argv = append(argv, "-L")
+        argv = append(argv, includeDir)
+
         if root != "" {
             argv = append(argv, "-L")
             argv = append(argv, root)
@@ -1069,9 +1066,8 @@ func (p *Package) compile() {
     argv := make([]string, 0)
     argv = append(argv, compiler)
     argv = append(argv, "-I")
-    for _, inc := range includeDirs {
-        argv = append(argv, inc)
-    }
+    argv = append(argv, includeDir)
+
     if root != "" {
         argv = append(argv, "-I")
         argv = append(argv, root)

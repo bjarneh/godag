@@ -60,7 +60,7 @@ var strs = []string{
     "-arch",
     "-dot",
     "-tabwidth",
-    "-rew-rule",
+    "-rewrite",
     "-output",
     "-bench",
     "-match",
@@ -68,7 +68,7 @@ var strs = []string{
     "-lib",
     "-main",
     "-backend",
-    "-gdmake",
+    "-gdmk",
 }
 
 
@@ -90,15 +90,15 @@ func init() {
     getopt.BoolOption("-q -quiet --quiet")
     getopt.BoolOption("-V -verbose --verbose")
     getopt.BoolOption("-f -fmt --fmt")
-    getopt.BoolOption("-tab --tab")
+    getopt.BoolOption("-T -tab --tab")
     getopt.BoolOption("-e -external --external")
     getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
-    getopt.StringOption("-dot -dot= --dot --dot=")
+    getopt.StringOption("-D -D= -dot -dot= --dot --dot=")
     getopt.StringOption("-L -L= -lib -lib= --lib --lib=")
     getopt.StringOption("-I -I=")
-    getopt.StringOption("-g -g= -gdmake -gdmake= --gdmake --gdmake=")
-    getopt.StringOption("-tabwidth --tabwidth -tabwidth= --tabwidth=")
-    getopt.StringOption("-rew-rule --rew-rule -rew-rule= --rew-rule=")
+    getopt.StringOption("-g -g= -gdmk -gdmk= --gdmk --gdmk=")
+    getopt.StringOption("-w -w= -tabwidth --tabwidth -tabwidth= --tabwidth=")
+    getopt.StringOption("-r -r= -rewrite --rewrite -rewrite= --rewrite=")
     getopt.StringOption("-o -o= -output --output -output= --output=")
     getopt.StringOption("-M -M= -main --main -main= --main=")
     getopt.StringOption("-b -b= -bench --bench -bench= --bench=")
@@ -312,9 +312,9 @@ func main() {
         compiler.CreateArgv(sorted)
     }
 
-    // gdmake
-    if global.GetString("-gdmake") != "" {
-        gdmake.Make(global.GetString("-gdmake"), sorted, dgrph.Alien().Slice())
+    // gdmk
+    if global.GetString("-gdmk") != "" {
+        gdmake.Make(global.GetString("-gdmk"), sorted, dgrph.Alien().Slice())
         os.Exit(0)
     }
 
@@ -393,9 +393,9 @@ func parseArgv(argv []string) (args []string) {
         walker.IncludeFile = allGoFilesFilter
     }
 
-    if getopt.IsSet("-gdmake") {
+    if getopt.IsSet("-gdmk") {
         global.SetString("-lib", "_obj")
-        // gdmake does not support testing
+        // gdmk does not support testing
         walker.IncludeFile = noTestFilesFilter
     }
 
@@ -431,23 +431,23 @@ func printHelp() {
   -s --sort            print legal compile order
   -o --output          link main package -> output
   -S --static          statically link binary
-  -g --gdmake          create a go makefile for project
+  -g --gdmk            create a go makefile for project
   -d --dryrun          print what gd would do (stdout)
   -c --clean           delete generated object code
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package
-  -dot                 create a graphviz dot file
+  -D --dot             create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests
-  -b --bench           regex to select benchmarks
   -m --match           regex to select unit-tests
+  -b --bench           regex to select benchmarks
   -V --verbose         verbose unit-test and goinstall
   --test-bin           name of test-binary (default: gdtest)
   -f --fmt             run gofmt on src and exit
-  --rew-rule           pass rewrite rule to gofmt
-  --tab                pass -tabindent=true to gofmt
-  --tabwidth           pass -tabwidth to gofmt (default: 4)
+  -r --rewrite         pass rewrite rule to gofmt
+  -T --tab             pass -tabindent=true to gofmt
+  -w --tabwidth        pass -tabwidth to gofmt (default: 4)
   -e --external        goinstall all external dependencies
   -B --backend         [gc,gccgo,express] (default: gc)
     `
@@ -456,7 +456,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.2 (r.59)")
+    fmt.Println("godag 0.2 (r.60)")
 }
 
 func printListing() {
@@ -469,23 +469,23 @@ func printListing() {
   -s --sort            =>   %t
   -o --output          =>   '%s'
   -S --static          =>   %t
-  -g --gdmake          =>   '%s'
+  -g --gdmk            =>   '%s'
   -d --dryrun          =>   %t
   -c --clean           =>   %t
   -q --quiet           =>   %t
   -L --lib             =>   '%s'
   -M --main            =>   '%s'
   -I                   =>   %v
-  -dot                 =>   '%s'
+  -D --dot             =>   '%s'
   -t --test            =>   %t
-  -b --bench           =>   '%s'
   -m --match           =>   '%s'
+  -b --bench           =>   '%s'
   -V --verbose         =>   %t
   --test-bin           =>   '%s'
   -f --fmt             =>   %t
-  --rew-rule           =>   '%s'
-  --tab                =>   %t
-  --tabwidth           =>   %s
+  -r --rewrite         =>   '%s'
+  -T --tab             =>   %t
+  -w --tabwidth        =>   %s
   -e --external        =>   %t
   -B --backend         =>   '%s'
 
@@ -502,7 +502,7 @@ func printListing() {
         global.GetBool("-sort"),
         global.GetString("-output"),
         global.GetBool("-static"),
-        global.GetString("-gdmake"),
+        global.GetString("-gdmk"),
         global.GetBool("-dryrun"),
         global.GetBool("-clean"),
         global.GetBool("-quiet"),
@@ -511,8 +511,8 @@ func printListing() {
         includes,
         global.GetString("-dot"),
         global.GetBool("-test"),
-        global.GetString("-bench"),
         global.GetString("-match"),
+        global.GetString("-bench"),
         global.GetBool("-verbose"),
         global.GetString("-test-bin"),
         global.GetBool("-fmt"),

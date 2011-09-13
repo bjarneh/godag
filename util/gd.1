@@ -60,7 +60,7 @@ print version and exit
 .B
 \-l, \-\-list
 .RS 4
-list options and values
+list options and values and exit
 .RE
 .PP
 .B
@@ -102,7 +102,7 @@ print what gd would do (to stdout)
 .B
 \-c, \-\-clean
 .RS 4
-\fBrm\fR *\&.[a865] from src (or lib) directory
+delete generated object code
 .RE
 .PP
 .B
@@ -124,9 +124,9 @@ regex to select main package (linking)
 .RE
 .PP
 .B
-\-\-dot
+\-D, \-\-dot
 .RS 4
-create a \fBgraphviz\fR dot-file
+create a \fBgraphviz\fR dot file
 .RE
 .PP
 .B
@@ -138,19 +138,19 @@ import package directories
 .B
 \-t, \-\-test
 .RS 4
-run all unit\-test
-.RE
-.PP
-.B
-\-b, \-\-bench
-.RS 4
-regex to decide which benchmarks to run
+run all unit\-tests
 .RE
 .PP
 .B
 \-m, \-\-match
 .RS 4
-regex to decide which unit\-tests to run
+regex to select unit\-tests
+.RE
+.PP
+.B
+\-b, \-\-bench
+.RS 4
+regex to select benchmarks
 .RE
 .PP
 .B
@@ -172,27 +172,21 @@ run \fBgofmt\fR on src and exit
 .RE
 .PP
 .B
-\-\-rew\-rule
+\-r, \-\-rewrite
 .RS 4
 pass rewrite rule to \fBgofmt\fR
 .RE
 .PP
 .B
-\-\-tab
+\-T, \-\-tab
 .RS 4
 pass \-tabindent=true to \fBgofmt\fR
 .RE
 .PP
 .B
-\-\-tab\-width
+\-w, \-\-tabwidth
 .RS 4
 pass \-tabwidth to \fBgofmt\fR (default:4)
-.RE
-.PP
-.B
-\-\-no\-comments
-.RS 4
-pass \-comments=false to \fBgofmt\fR
 .RE
 .PP
 .B
@@ -273,6 +267,12 @@ path1 := path.Join(root, "a", "b", "c", "testdata", "file1\&.txt")
 gd src/
 .RS 4
 compile source\-code located in \fBsrc\fR
+.RE
+.PP
+.B
+gd
+.RS 4
+compile source\-code located in \fBsrc\fR, src\-root defaults to \fBsrc\fR\&.
 .RE
 .PP
 .B

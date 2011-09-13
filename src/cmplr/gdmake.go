@@ -13,6 +13,7 @@ import (
     "go/token"
     "go/ast"
     "fmt"
+    "path/filepath"
     "strings"
     "cmplr/dag"
     "utilz/handy"
@@ -65,7 +66,9 @@ func Make(fname string, pkgs []*dag.Package, alien []string) {
         }
 
         if pOk || iOk {
-            e := os.Rename(fname, "."+fname+".bak")
+            dn, fn := filepath.Split(fname)
+            backupFname := filepath.Join(dn, "."+fn+".bak")
+            e := os.Rename(fname, backupFname)
             if e != nil {
                 log.Printf("[WARNING] failed to make backup of: %s\n",fname)
             }

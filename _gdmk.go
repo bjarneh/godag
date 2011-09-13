@@ -1,4 +1,4 @@
-/* Built : Sun Sep 11 19:43:06 UTC 2011 */
+/* Built : Tue Sep 13 07:35:50 UTC 2011 */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -275,9 +275,14 @@ func installDoLast() {
         name = filepath.Join(os.Getenv("GOBIN"), "gd")
     }
 
+    // os.Rename does not work across partitions, i.e.
+    // it had to be replaced by a copy + rm gd
     say.Printf("move gd  : %s\n", name)
-
-    os.Rename("gd", name)
+    copyGzip("gd", name, false)
+    e := os.Chmod(name, 0755)
+    quitter(e)
+    e = os.Remove("gd")
+    quitter(e)
 }
 
 
@@ -1175,12 +1180,12 @@ func main() {
     listTargets() // for bash auto complete
     initBackend() // gc/gcc/express
 
-    doFirst()
-    defer doLast()
-
     if quiet {
         say = Say(false)
     }
+
+    doFirst()
+    defer doLast()
 
     switch {
     case help:

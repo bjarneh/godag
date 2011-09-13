@@ -65,7 +65,7 @@ func Make(fname string, pkgs []*dag.Package, alien []string) {
         }
 
         if pOk || iOk {
-            e := os.Rename(fname, fname+".bak")
+            e := os.Rename(fname, "."+fname+".bak")
             if e != nil {
                 log.Printf("[WARNING] failed to make backup of: %s\n",fname)
             }
@@ -866,12 +866,12 @@ func main() {
     listTargets() // for bash auto complete
     initBackend() // gc/gcc/express
 
-    doFirst()
-    defer doLast()
-
     if quiet {
         say = Say(false)
     }
+
+    doFirst()
+    defer doLast()
 
     switch {
     case help:

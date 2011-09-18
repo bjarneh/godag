@@ -61,7 +61,7 @@ var targets = map[string]*Target{
         last:  nil,
     },
     "uninstall": &Target{
-        desc:  "target:clean + rf -f $HOME/bin/gd $GOBIN/gd",
+        desc:  "target:clean + rm -f $HOME/bin/gd $GOBIN/gd",
         first: uninstallDoFirst,
         last:  nil,
     },

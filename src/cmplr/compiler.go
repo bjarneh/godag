@@ -205,6 +205,25 @@ func SerialCompile(pkgs []*dag.Package) bool {
     return !oldPkgFound
 }
 
+// this is faster than ParallelCompile, but not fully tested
+func FastParallel(pkgs []*dag.Package) bool {
+    for y := 0; y < len(pkgs); y++ {
+        pkgs[y].ResetIndegree()
+    }
+    for y := 0; y < len(pkgs); y++ {
+        pkgs[y].InitWaitGroup()
+    }
+    ch := make(chan int)
+    for y := 0; y < len(pkgs); y++ {
+        go pkgs[y].Compile(ch)
+    }
+    for y := 0; y < len(pkgs); y++ {
+        _ = <-ch
+    }
+    close(ch)
+    return ! dag.OldPkgYet()
+}
+
 func ParallelCompile(pkgs []*dag.Package) bool {
 
     var localDeps *stringset.StringSet
@@ -220,6 +239,10 @@ func ParallelCompile(pkgs []*dag.Package) bool {
     for y = 0; y < len(pkgs); y++ {
         localDeps.Add(pkgs[y].Name)
         pkgs[y].ResetIndegree()
+    }
+
+    for _, pp := range pkgs {
+        say.Printf("%s: %d\n",pp.Name, pp.Indegree)
     }
 
     zeroFirst = make([]*dag.Package, len(pkgs))

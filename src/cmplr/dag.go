@@ -15,6 +15,7 @@ import (
     "log"
     "strings"
     "regexp"
+    "sync"
     "path/filepath"
     "utilz/stringset"
     "utilz/stringbuffer"
@@ -22,6 +23,10 @@ import (
     "utilz/global"
     "utilz/say"
 )
+
+
+var locker = new(sync.Mutex)
+var oldPkgFound bool // false
 
 
 type Dag map[string]*Package // package-name -> Package object
@@ -33,6 +38,7 @@ type Package struct {
     Files           []string // relative path of files
     dependencies    *stringset.StringSet
     children        []*Package // packages that depend on this
+    waiter          *sync.WaitGroup
 }
 
 type TestCollector struct {
@@ -49,6 +55,7 @@ func newPackage() *Package {
     p.Files = make([]string, 0)
     p.dependencies = stringset.New()
     p.children = make([]*Package, 0)
+    p.waiter = nil
     return p
 }
 
@@ -571,6 +578,39 @@ func (p *Package) ResetIndegree() {
     }
 }
 
+func (p *Package) InitWaitGroup() {
+    p.waiter = new(sync.WaitGroup)
+    p.waiter.Add(p.Indegree)
+}
+
+func (p *Package) Decrement() {
+    p.waiter.Done()
+}
+
+func (p *Package) Compile(ch chan int) {
+
+    var doCompile bool
+
+    p.waiter.Wait()
+
+    if OldPkgYet() {
+        doCompile = true
+    }else if ! p.UpToDate(){
+        oldPkgIsFound()
+        doCompile = true
+    }else{
+        say.Printf("up 2 date: %s\n", p.Name)
+    }
+    if doCompile {
+        say.Printf("compiling: %s\n", p.Name)
+        handy.StdExecve(p.Argv, true)
+    }
+    for _, child := range p.children {
+        child.Decrement()
+    }
+    ch<-1
+}
+
 func (p *Package) Visit(node ast.Node) (v ast.Visitor) {
 
     switch node.(type) {
@@ -619,4 +659,18 @@ func getSyntaxTreeOrDie(file string, mode uint) *ast.File {
         log.Fatalf("%s\n", err)
     }
     return absSynTree
+}
+
+
+func OldPkgYet() (res bool) {
+    locker.Lock()
+    res = oldPkgFound
+    locker.Unlock()
+    return res
+}
+
+func oldPkgIsFound() {
+    locker.Lock()
+    oldPkgFound = true
+    locker.Unlock()
 }

@@ -224,6 +224,7 @@ func FastParallel(pkgs []*dag.Package) bool {
     return ! dag.OldPkgYet()
 }
 
+// depricated START
 func ParallelCompile(pkgs []*dag.Package) bool {
 
     var localDeps *stringset.StringSet
@@ -341,6 +342,7 @@ func gCompile(argv []string, c chan bool) {
     ok := handy.StdExecve(argv, false) // don't exit on error
     c <- ok
 }
+// depricated STOP
 
 // for removal of temoprary packages created for testing and so on..
 func DeletePackages(pkgs []*dag.Package) bool {

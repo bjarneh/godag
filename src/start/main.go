@@ -320,8 +320,7 @@ func main() {
 
     // compile; up2date == true => 0 packages modified
     if runtime.GOMAXPROCS(-1) > 1 && !global.GetBool("-dryrun") {
-///         up2date = compiler.ParallelCompile(sorted)
-        up2date = compiler.FastParallel(sorted)
+        up2date = compiler.FastParallel(sorted) // updated parallel compile
     } else {
         up2date = compiler.SerialCompile(sorted)
     }

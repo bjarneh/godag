@@ -13,7 +13,6 @@ type StringBuffer struct {
     buffer       []byte
 }
 
-
 func New() *StringBuffer {
     s := new(StringBuffer)
     s.Clear()

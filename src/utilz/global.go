@@ -23,7 +23,6 @@ var float32Map map[string]float32
 var boolMap map[string]bool
 var interfaceMap map[string]interface{}
 
-
 func init() {
     intMap = make(map[string]int)
     stringMap = make(map[string]string)

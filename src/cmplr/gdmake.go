@@ -50,7 +50,6 @@ var m = map[int]string{
     Main:         MainTmpl,
 }
 
-
 func Make(fname string, pkgs []*dag.Package, alien []string) {
 
     if handy.IsFile(fname) {
@@ -70,7 +69,7 @@ func Make(fname string, pkgs []*dag.Package, alien []string) {
             backupFname := filepath.Join(dn, "."+fn+".bak")
             e := os.Rename(fname, backupFname)
             if e != nil {
-                log.Printf("[WARNING] failed to make backup of: %s\n",fname)
+                log.Printf("[WARNING] failed to make backup of: %s\n", fname)
             }
         }
     }
@@ -106,7 +105,7 @@ func (c *collector) String() string {
     sb := stringbuffer.New()
     sb.Add("\nimport(\n")
     for i := 0; i < len(c.deps); i++ {
-        sb.Add("    "+ c.deps[i] + "\n")
+        sb.Add("    " + c.deps[i] + "\n")
     }
     sb.Add(")\n\n")
     return sb.String()
@@ -150,7 +149,7 @@ func hasModifiedImports(fname string) (string, bool) {
     set.Add(`"path/filepath"`)
 
     for i := 0; i < len(c.deps); i++ {
-        if ! set.Contains(c.deps[i]) {
+        if !set.Contains(c.deps[i]) {
             return c.String(), true
         }
     }
@@ -164,7 +163,7 @@ func hasModifiedPlayground(fname string) (mod string, ok bool) {
     var startOffset, stopOffset int
 
     start = []byte("// PLAYGROUND START\n")
-    stop  = []byte("// PLAYGROUND STOP\n")
+    stop = []byte("// PLAYGROUND STOP\n")
 
     content, err := ioutil.ReadFile(fname)
 
@@ -173,15 +172,15 @@ func hasModifiedPlayground(fname string) (mod string, ok bool) {
     }
 
     startOffset = bytes.Index(content, start)
-    stopOffset  = bytes.Index(content, stop)
+    stopOffset = bytes.Index(content, stop)
 
     if startOffset == -1 || stopOffset == -1 {
         return "", false
     }
 
-    playground = content[startOffset + len(start):stopOffset]
+    playground = content[startOffset+len(start) : stopOffset]
 
-    ok = ( string(playground) != PlaygroundTmpl )
+    ok = (string(playground) != PlaygroundTmpl)
 
     return string(playground), ok
 

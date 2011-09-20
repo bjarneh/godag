@@ -43,7 +43,6 @@ func Printf(f string, args ...interface{}) (int, os.Error) {
     return 0, nil
 }
 
-
 func Fprint(w io.Writer, args ...interface{}) (int, os.Error) {
     if !mute {
         return fmt.Fprint(w, args...)

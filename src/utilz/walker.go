@@ -13,7 +13,6 @@ import (
 // Filters can be added on both directory and filenames in order to filter
 // the resulting slice of pathnames.
 
-
 // reassign to filter pathwalk
 var IncludeDir = func(p string) bool { return true }
 var IncludeFile = func(p string) bool { return true }

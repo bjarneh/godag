@@ -21,7 +21,6 @@ type StringOption struct {
     count int
 }
 
-
 func newStringOption(op []string) *StringOption {
     s := new(StringOption)
     s.options = op
@@ -86,7 +85,6 @@ func (s *StringOption) addArgument(arg string) {
 func (s *StringOption) String() string {
     return "StringOption " + s.options[0]
 }
-
 
 ///////////////////////////////////////////////////////////
 

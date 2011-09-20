@@ -9,7 +9,6 @@ import (
     "fmt"
     "log"
     "strings"
-    "runtime"
     "path/filepath"
     "utilz/walker"
     "cmplr/compiler"
@@ -22,7 +21,6 @@ import (
     "utilz/say"
 )
 
-
 // option parser object (struct)
 var getopt *gopt.GetOpt
 
@@ -34,7 +32,6 @@ var includes []string = nil
 
 // source root
 var srcdir string = "src"
-
 
 // keys for the bool options
 var bools = []string{
@@ -70,7 +67,6 @@ var strs = []string{
     "-backend",
     "-gdmk",
 }
-
 
 func init() {
 
@@ -126,7 +122,7 @@ func init() {
     // Testing on Windows requires .exe ending
     if os.Getenv("GOOS") == "windows" {
         global.SetString("-test-bin", "gdtest.exe")
-    }else{
+    } else {
         global.SetString("-test-bin", "gdtest")
     }
 
@@ -319,10 +315,10 @@ func main() {
     }
 
     // compile; up2date == true => 0 packages modified
-    if runtime.GOMAXPROCS(-1) > 1 && !global.GetBool("-dryrun") {
-        up2date = compiler.FastParallel(sorted) // updated parallel compile
+    if global.GetBool("-dryrun") {
+        compiler.Dryrun(sorted)
     } else {
-        up2date = compiler.SerialCompile(sorted)
+        up2date = compiler.Compile(sorted) // updated parallel
     }
 
     // test
@@ -334,7 +330,9 @@ func main() {
         } else {
             compiler.CreateArgv(testMain)
         }
-        compiler.SerialCompile(testMain)
+        if !global.GetBool("-dryrun") {
+            compiler.Compile(testMain)
+        }
         switch global.GetString("-backend") {
         case "gc", "express":
             compiler.ForkLink(global.GetString("-test-bin"), testMain, nil, false)
@@ -349,7 +347,10 @@ func main() {
             handy.Delete(testLib, false)
         }
         testArgv := compiler.CreateTestArgv()
-        if !global.GetBool("-dryrun") {
+        if global.GetBool("-dryrun") {
+            testArgv[0] = filepath.Base(testArgv[0])
+            say.Printf("%s\n", strings.Join(testArgv, " "))
+        } else {
             say.Printf("testing  : ")
             if global.GetBool("-verbose") {
                 say.Printf("\n")
@@ -359,8 +360,6 @@ func main() {
             if !ok {
                 os.Exit(1)
             }
-        } else {
-            say.Printf("%s\n", strings.Join(testArgv, " "))
         }
     }
 
@@ -370,7 +369,6 @@ func main() {
     }
 
 }
-
 
 func parseArgv(argv []string) (args []string) {
 
@@ -411,7 +409,6 @@ func parseArgv(argv []string) (args []string) {
 
     return args
 }
-
 
 func printHelp() {
     var helpMSG string = `

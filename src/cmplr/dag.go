@@ -24,7 +24,6 @@ import (
     "utilz/say"
 )
 
-
 var locker = new(sync.Mutex)
 var oldPkgFound bool // false
 
@@ -39,6 +38,8 @@ type Package struct {
     dependencies    *stringset.StringSet
     children        []*Package // packages that depend on this
     waiter          *sync.WaitGroup
+    needsCompile    bool
+    lock            *sync.Mutex
 }
 
 type TestCollector struct {
@@ -56,6 +57,8 @@ func newPackage() *Package {
     p.dependencies = stringset.New()
     p.children = make([]*Package, 0)
     p.waiter = nil
+    p.needsCompile = false // yeah yeah..
+    p.lock = new(sync.Mutex)
     return p
 }
 
@@ -64,7 +67,6 @@ func newTestCollector() *TestCollector {
     t.Names = make([]string, 0)
     return t
 }
-
 
 func (d Dag) Parse(root string, files []string) {
 
@@ -583,8 +585,11 @@ func (p *Package) InitWaitGroup() {
     p.waiter.Add(p.Indegree)
 }
 
-func (p *Package) Decrement() {
+func (p *Package) Decrement(compile bool) {
+    p.lock.Lock()
+    p.needsCompile = compile
     p.waiter.Done()
+    p.lock.Unlock()
 }
 
 func (p *Package) Compile(ch chan int) {
@@ -593,12 +598,10 @@ func (p *Package) Compile(ch chan int) {
 
     p.waiter.Wait()
 
-    if OldPkgYet() {
-        doCompile = true
-    }else if ! p.UpToDate(){
+    if p.needsCompile || !p.UpToDate() {
         oldPkgIsFound()
         doCompile = true
-    }else{
+    } else {
         say.Printf("up 2 date: %s\n", p.Name)
     }
     if doCompile {
@@ -606,9 +609,9 @@ func (p *Package) Compile(ch chan int) {
         handy.StdExecve(p.Argv, true)
     }
     for _, child := range p.children {
-        child.Decrement()
+        child.Decrement(doCompile)
     }
-    ch<-1
+    ch <- 1
 }
 
 func (p *Package) Visit(node ast.Node) (v ast.Visitor) {
@@ -660,7 +663,6 @@ func getSyntaxTreeOrDie(file string, mode uint) *ast.File {
     }
     return absSynTree
 }
-
 
 func OldPkgYet() (res bool) {
     locker.Lock()

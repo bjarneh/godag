@@ -20,14 +20,12 @@ import (
     "cmplr/dag"
 )
 
-
 var includes []string
 var srcroot string
 var libroot string
 var pathLinker string
 var pathCompiler string
 var suffix string
-
 
 func Init(srcdir string, include []string) {
 
@@ -131,7 +129,6 @@ func gcc() {
     suffix = ".o"
 }
 
-
 func CreateArgv(pkgs []*dag.Package) {
 
     var argv []string
@@ -183,166 +180,37 @@ func CreateLibArgv(pkgs []*dag.Package) {
 
 }
 
-func SerialCompile(pkgs []*dag.Package) bool {
-
-    var oldPkgFound bool = false
-
+func Dryrun(pkgs []*dag.Package) {
+    binary := filepath.Base(pathCompiler)
     for y := 0; y < len(pkgs); y++ {
-
-        if global.GetBool("-dryrun") {
-            fmt.Printf("%s || exit 1\n", strings.Join(pkgs[y].Argv, " "))
-        } else {
-            if oldPkgFound || !pkgs[y].UpToDate() {
-                say.Println("compiling:", pkgs[y].Name)
-                handy.StdExecve(pkgs[y].Argv, true)
-                oldPkgFound = true
-            } else {
-                say.Println("up 2 date:", pkgs[y].Name)
-            }
-        }
+        args := strings.Join(pkgs[y].Argv[1:], " ")
+        fmt.Printf("%s %s || exit 1\n", binary, args)
     }
-
-    return !oldPkgFound
 }
 
-// this is faster than ParallelCompile, but not fully tested
-func FastParallel(pkgs []*dag.Package) bool {
+// this is faster than ParallelCompile i.e. (the old version).
+// after release.r60.1 this is used for all compile jobs
+func Compile(pkgs []*dag.Package) bool {
+    // set indegree, i.e. how many jobs to wait for
     for y := 0; y < len(pkgs); y++ {
         pkgs[y].ResetIndegree()
     }
+    // init waitgroup to number of jobs calculated above
     for y := 0; y < len(pkgs); y++ {
         pkgs[y].InitWaitGroup()
     }
+    // start up one go-routine for each package
     ch := make(chan int)
     for y := 0; y < len(pkgs); y++ {
         go pkgs[y].Compile(ch)
     }
+    // make sure all jobs finished, i.e. drain channel
     for y := 0; y < len(pkgs); y++ {
         _ = <-ch
     }
     close(ch)
-    return ! dag.OldPkgYet()
+    return !dag.OldPkgYet()
 }
-
-// depricated START
-func ParallelCompile(pkgs []*dag.Package) bool {
-
-    var localDeps *stringset.StringSet
-    var compiledDeps *stringset.StringSet
-    var y, z, count int
-    var parallel []*dag.Package
-    var oldPkgFound bool = false
-    var zeroFirst []*dag.Package
-
-    localDeps = stringset.New()
-    compiledDeps = stringset.New()
-
-    for y = 0; y < len(pkgs); y++ {
-        localDeps.Add(pkgs[y].Name)
-        pkgs[y].ResetIndegree()
-    }
-
-    for _, pp := range pkgs {
-        say.Printf("%s: %d\n",pp.Name, pp.Indegree)
-    }
-
-    zeroFirst = make([]*dag.Package, len(pkgs))
-
-    for y = 0; y < len(pkgs); y++ {
-        if pkgs[y].Indegree == 0 {
-            zeroFirst[count] = pkgs[y]
-            count++
-        }
-    }
-
-    for y = 0; y < len(pkgs); y++ {
-        if pkgs[y].Indegree > 0 {
-            zeroFirst[count] = pkgs[y]
-            count++
-        }
-    }
-
-    parallel = make([]*dag.Package, 0)
-
-    for y = 0; y < len(zeroFirst); {
-
-        if !zeroFirst[y].Ready(localDeps, compiledDeps) {
-
-            oldPkgFound = compileMultipe(parallel, oldPkgFound)
-
-            for z = 0; z < len(parallel); z++ {
-                compiledDeps.Add(parallel[z].Name)
-            }
-
-            parallel = make([]*dag.Package, 0)
-
-        } else {
-            parallel = append(parallel, zeroFirst[y])
-            y++
-        }
-    }
-
-    if len(parallel) > 0 {
-        oldPkgFound = compileMultipe(parallel, oldPkgFound)
-    }
-
-    return !oldPkgFound
-}
-
-func compileMultipe(pkgs []*dag.Package, oldPkgFound bool) bool {
-
-    var ok bool
-    var max int = len(pkgs)
-    var trouble bool = false
-
-    if max == 0 {
-        log.Fatal("[ERROR] trying to compile 0 packages in parallel\n")
-    }
-
-    if max == 1 {
-        if oldPkgFound || !pkgs[0].UpToDate() {
-            say.Println("compiling:", pkgs[0].Name)
-            handy.StdExecve(pkgs[0].Argv, true)
-            oldPkgFound = true
-        } else {
-            say.Println("up 2 date:", pkgs[0].Name)
-        }
-    } else {
-
-        ch := make(chan bool, max)
-
-        for y := 0; y < max; y++ {
-            if oldPkgFound || !pkgs[y].UpToDate() {
-                say.Println("compiling:", pkgs[y].Name)
-                oldPkgFound = true
-                go gCompile(pkgs[y].Argv, ch)
-            } else {
-                say.Println("up 2 date:", pkgs[y].Name)
-                ch <- true
-            }
-        }
-
-        // drain channel (make sure all jobs are finished)
-        for z := 0; z < max; z++ {
-            ok = <-ch
-            if !ok {
-                trouble = true
-            }
-        }
-    }
-
-    if trouble {
-        log.Fatal("[ERROR] failed batch compile job\n")
-    }
-
-    return oldPkgFound
-}
-
-func gCompile(argv []string, c chan bool) {
-    ok := handy.StdExecve(argv, false) // don't exit on error
-    c <- ok
-}
-// depricated STOP
 
 // for removal of temoprary packages created for testing and so on..
 func DeletePackages(pkgs []*dag.Package) bool {
@@ -362,7 +230,6 @@ func DeletePackages(pkgs []*dag.Package) bool {
 
     return ok
 }
-
 
 func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date bool) {
 
@@ -460,7 +327,8 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date 
     }
 
     if global.GetBool("-dryrun") {
-        fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
+        linker := filepath.Base(pathLinker)
+        fmt.Printf("%s %s || exit 1\n", linker, strings.Join(argv[1:], " "))
     } else {
         say.Println("linking  :", output)
         handy.StdExecve(argv, true)
@@ -510,7 +378,6 @@ func mainChoice(pkgs []*dag.Package) int {
     return choice
 }
 
-
 func CreateTestArgv() []string {
 
     pwd, e := os.Getwd()
@@ -544,7 +411,6 @@ func CreateTestArgv() []string {
     }
     return argv
 }
-
 
 func FormatFiles(files []string) {
 
@@ -585,11 +451,12 @@ func FormatFiles(files []string) {
 
     for y := 0; y < len(files); y++ {
         argv[i] = files[y]
-        if !global.GetBool("-dryrun") {
+        if global.GetBool("-dryrun") {
+            argv[0] = filepath.Base(argv[0])
+            fmt.Printf(" %s\n", strings.Join(argv, " "))
+        } else {
             say.Printf("gofmt: %s\n", files[y])
             _ = handy.StdExecve(argv, true)
-        } else {
-            fmt.Printf(" %s\n", strings.Join(argv, " "))
         }
     }
 }

@@ -28,7 +28,7 @@ var getopt *gopt.GetOpt
 var files []string
 
 // libraries other than $GOROOT/pkg/PLATFORM
-var includes []string = nil
+var includes []string = make([]string, 0)
 
 // source root
 var srcdir string = "src"
@@ -398,11 +398,7 @@ func parseArgv(argv []string) (args []string) {
     }
 
     if getopt.IsSet("-I") {
-        if includes == nil {
-            includes = getopt.GetMultiple("-I")
-        } else {
-            includes = append(includes, getopt.GetMultiple("-I")...)
-        }
+        includes = append(includes, getopt.GetMultiple("-I")...)
     }
 
     getopt.Reset()
@@ -453,7 +449,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.2 (r.60)")
+    fmt.Println("godag 0.2 (r.60.2)")
 }
 
 func printListing() {

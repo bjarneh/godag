@@ -18,12 +18,12 @@ var IncludeDir = func(p string) bool { return true }
 var IncludeFile = func(p string) bool { return true }
 
 type collect struct {
-    Files []string
+    files []string
 }
 
 func newCollect() *collect {
     c := new(collect)
-    c.Files = make([]string, 0)
+    c.files = make([]string, 0)
     return c
 }
 
@@ -33,7 +33,7 @@ func (c *collect) VisitDir(path string, d *os.FileInfo) bool {
 
 func (c *collect) VisitFile(path string, d *os.FileInfo) {
     if IncludeFile(path) {
-        c.Files = append(c.Files, path)
+        c.files = append(c.files, path)
     }
 }
 
@@ -41,5 +41,45 @@ func PathWalk(root string) []string {
     c := newCollect()
     errs := make(chan os.Error)
     filepath.Walk(root, c, errs)
-    return c.Files
+    return c.files
+}
+
+
+// ChanWalk is a type of PathWalk which returns immediately and
+// spits out path-names through a channel, it requires a new
+// type; this is it :-)
+
+type chanCollect struct {
+    files chan string
+}
+
+func newChanCollect() *chanCollect {
+    c := new(chanCollect)
+    c.files = make(chan string)
+    return c
+}
+
+func (c *chanCollect) VisitDir(path string, d *os.FileInfo) bool {
+    return IncludeDir(path)
+}
+
+func (c *chanCollect) VisitFile(path string, d *os.FileInfo) {
+    if IncludeFile(path) {
+        c.files<-path
+    }
+}
+
+func helper(root string, cc *chanCollect) {
+    errs := make(chan os.Error)
+    filepath.Walk(root, cc, errs)
+    close(cc.files)
+}
+
+// Same as PathWalk part from returning path names in a channel,
+// note that this function returns immediatlely, most likely this is
+// what you want unless you need all path names at once..
+func ChanWalk(root string) chan string {
+    cc := newChanCollect()
+    go helper(root, cc)
+    return cc.files
 }

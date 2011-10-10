@@ -277,3 +277,35 @@ func (g *GetOpt) StringOption(optstr string) {
     }
     g.options = append(g.options, stringopt)
 }
+
+func (g *GetOpt) StringOptionFancy(optstr string) {
+    ops := Convert(optstr)
+    stringopt := newStringOption(ops)
+    for i := range ops {
+        g.cache[ops[i]] = stringopt
+    }
+    g.options = append(g.options, stringopt)
+}
+
+// '-f' -> [-f, -f=]
+// '--file' -> [-file, -file=, --file, --file=]
+// '-f --file' -> [-f, -f=, -file, -file=, --file, --file=]
+func Convert(optstr string) (opts []string) {
+
+    ops := strings.Split(optstr, " ")
+    convOps := make([]string, len(ops))
+    copy(convOps, ops)
+
+    for i := 0; i < len(ops); i++ {
+        // could be wierd UTF-8 char i.e. -ø -ł -Ħ ...
+        point := []int(ops[i])
+        if len(point) == 2 && point[0] == int('-') {
+            convOps = append(convOps, ops[i] + "=")
+        }else if len(point) > 3 && ops[i][:2] == "--" {
+            convOps = append(convOps, ops[i] + "=")
+            convOps = append(convOps, ops[i][1:])
+            convOps = append(convOps, ops[i][1:] + "=")
+        }
+    }
+    return convOps
+}

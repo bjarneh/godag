@@ -49,6 +49,10 @@ var bools = []string{
     "-quiet",
     "-tab",
     "-external",
+// add missing test options + alias
+    "-test.short",
+    "-test.v",
+
 }
 
 // keys for the string options
@@ -66,7 +70,16 @@ var strs = []string{
     "-main",
     "-backend",
     "-gdmk",
+// add missing test options + alias
+    "-test.bench",
+    "-test.benchtime",
+    "-test.cpu",
+    "-test.cpuprofile",
+    "-test.memprofile",
+    "-test.memprofilerate",
+    "-test.timeout",
 }
+
 
 func init() {
 
@@ -88,19 +101,30 @@ func init() {
     getopt.BoolOption("-f -fmt --fmt")
     getopt.BoolOption("-T -tab --tab")
     getopt.BoolOption("-e -external --external")
-    getopt.StringOption("-a -a= -arch --arch -arch= --arch=")
-    getopt.StringOption("-D -D= -dot -dot= --dot --dot=")
-    getopt.StringOption("-L -L= -lib -lib= --lib --lib=")
+    getopt.StringOptionFancy("-a --arch")
+    getopt.StringOptionFancy("-D --dot")
+    getopt.StringOptionFancy("-L --lib")
     getopt.StringOption("-I -I=")
-    getopt.StringOption("-g -g= -gdmk -gdmk= --gdmk --gdmk=")
-    getopt.StringOption("-w -w= -tabwidth --tabwidth -tabwidth= --tabwidth=")
-    getopt.StringOption("-r -r= -rewrite --rewrite -rewrite= --rewrite=")
-    getopt.StringOption("-o -o= -output --output -output= --output=")
-    getopt.StringOption("-M -M= -main --main -main= --main=")
-    getopt.StringOption("-b -b= -bench --bench -bench= --bench=")
-    getopt.StringOption("-m -m= -match --match -match= --match=")
-    getopt.StringOption("-test-bin --test-bin -test-bin= --test-bin=")
-    getopt.StringOption("-B -B= -backend --backend -backend= --backend=")
+    getopt.StringOptionFancy("-g --gdmk")
+    getopt.StringOptionFancy("-w --tabwidth")
+    getopt.StringOptionFancy("-r --rewrite")
+    getopt.StringOptionFancy("-o --output")
+    getopt.StringOptionFancy("-M --main")
+    getopt.StringOptionFancy("-b --bench")
+    getopt.StringOptionFancy("-m --match")
+    getopt.StringOptionFancy("--test-bin")
+    getopt.StringOptionFancy("-B --backend")
+
+    // new test options and aliases
+    getopt.BoolOption("-test.short --test.short")
+    getopt.BoolOption("-test.v --test.v")
+    getopt.StringOptionFancy("--test.bench")
+    getopt.StringOptionFancy("--test.benchtime")
+    getopt.StringOptionFancy("--test.cpu")
+    getopt.StringOptionFancy("--test.cpuprofile")
+    getopt.StringOptionFancy("--test.memprofile")
+    getopt.StringOptionFancy("--test.memprofilerate")
+    getopt.StringOptionFancy("--test.timeout")
 
     // override IncludeFile to make walker pick up only .go files
     walker.IncludeFile = noTestFilesFilter
@@ -352,7 +376,7 @@ func main() {
             say.Printf("%s\n", strings.Join(testArgv, " "))
         } else {
             say.Printf("testing  : ")
-            if global.GetBool("-verbose") {
+            if global.GetBool("-verbose") || global.GetBool("-test.v") {
                 say.Printf("\n")
             }
             ok = handy.StdExecve(testArgv, false)

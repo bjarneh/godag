@@ -401,14 +401,57 @@ func CreateTestArgv() []string {
     if global.GetString("-bench") != "" {
         argv = append(argv, "-test.bench")
         argv = append(argv, global.GetString("-bench"))
+    }else if global.GetString("-test.bench") != "" {
+        argv = append(argv, "-test.bench")
+        argv = append(argv, global.GetString("-test.bench"))
     }
+
     if global.GetString("-match") != "" {
         argv = append(argv, "-test.run")
         argv = append(argv, global.GetString("-match"))
+    }else if global.GetString("-test.run") != "" {
+        argv = append(argv, "-test.run")
+        argv = append(argv, global.GetString("-test.run"))
     }
-    if global.GetBool("-verbose") {
+
+    if global.GetString("-test.timeout") != "" {
+        argv = append(argv, "-test.timeout")
+        argv = append(argv, global.GetString("-test.timeout"))
+    }
+
+    if global.GetString("-test.benchtime") != "" {
+        argv = append(argv, "-test.benchtime")
+        argv = append(argv, global.GetString("-test.benchtime"))
+    }
+
+    if global.GetString("-test.cpu") != "" {
+        argv = append(argv, "-test.cpu")
+        argv = append(argv, global.GetString("-test.cpu"))
+    }
+
+    if global.GetString("-test.cpuprofile") != "" {
+        argv = append(argv, "-test.cpuprofile")
+        argv = append(argv, global.GetString("-test.cpuprofile"))
+    }
+
+    if global.GetString("-test.memprofile") != "" {
+        argv = append(argv, "-test.memprofile")
+        argv = append(argv, global.GetString("-test.memprofile"))
+    }
+
+    if global.GetString("-test.memprofilerate") != "" {
+        argv = append(argv, "-test.memprofilerate")
+        argv = append(argv, global.GetString("-test.memprofilerate"))
+    }
+
+    if global.GetBool("-verbose") || global.GetBool("-test.v") {
         argv = append(argv, "-test.v")
     }
+
+    if global.GetBool("-test.short") {
+        argv = append(argv, "-test.short")
+    }
+
     return argv
 }
 

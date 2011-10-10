@@ -401,7 +401,7 @@ func CreateTestArgv() []string {
     if global.GetString("-bench") != "" {
         argv = append(argv, "-test.bench")
         argv = append(argv, global.GetString("-bench"))
-    }else if global.GetString("-test.bench") != "" {
+    } else if global.GetString("-test.bench") != "" {
         argv = append(argv, "-test.bench")
         argv = append(argv, global.GetString("-test.bench"))
     }
@@ -409,7 +409,7 @@ func CreateTestArgv() []string {
     if global.GetString("-match") != "" {
         argv = append(argv, "-test.run")
         argv = append(argv, global.GetString("-match"))
-    }else if global.GetString("-test.run") != "" {
+    } else if global.GetString("-test.run") != "" {
         argv = append(argv, "-test.run")
         argv = append(argv, global.GetString("-test.run"))
     }

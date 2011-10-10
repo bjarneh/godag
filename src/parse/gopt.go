@@ -300,11 +300,11 @@ func Convert(optstr string) (opts []string) {
         // could be wierd UTF-8 char i.e. -ø -ł -Ħ ...
         point := []int(ops[i])
         if len(point) == 2 && point[0] == int('-') {
-            convOps = append(convOps, ops[i] + "=")
-        }else if len(point) > 3 && ops[i][:2] == "--" {
-            convOps = append(convOps, ops[i] + "=")
+            convOps = append(convOps, ops[i]+"=")
+        } else if len(point) > 3 && ops[i][:2] == "--" {
+            convOps = append(convOps, ops[i]+"=")
             convOps = append(convOps, ops[i][1:])
-            convOps = append(convOps, ops[i][1:] + "=")
+            convOps = append(convOps, ops[i][1:]+"=")
         }
     }
     return convOps

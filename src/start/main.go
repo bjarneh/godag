@@ -49,10 +49,9 @@ var bools = []string{
     "-quiet",
     "-tab",
     "-external",
-// add missing test options + alias
+    // add missing test options + alias
     "-test.short",
     "-test.v",
-
 }
 
 // keys for the string options
@@ -70,7 +69,7 @@ var strs = []string{
     "-main",
     "-backend",
     "-gdmk",
-// add missing test options + alias
+    // add missing test options + alias
     "-test.bench",
     "-test.benchtime",
     "-test.cpu",
@@ -79,7 +78,6 @@ var strs = []string{
     "-test.memprofilerate",
     "-test.timeout",
 }
-
 
 func init() {
 

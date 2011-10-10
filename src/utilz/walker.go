@@ -44,7 +44,6 @@ func PathWalk(root string) []string {
     return c.files
 }
 
-
 // ChanWalk is a type of PathWalk which returns immediately and
 // spits out path-names through a channel, it requires a new
 // type; this is it :-)
@@ -65,7 +64,7 @@ func (c *chanCollect) VisitDir(path string, d *os.FileInfo) bool {
 
 func (c *chanCollect) VisitFile(path string, d *os.FileInfo) {
     if IncludeFile(path) {
-        c.files<-path
+        c.files <- path
     }
 }
 

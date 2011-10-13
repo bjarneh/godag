@@ -186,30 +186,26 @@ func main() {
     var ok, up2date bool
     var e os.Error
     var argv, args []string
-    var config1, config2 string
+    var config = make([]string, 4)
 
     timer.Start("everything")
     defer reportTime()
 
-    // default config location 1 $HOME/.gdrc
-    config1 = filepath.Join(os.Getenv("HOME"), ".gdrc")
-    argv, ok = handy.ConfigToArgv(config1)
+    // possible config locations
+    config[0] = filepath.Join(os.Getenv("XDG_CONFIG_HOME"),"godag","gdrc")
+    config[1] = filepath.Join(os.Getenv("HOME"),".config","godag","gdrc")
+    config[2] = filepath.Join(os.Getenv("HOME"),".gdrc")
+    config[3] = filepath.Join(os.Getenv("PWD"),".gdrc")
 
-    if ok {
-        args = parseArgv(argv)
-        if len(args) > 0 {
-            log.Print("[WARNING] non-option arguments in config file\n")
-        }
-    }
+    for _, conf := range config {
 
-    // default config location 2 $PWD/.gdrc
-    config2 = filepath.Join(os.Getenv("PWD"), ".gdrc")
-    argv, ok = handy.ConfigToArgv(config2)
+        argv, ok = handy.ConfigToArgv(conf)
 
-    if ok {
-        args = parseArgv(argv)
-        if len(args) > 0 {
-            log.Print("[WARNING] non-option arguments in config file\n")
+        if ok {
+            args = parseArgv(argv)
+            if len(args) > 0 {
+                log.Print("[WARNING] non-option arguments in config file\n")
+            }
         }
     }
 
@@ -459,6 +455,7 @@ func printHelp() {
   -b --bench           regex to select benchmarks
   -V --verbose         verbose unit-test and goinstall
   --test-bin           name of test-binary (default: gdtest)
+  --test.*             valid test options to gotest
   -f --fmt             run gofmt on src and exit
   -r --rewrite         pass rewrite rule to gofmt
   -T --tab             pass -tabindent=true to gofmt

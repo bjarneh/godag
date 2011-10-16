@@ -3,4 +3,8 @@ example
 mklib.sh
 tmp-pkgroot-*
 *.bak
+*.6
+*.5
+*.8
+*.o
 gdmk

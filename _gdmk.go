@@ -185,11 +185,7 @@ func debianDoLast() {
 
     // copyGzip( from, to, gzipfile )
     copyGzip("util/gd-completion.sh", "debian/etc/bash_completion.d/gd", false)
-    e = os.Chmod("debian/etc/bash_completion.d/gd", 0755)
-    quitter(e)
     copyGzip("util/gdmk-completion.sh", "debian/etc/bash_completion.d/gdmk", false)
-    e = os.Chmod("debian/etc/bash_completion.d/gdmk", 0755)
-    quitter(e)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/gd.1.gz", true)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/godag.1.gz", true)
     copyGzipStringBuffer(debianCopyright, "debian/usr/share/doc/godag/copyright", false)
@@ -221,6 +217,25 @@ func debianDoLast() {
 
     tmpBuf := fmt.Sprintf(debianControl, debArch, totalSize)
     copyGzipStringBuffer(tmpBuf, "debian/DEBIAN/control", false)
+
+    // satisfy lintian
+    say.Println("debian   : chmod files in debian")
+    var fileModes = map[string]uint32{
+        "debian/usr/bin/gd" : 0755,
+        "debian/DEBIAN/conffiles" : 0644,
+        "debian/etc/bash_completion.d/gd" : 0755,
+        "debian/etc/bash_completion.d/gdmk" : 0755,
+        "debian/usr/share/man/man1/gd.1.gz" : 0644,
+        "debian/usr/share/man/man1/godag.1.gz" : 0644,
+        "debian/usr/share/doc/godag/copyright" : 0644,
+        "debian/usr/share/doc/godag/changelog.Debian.gz" : 0644,
+        "debian/usr/share/doc/godag/changelog.gz" : 0644,
+    }
+
+    for k, v := range fileModes {
+        e = os.Chmod(k, v)
+        quitter(e)
+    }
 
     run([]string{"fakeroot", "dpkg-deb", "--build", "debian"})
     e = os.Rename("debian.deb",  "godag_0.2-0_" + debArch + ".deb")

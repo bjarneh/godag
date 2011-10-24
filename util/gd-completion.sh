@@ -14,7 +14,7 @@ _gd(){
 
     local cur prev opts gd_long_opts gd_short_opts gd_short_explain gd_special
     # long options
-    gd_long_opts="--help --version --list --print --sort --output --static --gdmk --dryrun --clean --quiet --lib --main --dot --test --bench --match --verbose --fmt --rewrite --tab --tabwidth --external --backend --test-bin"
+    gd_long_opts="--help --version --list --print --sort --output --static --gdmk --dryrun --clean --quiet --lib --main --dot --test --bench --match --verbose --fmt --rewrite --tab --tabwidth --external --backend --test-bin --test.short --test.v --test.bench --test.benchtime --test.cpu --test.cpuprofile --test.memprofile --test.memprofilerate --test.timeout"
     # short options + explain
     gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -g[--gdmk] -d[--dryrun] -c[--clean] -q[--quiet] -L[--lib] -M[--main] -D[--dot] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -r[--rewrite] -T[--tab] -w[--tabwidth] -e[--external] -B[--backend]"
     # short options

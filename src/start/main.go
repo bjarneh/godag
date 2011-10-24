@@ -183,10 +183,12 @@ func reportTime() {
 
 func main() {
 
-    var ok, up2date bool
-    var e os.Error
-    var argv, args []string
-    var config = make([]string, 4)
+    var(
+        ok, up2date bool
+        e os.Error
+        argv, args []string
+        config = make([]string, 4)
+    )
 
     timer.Start("everything")
     defer reportTime()
@@ -455,7 +457,7 @@ func printHelp() {
   -b --bench           regex to select benchmarks
   -V --verbose         verbose unit-test and goinstall
   --test-bin           name of test-binary (default: gdtest)
-  --test.*             valid test options to gotest
+  --test.*             any valid gotest option
   -f --fmt             run gofmt on src and exit
   -r --rewrite         pass rewrite rule to gofmt
   -T --tab             pass -tabindent=true to gofmt
@@ -468,69 +470,21 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.2 (r.60.2)")
+    fmt.Println("godag 0.2 (r.60.3)")
 }
 
 func printListing() {
-    var listMSG string = `
-  Listing of options and their content:
 
-  -h --help            =>   %t
-  -v --version         =>   %t
-  -p --print           =>   %t
-  -s --sort            =>   %t
-  -o --output          =>   '%s'
-  -S --static          =>   %t
-  -g --gdmk            =>   '%s'
-  -d --dryrun          =>   %t
-  -c --clean           =>   %t
-  -q --quiet           =>   %t
-  -L --lib             =>   '%s'
-  -M --main            =>   '%s'
-  -I                   =>   %v
-  -D --dot             =>   '%s'
-  -t --test            =>   %t
-  -m --match           =>   '%s'
-  -b --bench           =>   '%s'
-  -V --verbose         =>   %t
-  --test-bin           =>   '%s'
-  -f --fmt             =>   %t
-  -r --rewrite         =>   '%s'
-  -T --tab             =>   %t
-  -w --tabwidth        =>   %s
-  -e --external        =>   %t
-  -B --backend         =>   '%s'
+    fmt.Println("\n Listing of options and their content:\n")
+    defer fmt.Println("")
 
-`
-    tabRepr := "4"
-    if global.GetString("-tabwidth") != "" {
-        tabRepr = global.GetString("-tabwidth")
+    for i := 0; i < len(bools); i++ {
+        fmt.Printf(" %-20s  =>    %v\n", bools[i], global.GetBool(bools[i]))
     }
 
-    fmt.Printf(listMSG,
-        global.GetBool("-help"),
-        global.GetBool("-version"),
-        global.GetBool("-print"),
-        global.GetBool("-sort"),
-        global.GetString("-output"),
-        global.GetBool("-static"),
-        global.GetString("-gdmk"),
-        global.GetBool("-dryrun"),
-        global.GetBool("-clean"),
-        global.GetBool("-quiet"),
-        global.GetString("-lib"),
-        global.GetString("-main"),
-        includes,
-        global.GetString("-dot"),
-        global.GetBool("-test"),
-        global.GetString("-match"),
-        global.GetString("-bench"),
-        global.GetBool("-verbose"),
-        global.GetString("-test-bin"),
-        global.GetBool("-fmt"),
-        global.GetString("-rew-rule"),
-        global.GetBool("-tab"),
-        tabRepr,
-        global.GetBool("-external"),
-        global.GetString("-backend"))
+    for i := 0; i < len(strs); i++ {
+        fmt.Printf(" %-20s  =>    %v\n", strs[i], global.GetString(strs[i]))
+    }
+
+    fmt.Printf(" %-20s  =>    %v\n", "-lib", includes)
 }

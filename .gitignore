@@ -4,3 +4,7 @@ mklib.sh
 tmp-pkgroot-*
 *.bak
 gdmk
+*.8
+*.6
+*.5
+*.o

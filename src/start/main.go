@@ -256,10 +256,7 @@ func main() {
 
     if len(args) == 0 {
         // give nice feedback if missing input dir
-        cwd, e := os.Getwd()
-        possibleSrc := filepath.Join(cwd, "src")
-        _, e = os.Stat(possibleSrc)
-        if e != nil {
+        if ! handy.IsDir("src"){
             fmt.Printf("usage: gd [OPTIONS] src-directory\n")
             os.Exit(1)
         }
@@ -381,6 +378,16 @@ func main() {
                 os.Exit(1)
             }
         }
+
+        // if packages contain both test-files and regular files
+        // test-files should not be part of the objects, i.e. init
+        // functions in test-packages can cause unexpected behaviour
+
+        if compiler.ReCompile(sorted) {
+            say.Printf("recompile: --tests\n")
+            compiler.Compile(sorted)
+        }
+
     }
 
     // link if ! up2date

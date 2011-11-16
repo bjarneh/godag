@@ -211,3 +211,26 @@ func ModifyTimestamp(pathname string) (ts int64) {
     }
     return
 }
+
+// Hackish version of touching a file
+func Touch(pathname string) os.Error {
+
+    fd, e := os.OpenFile(pathname, os.O_WRONLY|os.O_APPEND, 0777)
+
+    if e != nil {
+        return e
+    }else{
+        defer fd.Close()
+    }
+
+    fi, e := fd.Stat()
+
+    if e != nil {
+        return e
+    }
+
+    size  := fi.Size
+    e = fd.Truncate(size)
+
+    return e
+}

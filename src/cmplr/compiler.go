@@ -231,6 +231,22 @@ func DeletePackages(pkgs []*dag.Package) bool {
     return ok
 }
 
+// Recompile packages that contain test files (*_test.go), 
+// i.e. test-code should not be part of the packages after compilation.
+func ReCompile(pkgs []*dag.Package) bool {
+
+    var doRecompile bool
+
+    for i := 0; i < len(pkgs); i++ {
+        if pkgs[i].HasTestAndInit() {
+            doRecompile = true;
+        }
+    }
+
+    return doRecompile
+
+}
+
 func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date bool) {
 
     var mainPKG *dag.Package

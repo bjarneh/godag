@@ -46,6 +46,10 @@ type TestCollector struct {
     Names []string
 }
 
+type initCollector struct {
+    hasInit bool
+}
+
 func New() Dag {
     return make(map[string]*Package)
 }
@@ -473,6 +477,72 @@ func (p *Package) DotGraph(sb *stringbuffer.StringBuffer) {
     }
 }
 
+// if a package contains test-files and regular files, and on top
+// of that contains an 'init' function inside the test-files; we
+// have to recompile that package and its recursive dependencies
+// to avoid dragging the test-code into the produced binaries and
+// libraries that depends on this package. thanks to seth.bunce@gm..
+// for reporting this issue.
+func (p *Package) HasTestAndInit() (recompile bool) {
+
+    var(
+        testFile    bool = false
+        plainFile   bool = false
+        plainArgv   []string
+        plainFiles  []string
+    )
+
+    p.Indegree = 0
+
+    for y := 0; y < len(p.Files); y++ {
+        if strings.HasSuffix(p.Files[y], "_test.go") {
+            testFile = true
+        }else{
+            plainFile = true
+        }
+    }
+
+    if testFile && plainFile {
+        for j := 0; j < len(p.Files); j++ {
+            if strings.HasSuffix(p.Files[j], "_test.go") {
+                collector := &initCollector{hasInit: false}
+                tree      := getSyntaxTreeOrDie(p.Files[j], 0)
+                ast.Walk(collector, tree)
+                if collector.hasInit {
+                    recompile = true
+                }
+            }
+        }
+    }
+
+    // strip test-files from package during recompile, we
+    // 'touch' a file inside the package in order to make godag
+    // recompile the package (it won't be up2date any longer)
+    if recompile {
+
+        plainArgv = make([]string, 0)
+        plainFiles = make([]string, 0)
+
+        for j := 0; j < len(p.Argv); j++ {
+            if ! strings.HasSuffix(p.Argv[j], "_test.go") {
+                plainArgv = append(plainArgv, p.Argv[j])
+            }
+        }
+
+        for j := 0; j < len(p.Files); j++ {
+            if ! strings.HasSuffix(p.Files[j], "_test.go") {
+                plainFiles = append(plainFiles, p.Files[j])
+                handy.Touch(p.Files[j])
+            }
+        }
+
+        p.Argv = plainArgv
+        p.Files = plainFiles
+    }
+
+    return recompile
+}
+
 func (p *Package) Rep() string {
 
     sb := make([]string, 0)
@@ -638,6 +708,20 @@ func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
     default: // nothing to do if not FuncDecl
     }
     return t
+}
+
+func (i *initCollector) Visit(node ast.Node) (v ast.Visitor) {
+    switch t := node.(type) {
+    case *ast.FuncDecl:
+        if t.Name.Name == "init" {
+            if ( t.Type.Params == nil  || t.Type.Params.NumFields()  == 0) &&
+               ( t.Type.Results == nil || t.Type.Results.NumFields() == 0) {
+                i.hasInit = true
+            }
+        }
+    default: // nothing to do if not FuncDecl
+    }
+    return i
 }
 
 func addSeparatorPath(root string) string {

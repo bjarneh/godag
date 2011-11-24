@@ -1,4 +1,4 @@
-/* Built : Tue Sep 13 07:35:50 UTC 2011 */
+/* Built : Thu Nov 24 05:42:12 UTC 2011 */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -1144,16 +1144,16 @@ var packages = []*Package{
 		files:  []string{"src/cmplr/dag.go"},
 	},
 	&Package{
-		name:   "gdmake",
-		full:   "cmplr/gdmake",
-		output: "_obj/cmplr/gdmake",
-		files:  []string{"src/cmplr/gdmake.go"},
-	},
-	&Package{
 		name:   "compiler",
 		full:   "cmplr/compiler",
 		output: "_obj/cmplr/compiler",
 		files:  []string{"src/cmplr/compiler.go"},
+	},
+	&Package{
+		name:   "gdmake",
+		full:   "cmplr/gdmake",
+		output: "_obj/cmplr/gdmake",
+		files:  []string{"src/cmplr/gdmake.go"},
 	},
 	&Package{
 		name:   "main",

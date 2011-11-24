@@ -5,19 +5,19 @@
 package compiler
 
 import (
-    "os"
+    "cmplr/dag"
     "fmt"
     "log"
-    "exec"
-    "strings"
-    "regexp"
+    "os"
+    "os/exec"
     "path/filepath"
-    "utilz/walker"
-    "utilz/stringset"
+    "regexp"
+    "strings"
+    "utilz/global"
     "utilz/handy"
     "utilz/say"
-    "utilz/global"
-    "cmplr/dag"
+    "utilz/stringset"
+    "utilz/walker"
 )
 
 var includes []string
@@ -53,7 +53,7 @@ func Init(srcdir string, include []string) {
 
 func express() {
 
-    var err os.Error
+    var err error
 
     pathCompiler, err = exec.LookPath("vmgc")
 
@@ -73,7 +73,7 @@ func express() {
 func gc() {
 
     var A string // a:architecture
-    var err os.Error
+    var err error
 
     A = os.Getenv("GOARCH")
 
@@ -116,7 +116,7 @@ func gc() {
 
 func gcc() {
 
-    var err os.Error
+    var err error
 
     pathCompiler, err = exec.LookPath("gccgo")
 
@@ -239,7 +239,7 @@ func ReCompile(pkgs []*dag.Package) bool {
 
     for i := 0; i < len(pkgs); i++ {
         if pkgs[i].HasTestAndInit() {
-            doRecompile = true;
+            doRecompile = true
         }
     }
 
@@ -440,6 +440,11 @@ func CreateTestArgv() []string {
         argv = append(argv, global.GetString("-test.benchtime"))
     }
 
+    if global.GetString("-test.parallel") != "" {
+        argv = append(argv, "-test.parallel")
+        argv = append(argv, global.GetString("-test.parallel"))
+    }
+
     if global.GetString("-test.cpu") != "" {
         argv = append(argv, "-test.cpu")
         argv = append(argv, global.GetString("-test.cpu"))
@@ -479,7 +484,7 @@ func FormatFiles(files []string) {
     var useTabs string = "-tabindent=false"
     var rewRule string = global.GetString("-rew-rule")
     var fmtexec string
-    var err os.Error
+    var err error
 
     fmtexec, err = exec.LookPath("gofmt")
 

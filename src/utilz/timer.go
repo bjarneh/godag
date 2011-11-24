@@ -5,10 +5,11 @@
 package timer
 
 import (
-    "time"
-    "os"
-    "io"
+    "errors"
     "fmt"
+
+    "io"
+    "time"
 )
 
 // a very simple timer package, perhaps to simple
@@ -40,16 +41,16 @@ func Start(name string) {
     running[name] = true
 }
 
-func Stop(name string) os.Error {
+func Stop(name string) error {
 
     started, ok := running[name]
 
     if !ok {
-        return os.NewError("[utilz/timer] unknown job: " + name)
+        return errors.New("[utilz/timer] unknown job: " + name)
     }
 
     if !started {
-        return os.NewError("[utilz/timer] job not running: " + name)
+        return errors.New("[utilz/timer] job not running: " + name)
     }
 
     jobs[name] = time.Nanoseconds() - jobs[name]
@@ -58,16 +59,16 @@ func Stop(name string) os.Error {
     return nil
 }
 
-func Resume(name string) os.Error {
+func Resume(name string) error {
 
     started, ok := running[name]
 
     if !ok {
-        return os.NewError("[utilz/timer] unknown job: " + name)
+        return errors.New("[utilz/timer] unknown job: " + name)
     }
 
     if started {
-        return os.NewError("[utilz/timer] job is running: " + name)
+        return errors.New("[utilz/timer] job is running: " + name)
     }
 
     jobs[name] = time.Nanoseconds() - jobs[name]
@@ -76,12 +77,12 @@ func Resume(name string) os.Error {
     return nil
 }
 
-func Delta(name string) (ns int64, err os.Error) {
+func Delta(name string) (ns int64, err error) {
 
     delta, ok := jobs[name]
 
     if !ok {
-        return 0, os.NewError("[utilz/timer] unknown job: " + name)
+        return 0, errors.New("[utilz/timer] unknown job: " + name)
     }
 
     return delta, nil

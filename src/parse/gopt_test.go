@@ -5,9 +5,9 @@
 package gopt_test
 
 import (
-    "testing"
-    "strings"
     "parse/gopt"
+    "strings"
+    "testing"
 )
 
 func TestGetOpt(t *testing.T) {

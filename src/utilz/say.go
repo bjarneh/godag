@@ -7,7 +7,6 @@ package say // Perl6 inspiration here :-)
 import (
     "fmt"
     "io"
-    "os"
 )
 
 // package to turn of all print statements
@@ -22,42 +21,42 @@ func Sound() {
     mute = false
 }
 
-func Print(args ...interface{}) (int, os.Error) {
+func Print(args ...interface{}) (int, error) {
     if !mute {
         return fmt.Print(args...)
     }
     return 0, nil
 }
 
-func Println(args ...interface{}) (int, os.Error) {
+func Println(args ...interface{}) (int, error) {
     if !mute {
         return fmt.Println(args...)
     }
     return 0, nil
 }
 
-func Printf(f string, args ...interface{}) (int, os.Error) {
+func Printf(f string, args ...interface{}) (int, error) {
     if !mute {
         return fmt.Printf(f, args...)
     }
     return 0, nil
 }
 
-func Fprint(w io.Writer, args ...interface{}) (int, os.Error) {
+func Fprint(w io.Writer, args ...interface{}) (int, error) {
     if !mute {
         return fmt.Fprint(w, args...)
     }
     return 0, nil
 }
 
-func Fprintln(w io.Writer, args ...interface{}) (int, os.Error) {
+func Fprintln(w io.Writer, args ...interface{}) (int, error) {
     if !mute {
         return fmt.Fprintln(w, args...)
     }
     return 0, nil
 }
 
-func Fprintf(w io.Writer, f string, args ...interface{}) (int, os.Error) {
+func Fprintf(w io.Writer, f string, args ...interface{}) (int, error) {
     if !mute {
         fmt.Fprintf(w, f, args...)
     }

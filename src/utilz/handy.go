@@ -5,19 +5,19 @@
 package handy
 
 import (
-    "os"
-    "log"
     "io/ioutil"
+    "log"
+    "os"
+    "os/exec"
     "regexp"
     "strings"
-    "exec"
 )
 
 // some utility functions
 
 func StdExecve(argv []string, stopOnTrouble bool) bool {
 
-    var err os.Error
+    var err error
     var cmd *exec.Cmd
 
     switch len(argv) {
@@ -65,7 +65,7 @@ func StdExecve(argv []string, stopOnTrouble bool) bool {
 // More or less taken from a pastebin posted on #go-nuts
 // http://pastebin.com/V0CULJWt by yiyus
 // looked kind of handy, so it was placed here :-)
-func Fopen(name, mode string, perms uint32) (*os.File, os.Error) {
+func Fopen(name, mode string, perms uint32) (*os.File, error) {
 
     var imode int // int mode
 
@@ -213,13 +213,13 @@ func ModifyTimestamp(pathname string) (ts int64) {
 }
 
 // Hackish version of touching a file
-func Touch(pathname string) os.Error {
+func Touch(pathname string) error {
 
     fd, e := os.OpenFile(pathname, os.O_WRONLY|os.O_APPEND, 0777)
 
     if e != nil {
         return e
-    }else{
+    } else {
         defer fd.Close()
     }
 
@@ -229,7 +229,7 @@ func Touch(pathname string) os.Error {
         return e
     }
 
-    size  := fi.Size
+    size := fi.Size
     e = fd.Truncate(size)
 
     return e

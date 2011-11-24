@@ -1,14 +1,14 @@
 package utilz_test
 
 import (
-    "testing"
-    "strings"
     "os"
     "path/filepath"
-    "utilz/stringset"
+    "strings"
+    "testing"
     "utilz/stringbuffer"
-    "utilz/walker"
+    "utilz/stringset"
     "utilz/timer"
+    "utilz/walker"
 )
 
 func TestStringSet(t *testing.T) {
@@ -84,7 +84,8 @@ func TestWalker(t *testing.T) {
         return dirname[0] != '.'
     }
     walker.IncludeFile = func(s string) bool {
-        return strings.HasSuffix(s, ".go")
+        return strings.HasSuffix(s, ".go") &&
+            !strings.HasPrefix(s, "_")
     }
 
     srcroot := os.Getenv("SRCROOT")

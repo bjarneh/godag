@@ -51,10 +51,10 @@ Usage:
 */
 
 import (
-    "strings"
     "log"
-    "os"
     "strconv"
+
+    "strings"
 )
 
 type GetOpt struct {
@@ -110,15 +110,15 @@ func (g *GetOpt) Get(o string) string {
     return sopt.values[0]
 }
 
-func (g *GetOpt) GetFloat32(o string) (float32, os.Error) {
+func (g *GetOpt) GetFloat32(o string) (float32, error) {
     return strconv.Atof32(g.Get(o))
 }
 
-func (g *GetOpt) GetFloat64(o string) (float64, os.Error) {
+func (g *GetOpt) GetFloat64(o string) (float64, error) {
     return strconv.Atof64(g.Get(o))
 }
 
-func (g *GetOpt) GetInt(o string) (int, os.Error) {
+func (g *GetOpt) GetInt(o string) (int, error) {
     return strconv.Atoi(g.Get(o))
 }
 

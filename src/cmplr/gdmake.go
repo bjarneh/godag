@@ -5,21 +5,21 @@
 package gdmake
 
 import (
-    "os"
-    "log"
     "bytes"
-    "time"
+    "cmplr/dag"
+    "fmt"
+    "go/ast"
     "go/parser"
     "go/token"
-    "go/ast"
-    "fmt"
+    "io/ioutil"
+    "log"
+    "os"
     "path/filepath"
     "strings"
-    "cmplr/dag"
+    "time"
     "utilz/handy"
     "utilz/stringbuffer"
     "utilz/stringset"
-    "io/ioutil"
 )
 
 const (
@@ -143,7 +143,7 @@ func hasModifiedImports(fname string) (string, bool) {
     set.Add(`"compress/gzip"`)
     set.Add(`"bytes"`)
     set.Add(`"regexp"`)
-    set.Add(`"exec"`)
+    set.Add(`"os/exec"`)
     set.Add(`"log"`)
     set.Add(`"flag"`)
     set.Add(`"path/filepath"`)
@@ -206,7 +206,7 @@ import (
     "fmt"
     "bytes"
     "regexp"
-    "exec"
+    "os/exec"
     "log"
     "flag"
     "path/filepath"
@@ -581,14 +581,12 @@ func link(pkgs []*Package) {
             argv = append(argv, pkgs[i].output)
         }
         if root != "" {
-            errs := make(chan os.Error)
-            collect := &collector{make([]string, 0), nil}
-            collect.filter = func(s string)bool{
-                return strings.HasSuffix(s, ".o")
-            }
-            filepath.Walk(root, collect, errs)
-            for i := 0; i < len(collect.files); i++ {
-                argv = append(argv, collect.files[i])
+            filter := func(s string) bool { 
+                return strings.HasSuffix(s, ".o") 
+            } 
+            files := PathWalk(root, filter) 
+            for i := 0; i < len(files); i++ { 
+                argv = append(argv, files[i]) 
             }
         }
     }else{
@@ -659,33 +657,29 @@ func goinstall() {
 // Utility types and functions
 //-------------------------------------------------------------------
 
-type collector struct{
-    files []string
-    filter func(string)bool
-}
+func PathWalk(root string, ok func(s string)bool) (files []string) {
 
-func (c *collector) VisitDir(pathname string, d *os.FileInfo) bool {
-    return true
-}
+    fn := func(p string, d *os.FileInfo, e error) error{
 
-func (c *collector) VisitFile(pathname string, d *os.FileInfo) {
-    if c.filter != nil {
-        if c.filter(pathname) {
-            c.files = append(c.files, pathname)
+        if d.IsRegular() && ok(p) {
+            files = append(files, p)
         }
-    }else{
-        c.files = append(c.files, pathname)
+
+        return e
     }
+
+    filepath.Walk(root, fn)
+
+    return files
 }
+
 
 func emptyDir(pathname string) bool {
     if ! isDir(pathname) {
         return false
     }
-    errs := make(chan os.Error)
-    collect := &collector{make([]string, 0), nil}
-    filepath.Walk(pathname, collect, errs)
-    return len(collect.files) == 0
+    fn := func(s string)bool{ return true }
+    return len(PathWalk(pathname, fn)) == 0
 }
 
 func isDir(pathname string) bool {
@@ -735,7 +729,7 @@ func isFile(pathname string) bool {
     return false
 }
 
-func quitter(e os.Error) {
+func quitter(e error) {
     if e != nil {
         log.Fatalf("[ERROR] %s\n", e)
     }
@@ -754,7 +748,7 @@ func copyGzipByteBuffer(from []byte, to string, gzipFile bool){
 
 func copyGzip(from, to string, gzipFile bool) {
 
-    var err os.Error
+    var err error
     var fromFile *os.File
 
     fromFile, err = os.Open(from)
@@ -767,7 +761,7 @@ func copyGzip(from, to string, gzipFile bool) {
 
 func copyGzipReader(fromReader io.Reader, to string, gzipFile bool) {
 
-    var err os.Error
+    var err error
     var toFile io.WriteCloser
 
     toFile, err = os.Create(to)

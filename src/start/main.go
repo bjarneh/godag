@@ -5,20 +5,20 @@
 package main
 
 import (
-    "os"
-    "fmt"
-    "log"
-    "strings"
-    "path/filepath"
-    "utilz/walker"
     "cmplr/compiler"
     "cmplr/dag"
     "cmplr/gdmake"
+    "fmt"
+    "log"
+    "os"
     "parse/gopt"
-    "utilz/handy"
+    "path/filepath"
+    "strings"
     "utilz/global"
-    "utilz/timer"
+    "utilz/handy"
     "utilz/say"
+    "utilz/timer"
+    "utilz/walker"
 )
 
 // option parser object (struct)
@@ -77,6 +77,7 @@ var strs = []string{
     "-test.memprofile",
     "-test.memprofilerate",
     "-test.timeout",
+    "-test.parallel",
 }
 
 func init() {
@@ -123,6 +124,7 @@ func init() {
     getopt.StringOptionFancy("--test.memprofile")
     getopt.StringOptionFancy("--test.memprofilerate")
     getopt.StringOptionFancy("--test.timeout")
+    getopt.StringOptionFancy("--test.parallel")
 
     // override IncludeFile to make walker pick up only .go files
     walker.IncludeFile = noTestFilesFilter
@@ -183,21 +185,21 @@ func reportTime() {
 
 func main() {
 
-    var(
+    var (
         ok, up2date bool
-        e os.Error
-        argv, args []string
-        config = make([]string, 4)
+        e           error
+        argv, args  []string
+        config      = make([]string, 4)
     )
 
     timer.Start("everything")
     defer reportTime()
 
     // possible config locations
-    config[0] = filepath.Join(os.Getenv("XDG_CONFIG_HOME"),"godag","gdrc")
-    config[1] = filepath.Join(os.Getenv("HOME"),".config","godag","gdrc")
-    config[2] = filepath.Join(os.Getenv("HOME"),".gdrc")
-    config[3] = filepath.Join(os.Getenv("PWD"),".gdrc")
+    config[0] = filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "godag", "gdrc")
+    config[1] = filepath.Join(os.Getenv("HOME"), ".config", "godag", "gdrc")
+    config[2] = filepath.Join(os.Getenv("HOME"), ".gdrc")
+    config[3] = filepath.Join(os.Getenv("PWD"), ".gdrc")
 
     for _, conf := range config {
 
@@ -256,7 +258,7 @@ func main() {
 
     if len(args) == 0 {
         // give nice feedback if missing input dir
-        if ! handy.IsDir("src"){
+        if !handy.IsDir("src") {
             fmt.Printf("usage: gd [OPTIONS] src-directory\n")
             os.Exit(1)
         }

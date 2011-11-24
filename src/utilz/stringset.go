@@ -35,7 +35,7 @@ func (s *StringSet) Remove(e string) bool {
     if !s.Contains(e) {
         return false
     }
-    s.elements[e] = nil, false
+    delete(s.elements, e)
     return true
 }
 

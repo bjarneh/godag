@@ -313,6 +313,7 @@ var golibs = []string{
 	"tabwriter",
 	"template",
 	"io",
+	"text",
 	"regexp",
 	// packages above this line cannot be tested without modification
 	"asn1",
@@ -334,7 +335,6 @@ var golibs = []string{
 	"scanner",
 	"smtp",
 	"sort",
-	"text",
 	"syslog",
 	"testing",
 	"try",
@@ -368,7 +368,7 @@ func testokDoFirst() {
 
 	say.Printf("testable part of stdlib -> %s\n", to)
 
-	testable := golibs[14:]
+	testable := golibs[15:]
 
 	for i := 0; i < len(testable); i++ {
 		recCopyStrip(filepath.Join(from, testable[i]),

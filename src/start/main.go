@@ -57,6 +57,7 @@ var bools = []string{
     "-list",
     "-verbose",
     "-fmt",
+    "-all",
     "-quiet",
     "-tab",
     "-external",
@@ -68,7 +69,6 @@ var bools = []string{
 // keys for the string options
 // note: -I is handled seperately
 var strs = []string{
-    "-arch",
     "-dot",
     "-tabwidth",
     "-rewrite",
@@ -110,8 +110,8 @@ func init() {
     getopt.BoolOption("-V -verbose --verbose")
     getopt.BoolOption("-f -fmt --fmt")
     getopt.BoolOption("-T -tab --tab")
+    getopt.BoolOption("-a -all --all")
     getopt.BoolOption("-e -external --external")
-    getopt.StringOptionFancy("-a --arch")
     getopt.StringOptionFancy("-D --dot")
     getopt.StringOptionFancy("-L --lib")
     getopt.StringOption("-I -I=")
@@ -406,6 +406,8 @@ func main() {
     // link if ! up2date
     if global.GetString("-output") != "" {
         compiler.ForkLink(global.GetString("-output"), sorted, nil, up2date)
+    }else if global.GetBool("-all"){
+        compiler.ForkLinkAll(sorted, up2date)
     }
 
 }
@@ -470,6 +472,7 @@ func printHelp() {
   -q --quiet           silent, print only errors
   -L --lib             write objects to other dir (!src)
   -M --main            regex to select main package
+  -a --all             link main pkgs to bin/nameOfMainDir
   -D --dot             create a graphviz dot file
   -I                   import package directories
   -t --test            run all unit-tests

@@ -259,6 +259,37 @@ func ReCompile(pkgs []*dag.Package) bool {
 
 }
 
+//TODO rewrite the whole link stuff, make i run in parallel
+func ForkLinkAll(pkgs []*dag.Package, up2date bool) {
+
+    mainPkgs := make([]*dag.Package, 0)
+
+    for i := 0; i < len(pkgs); i++ {
+        if pkgs[i].ShortName == "main" {
+            mainPkgs = append(mainPkgs, pkgs[i])
+        }
+    }
+
+    if len(mainPkgs) == 0 {
+        log.Fatal("[ERROR] (linking) no main package found\n")
+    }
+
+    handy.DirOrMkdir("bin")
+
+    for i := 0; i < len(mainPkgs); i++ {
+        toks := strings.Split(mainPkgs[i].Name, "/")
+        // do this for main packages which are placed in directories
+        // if toks < 2 this cannot be true, i.e. then the main package
+        // lives under the src-root and cannot be filtered
+        if len(toks) >= 2 {
+            nameOfBinary := toks[len(toks)-2]
+            pathToBinary := filepath.Join("bin", nameOfBinary)
+            global.SetString("-main", nameOfBinary)
+            ForkLink(pathToBinary, pkgs, nil, up2date)
+        }
+    }
+}
+
 func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date bool) {
 
     var mainPKG *dag.Package

@@ -52,7 +52,6 @@ type Target struct {
 
 // PLAYGROUND START
 
-
 var targets = map[string]*Target{
 	"clean": &Target{
 		desc:  "rm -rf _obj/ _gdmk.[856o]",
@@ -210,7 +209,7 @@ func debianDoLast() {
 	for i := 0; i < len(files); i++ {
 		finfo, e := os.Stat(files[i])
 		quitter(e)
-		totalSize += finfo.Size
+		totalSize += finfo.Size()
 	}
 
 	tmpBuf := fmt.Sprintf(debianControl, debArch, totalSize)
@@ -231,7 +230,7 @@ func debianDoLast() {
 	}
 
 	for k, v := range fileModes {
-		e = os.Chmod(k, v)
+		e = os.Chmod(k, os.FileMode(v))
 		quitter(e)
 	}
 
@@ -364,7 +363,7 @@ func testokDoFirst() {
 	}
 
 	from := filepath.Join(goroot, "src", "pkg")
-	to := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
+	to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().UnixNano())
 
 	say.Printf("testable part of stdlib -> %s\n", to)
 
@@ -400,7 +399,7 @@ func stdlibDoFirst() {
 	}
 
 	from := filepath.Join(goroot, "src", "pkg")
-	to := fmt.Sprintf("tmp-pkgroot-%d", time.Seconds())
+	to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().UnixNano())
 
 	say.Printf("pure go part of stdlib -> %s\n", to)
 
@@ -908,9 +907,9 @@ func goinstall() {
 
 func PathWalk(root string, ok func(s string) bool) (files []string) {
 
-	fn := func(p string, d *os.FileInfo, e error) error {
+	fn := func(p string, d os.FileInfo, e error) error {
 
-		if d.IsRegular() && ok(p) {
+		if !d.IsDir() && ok(p) {
 			files = append(files, p)
 		}
 
@@ -932,7 +931,7 @@ func emptyDir(pathname string) bool {
 
 func isDir(pathname string) bool {
 	fileInfo, err := os.Stat(pathname)
-	if err == nil && fileInfo.IsDirectory() {
+	if err == nil && fileInfo.IsDir() {
 		return true
 	}
 	return false
@@ -940,8 +939,8 @@ func isDir(pathname string) bool {
 
 func timestamp(s string) (int64, bool) {
 	fileInfo, e := os.Stat(s)
-	if e == nil && fileInfo.IsRegular() {
-		return fileInfo.Mtime_ns, true
+	if e == nil && !fileInfo.IsDir() {
+		return fileInfo.ModTime().UnixNano(), true
 	}
 	return 0, false
 }
@@ -971,7 +970,7 @@ func run(argv []string) {
 
 func isFile(pathname string) bool {
 	fileInfo, err := os.Stat(pathname)
-	if err == nil && fileInfo.IsRegular() {
+	if err == nil && !fileInfo.IsDir() {
 		return true
 	}
 	return false

@@ -16,184 +16,185 @@
 package gdmake
 
 import (
-    "bytes"
-    "cmplr/dag"
-    "fmt"
-    "go/ast"
-    "go/parser"
-    "go/token"
-    "io/ioutil"
-    "log"
-    "os"
-    "path/filepath"
-    "strings"
-    "time"
-    "utilz/handy"
-    "utilz/stringbuffer"
-    "utilz/stringset"
+	"bytes"
+	"cmplr/dag"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+	"utilz/handy"
+	"utilz/stringbuffer"
+	"utilz/stringset"
 )
 
 const (
-    Header = iota
-    Imports
-    Targets
-    Playground
-    Init
-    GoInstall
-    Compile
-    PackageDef
-    PackageStart
-    Packages
-    Main
+	Header = iota
+	Imports
+	Targets
+	Playground
+	Init
+	GoInstall
+	Compile
+	PackageDef
+	PackageStart
+	Packages
+	Main
 )
+
 // makefile structure
 var m = map[int]string{
-    Header:       HeaderTmpl,
-    Imports:      ImportsTmpl,
-    Targets:      TargetsTmpl,
-    Playground:   PlaygroundTmpl,
-    Init:         InitTmpl,
-    GoInstall:    GoInstallTmpl,
-    Compile:      CompileTmpl,
-    PackageDef:   PackageDefTmpl,
-    PackageStart: PackageStartTmpl,
-    Packages:     "", // this is not static :-)
-    Main:         MainTmpl,
+	Header:       HeaderTmpl,
+	Imports:      ImportsTmpl,
+	Targets:      TargetsTmpl,
+	Playground:   PlaygroundTmpl,
+	Init:         InitTmpl,
+	GoInstall:    GoInstallTmpl,
+	Compile:      CompileTmpl,
+	PackageDef:   PackageDefTmpl,
+	PackageStart: PackageStartTmpl,
+	Packages:     "", // this is not static :-)
+	Main:         MainTmpl,
 }
 
 func Make(fname string, pkgs []*dag.Package, alien []string) {
 
-    if handy.IsFile(fname) {
+	if handy.IsFile(fname) {
 
-        modImport, iOk := hasModifiedImports(fname)
-        if iOk {
-            m[Imports] = modImport
-        }
+		modImport, iOk := hasModifiedImports(fname)
+		if iOk {
+			m[Imports] = modImport
+		}
 
-        modPlay, pOk := hasModifiedPlayground(fname)
-        if pOk {
-            m[Playground] = modPlay
-        }
+		modPlay, pOk := hasModifiedPlayground(fname)
+		if pOk {
+			m[Playground] = modPlay
+		}
 
-        if pOk || iOk {
-            dn, fn := filepath.Split(fname)
-            backupFname := filepath.Join(dn, "."+fn+".bak")
-            e := os.Rename(fname, backupFname)
-            if e != nil {
-                log.Printf("[WARNING] failed to make backup of: %s\n", fname)
-            }
-        }
-    }
+		if pOk || iOk {
+			dn, fn := filepath.Split(fname)
+			backupFname := filepath.Join(dn, "."+fn+".bak")
+			e := os.Rename(fname, backupFname)
+			if e != nil {
+				log.Printf("[WARNING] failed to make backup of: %s\n", fname)
+			}
+		}
+	}
 
-    sb := stringbuffer.New()
-    sb.Add(fmt.Sprintf(m[Header], time.UTC()))
-    sb.Add(m[Imports])
-    sb.Add(m[Targets])
-    sb.Add("// PLAYGROUND START\n")
-    sb.Add(m[Playground])
-    sb.Add("// PLAYGROUND STOP\n")
-    sb.Add(m[Init])
-    for i := 0; i < len(alien); i++ {
-        alien[i] = `"` + alien[i] + `"`
-    }
-    sb.Add(fmt.Sprintf(m[GoInstall], strings.Join(alien, ",")))
-    sb.Add(m[Compile])
-    sb.Add(m[PackageDef])
-    sb.Add(m[PackageStart])
-    for i := 0; i < len(pkgs); i++ {
-        sb.Add(pkgs[i].Rep())
-    }
-    sb.Add("\n}\n")
-    sb.Add(m[Main])
-    ioutil.WriteFile(fname, sb.Bytes(), 0644)
+	sb := stringbuffer.New()
+	sb.Add(fmt.Sprintf(m[Header], time.Now().UTC()))
+	sb.Add(m[Imports])
+	sb.Add(m[Targets])
+	sb.Add("// PLAYGROUND START\n")
+	sb.Add(m[Playground])
+	sb.Add("// PLAYGROUND STOP\n")
+	sb.Add(m[Init])
+	for i := 0; i < len(alien); i++ {
+		alien[i] = `"` + alien[i] + `"`
+	}
+	sb.Add(fmt.Sprintf(m[GoInstall], strings.Join(alien, ",")))
+	sb.Add(m[Compile])
+	sb.Add(m[PackageDef])
+	sb.Add(m[PackageStart])
+	for i := 0; i < len(pkgs); i++ {
+		sb.Add(pkgs[i].Rep())
+	}
+	sb.Add("\n}\n")
+	sb.Add(m[Main])
+	ioutil.WriteFile(fname, sb.Bytes(), 0644)
 }
 
 type collector struct {
-    deps []string
+	deps []string
 }
 
 func (c *collector) String() string {
-    sb := stringbuffer.New()
-    sb.Add("\nimport(\n")
-    for i := 0; i < len(c.deps); i++ {
-        sb.Add("    " + c.deps[i] + "\n")
-    }
-    sb.Add(")\n\n")
-    return sb.String()
+	sb := stringbuffer.New()
+	sb.Add("\nimport(\n")
+	for i := 0; i < len(c.deps); i++ {
+		sb.Add("    " + c.deps[i] + "\n")
+	}
+	sb.Add(")\n\n")
+	return sb.String()
 }
 
 func (c *collector) Visit(node ast.Node) (v ast.Visitor) {
-    switch d := node.(type) {
-    case *ast.BasicLit:
-        c.deps = append(c.deps, d.Value)
-    default: // nothing to do if not BasicLit
-    }
-    return c
+	switch d := node.(type) {
+	case *ast.BasicLit:
+		c.deps = append(c.deps, d.Value)
+	default: // nothing to do if not BasicLit
+	}
+	return c
 }
 
 func hasModifiedImports(fname string) (string, bool) {
 
-    fileset := token.NewFileSet()
-    mode := parser.ImportsOnly
+	fileset := token.NewFileSet()
+	mode := parser.ImportsOnly
 
-    absSynTree, err := parser.ParseFile(fileset, fname, nil, mode)
+	absSynTree, err := parser.ParseFile(fileset, fname, nil, mode)
 
-    if err != nil {
-        log.Fatalf("%s\n", err)
-    }
+	if err != nil {
+		log.Fatalf("%s\n", err)
+	}
 
-    c := &collector{make([]string, 0)}
-    ast.Walk(c, absSynTree)
+	c := &collector{make([]string, 0)}
+	ast.Walk(c, absSynTree)
 
-    set := stringset.New()
+	set := stringset.New()
 
-    set.Add(`"os"`)
-    set.Add(`"io"`)
-    set.Add(`"fmt"`)
-    set.Add(`"strings"`)
-    set.Add(`"compress/gzip"`)
-    set.Add(`"bytes"`)
-    set.Add(`"regexp"`)
-    set.Add(`"os/exec"`)
-    set.Add(`"log"`)
-    set.Add(`"flag"`)
-    set.Add(`"path/filepath"`)
+	set.Add(`"os"`)
+	set.Add(`"io"`)
+	set.Add(`"fmt"`)
+	set.Add(`"strings"`)
+	set.Add(`"compress/gzip"`)
+	set.Add(`"bytes"`)
+	set.Add(`"regexp"`)
+	set.Add(`"os/exec"`)
+	set.Add(`"log"`)
+	set.Add(`"flag"`)
+	set.Add(`"path/filepath"`)
 
-    for i := 0; i < len(c.deps); i++ {
-        if !set.Contains(c.deps[i]) {
-            return c.String(), true
-        }
-    }
+	for i := 0; i < len(c.deps); i++ {
+		if !set.Contains(c.deps[i]) {
+			return c.String(), true
+		}
+	}
 
-    return "", false
+	return "", false
 }
 
 func hasModifiedPlayground(fname string) (mod string, ok bool) {
 
-    var start, stop, content, playground []byte
-    var startOffset, stopOffset int
+	var start, stop, content, playground []byte
+	var startOffset, stopOffset int
 
-    start = []byte("// PLAYGROUND START\n")
-    stop = []byte("// PLAYGROUND STOP\n")
+	start = []byte("// PLAYGROUND START\n")
+	stop = []byte("// PLAYGROUND STOP\n")
 
-    content, err := ioutil.ReadFile(fname)
+	content, err := ioutil.ReadFile(fname)
 
-    if err != nil {
-        log.Fatalf("[ERROR] %s\n", err)
-    }
+	if err != nil {
+		log.Fatalf("[ERROR] %s\n", err)
+	}
 
-    startOffset = bytes.Index(content, start)
-    stopOffset = bytes.Index(content, stop)
+	startOffset = bytes.Index(content, start)
+	stopOffset = bytes.Index(content, stop)
 
-    if startOffset == -1 || stopOffset == -1 {
-        return "", false
-    }
+	if startOffset == -1 || stopOffset == -1 {
+		return "", false
+	}
 
-    playground = content[startOffset+len(start) : stopOffset]
+	playground = content[startOffset+len(start) : stopOffset]
 
-    ok = (string(playground) != PlaygroundTmpl)
+	ok = (string(playground) != PlaygroundTmpl)
 
-    return string(playground), ok
+	return string(playground), ok
 
 }
 

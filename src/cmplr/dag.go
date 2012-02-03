@@ -784,7 +784,7 @@ func removeSlashAndDot(s string) string {
 	return strings.Replace(noslash, ".", "", -1)
 }
 
-func getSyntaxTreeOrDie(file string, mode uint) *ast.File {
+func getSyntaxTreeOrDie(file string, mode parser.Mode) *ast.File {
 	absSynTree, err := parser.ParseFile(token.NewFileSet(), file, nil, mode)
 	if err != nil {
 		log.Fatalf("%s\n", err)

@@ -242,14 +242,14 @@ func main() {
 
     // expand variables in includes
     for i := 0; i < len(includes); i++ {
-        includes[i] = os.ShellExpand(includes[i])
+        includes[i] = os.ExpandEnv(includes[i])
     }
 
     // expand variables in -lib
-    global.SetString("-lib", os.ShellExpand(global.GetString("-lib")))
+    global.SetString("-lib", os.ExpandEnv(global.GetString("-lib")))
 
     // expand variables in -output
-    global.SetString("-output", os.ShellExpand(global.GetString("-output")))
+    global.SetString("-output", os.ExpandEnv(global.GetString("-output")))
 
     // stuff that can be done without $GOROOT
     if global.GetBool("-list") {

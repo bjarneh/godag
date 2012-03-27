@@ -21,6 +21,7 @@ import (
     "fmt"
     "log"
     "os"
+    "runtime"
     "os/exec"
     "path/filepath"
     "regexp"
@@ -84,12 +85,21 @@ func express() {
 
 func gc() {
 
-    var A string // a:architecture
+    var (
+        A string // A:architecture
+        S string // S:suffix
+        C string // C:compiler
+        L string // L:linker
+        R string // R:goroot
+        O string // O:goOS
+    )
+
     var err error
 
     A = os.Getenv("GOARCH")
-
-    var S, C, L string // S:suffix, C:compiler, L:linker
+    if A == "" {
+        A = runtime.GOARCH
+    }
 
     switch A {
     case "arm":
@@ -104,19 +114,31 @@ func gc() {
         S = ".8"
         C = "8g"
         L = "8l"
-    case "":
-        log.Fatalf("[ERROR] missing GOARCH variable\n")
     default:
         log.Fatalf("[ERROR] unknown architecture: %s\n", A)
     }
 
-    pathCompiler, err = exec.LookPath(C)
+    R = os.Getenv("GOROOT")
+    if R == "" {
+        R = runtime.GOROOT()
+    }
+
+    O = os.Getenv("GOOS")
+    if O == "" {
+        O = runtime.GOOS
+    }
+
+    path_C := filepath.Join(R,"pkg","tool", (O + "_" + A), C)
+
+    pathCompiler, err = exec.LookPath(path_C)
 
     if err != nil {
         log.Fatalf("[ERROR] could not find compiler: %s\n", C)
     }
 
-    pathLinker, err = exec.LookPath(L)
+    path_L := filepath.Join(R,"pkg","tool", (O + "_" + A), L)
+
+    pathLinker, err = exec.LookPath(path_L)
 
     if err != nil {
         log.Fatalf("[ERROR] could not find linker: %s\n", L)

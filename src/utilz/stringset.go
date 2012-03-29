@@ -19,7 +19,6 @@ import "strings"
 
 // Use the built-in hash tables to construct a set of strings.
 
-
 type StringSet struct {
     elements map[string]interface{}
 }

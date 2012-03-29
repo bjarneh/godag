@@ -13,7 +13,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package compiler
 
 import (
@@ -21,10 +20,10 @@ import (
     "fmt"
     "log"
     "os"
-    "runtime"
     "os/exec"
     "path/filepath"
     "regexp"
+    "runtime"
     "strings"
     "utilz/global"
     "utilz/handy"
@@ -83,15 +82,16 @@ func express() {
     suffix = ".vmo"
 }
 
+//TODO fix this mess
 func gc() {
 
     var (
-        A string // A:architecture
-        S string // S:suffix
-        C string // C:compiler
-        L string // L:linker
-        R string // R:goroot
-        O string // O:goOS
+        A   string // A:architecture
+        S   string // S:suffix
+        C   string // C:compiler
+        L   string // L:linker
+        R   string // R:goroot
+        O   string // O:goOS
     )
 
     var err error
@@ -128,7 +128,7 @@ func gc() {
         O = runtime.GOOS
     }
 
-    path_C := filepath.Join(R,"pkg","tool", (O + "_" + A), C)
+    path_C := filepath.Join(R, "pkg", "tool", (O + "_" + A), C)
 
     pathCompiler, err = exec.LookPath(path_C)
 
@@ -136,7 +136,7 @@ func gc() {
         log.Fatalf("[ERROR] could not find compiler: %s\n", C)
     }
 
-    path_L := filepath.Join(R,"pkg","tool", (O + "_" + A), L)
+    path_L := filepath.Join(R, "pkg", "tool", (O + "_" + A), L)
 
     pathLinker, err = exec.LookPath(path_L)
 
@@ -546,7 +546,7 @@ func FormatFiles(files []string) {
     var i int
     var argv []string
     var tabWidth string = "-tabwidth=4"
-    var useTabs string = "-tabindent=false"
+    var useTabs string = "-tabs=false"
     var rewRule string = global.GetString("-rew-rule")
     var fmtexec string
     var err error
@@ -561,7 +561,7 @@ func FormatFiles(files []string) {
         tabWidth = "-tabwidth=" + global.GetString("-tabwidth")
     }
     if global.GetBool("-tab") {
-        useTabs = "-tabindent=true"
+        useTabs = "-tabs=true"
     }
 
     argv = make([]string, 0)

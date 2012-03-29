@@ -16,25 +16,25 @@
 package timer
 
 import (
-	"errors"
-	"fmt"
+    "errors"
+    "fmt"
 
-	"io"
-	"time"
+    "io"
+    "time"
 )
 
 // a very simple timer package, perhaps to simple
 
 // nanosecond: Millisecond, Second, Minute, Hour
 const (
-	Millisecond = 1e6
-	Second      = 1e9
-	Minute      = 60 * Second
-	Hour        = 60 * Minute
+    Millisecond = 1e6
+    Second      = 1e9
+    Minute      = 60 * Second
+    Hour        = 60 * Minute
 )
 
 type Time struct {
-	Milliseconds, Seconds, Minutes, Hours int64
+    Milliseconds, Seconds, Minutes, Hours int64
 }
 
 // jobname -> epoch-ns [ns used when stopped]
@@ -44,104 +44,104 @@ var jobs map[string]int64
 var running map[string]bool
 
 func init() {
-	jobs = make(map[string]int64)
-	running = make(map[string]bool)
+    jobs = make(map[string]int64)
+    running = make(map[string]bool)
 }
 
 func Start(name string) {
-	jobs[name] = time.Now().UnixNano()
-	running[name] = true
+    jobs[name] = time.Now().UnixNano()
+    running[name] = true
 }
 
 func Stop(name string) error {
 
-	started, ok := running[name]
+    started, ok := running[name]
 
-	if !ok {
-		return errors.New("[utilz/timer] unknown job: " + name)
-	}
+    if !ok {
+        return errors.New("[utilz/timer] unknown job: " + name)
+    }
 
-	if !started {
-		return errors.New("[utilz/timer] job not running: " + name)
-	}
+    if !started {
+        return errors.New("[utilz/timer] job not running: " + name)
+    }
 
-	jobs[name] = time.Now().UnixNano() - jobs[name]
-	running[name] = false
+    jobs[name] = time.Now().UnixNano() - jobs[name]
+    running[name] = false
 
-	return nil
+    return nil
 }
 
 func Resume(name string) error {
 
-	started, ok := running[name]
+    started, ok := running[name]
 
-	if !ok {
-		return errors.New("[utilz/timer] unknown job: " + name)
-	}
+    if !ok {
+        return errors.New("[utilz/timer] unknown job: " + name)
+    }
 
-	if started {
-		return errors.New("[utilz/timer] job is running: " + name)
-	}
+    if started {
+        return errors.New("[utilz/timer] job is running: " + name)
+    }
 
-	jobs[name] = time.Now().UnixNano() - jobs[name]
-	running[name] = true
+    jobs[name] = time.Now().UnixNano() - jobs[name]
+    running[name] = true
 
-	return nil
+    return nil
 }
 
 func Delta(name string) (ns int64, err error) {
 
-	delta, ok := jobs[name]
+    delta, ok := jobs[name]
 
-	if !ok {
-		return 0, errors.New("[utilz/timer] unknown job: " + name)
-	}
+    if !ok {
+        return 0, errors.New("[utilz/timer] unknown job: " + name)
+    }
 
-	return delta, nil
+    return delta, nil
 }
 
 // positive time interval to Time struct
 func Nano2Time(delta int64) *Time {
-	if delta < 0 {
-		panic("negative time interval")
-	}
-	t := new(Time)
-	t.Hours, delta = chunk(Hour, delta)
-	t.Minutes, delta = chunk(Minute, delta)
-	t.Seconds, delta = chunk(Second, delta)
-	t.Milliseconds, delta = chunk(Millisecond, delta)
-	return t
+    if delta < 0 {
+        panic("negative time interval")
+    }
+    t := new(Time)
+    t.Hours, delta = chunk(Hour, delta)
+    t.Minutes, delta = chunk(Minute, delta)
+    t.Seconds, delta = chunk(Second, delta)
+    t.Milliseconds, delta = chunk(Millisecond, delta)
+    return t
 }
 
 func chunk(unit, total int64) (units, rest int64) {
-	if total > unit {
-		units = total / unit
-		rest = total % unit
-	} else {
-		units = 0
-		rest = total
-	}
-	return units, rest
+    if total > unit {
+        units = total / unit
+        rest = total % unit
+    } else {
+        units = 0
+        rest = total
+    }
+    return units, rest
 }
 
 func (t *Time) String() string {
 
-	var r string
+    var r string
 
-	if t.Hours > 0 {
-		r = fmt.Sprintf("%dh ", t.Hours)
-	}
-	if t.Minutes > 0 {
-		r = fmt.Sprintf("%s%2dm ", r, t.Minutes)
-	}
+    if t.Hours > 0 {
+        r = fmt.Sprintf("%dh ", t.Hours)
+    }
+    if t.Minutes > 0 {
+        r = fmt.Sprintf("%s%2dm ", r, t.Minutes)
+    }
 
-	return fmt.Sprintf("%s%d.%03ds", r, t.Seconds, t.Milliseconds)
+    return fmt.Sprintf("%s%d.%03ds", r, t.Seconds, t.Milliseconds)
 }
 
 func Print(w io.Writer) {
-	fmt.Fprintf(w, "--------------------------------\n")
-	for k, v := range jobs {
-		fmt.Fprintf(w, "%11s   : %14s\n", k, Nano2Time(v))
-	}
-	fmt.Fprintf(w, "--------------------------------\n")
+    fmt.Fprintf(w, "--------------------------------\n")
+    for k, v := range jobs {
+        fmt.Fprintf(w, "%11s   : %14s\n", k, Nano2Time(v))
+    }
+    fmt.Fprintf(w, "--------------------------------\n")
 }

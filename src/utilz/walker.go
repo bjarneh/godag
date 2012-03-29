@@ -16,8 +16,8 @@
 package walker /* texas ranger */
 
 import (
-	"os"
-	"path/filepath"
+    "os"
+    "path/filepath"
 )
 
 // This package does something along the lines of: find PATH -type f
@@ -30,22 +30,22 @@ var IncludeFile = func(p string) bool { return true }
 
 func PathWalk(root string) (files []string) {
 
-	fn := func(p string, d os.FileInfo, e error) error {
+    fn := func(p string, d os.FileInfo, e error) error {
 
-		if d.IsDir() && !IncludeDir(p) {
-			return filepath.SkipDir
-		}
+        if d.IsDir() && !IncludeDir(p) {
+            return filepath.SkipDir
+        }
 
-		if !d.IsDir() && IncludeFile(p) {
-			files = append(files, p)
-		}
+        if !d.IsDir() && IncludeFile(p) {
+            files = append(files, p)
+        }
 
-		return e
-	}
+        return e
+    }
 
-	filepath.Walk(root, fn)
+    filepath.Walk(root, fn)
 
-	return files
+    return files
 }
 
 //////////////////////////////////TODO: fix the chan-walker

@@ -99,7 +99,6 @@ func (s *StringOption) String() string {
 
 ///////////////////////////////////////////////////////////
 
-
 type BoolOption struct {
     // all options belonging to this BoolOption
     options []string

@@ -16,15 +16,16 @@
 package main
 
 import (
+    "os"
+    "fmt"
+    "log"
+    "strings"
+    "runtime"
     "cmplr/compiler"
     "cmplr/dag"
     "cmplr/gdmake"
-    "fmt"
-    "log"
-    "os"
     "parse/gopt"
     "path/filepath"
-    "strings"
     "utilz/global"
     "utilz/handy"
     "utilz/say"
@@ -155,13 +156,16 @@ func init() {
     }
 
     // Testing on Windows requires .exe ending
-    if os.Getenv("GOOS") == "windows" {
+    goos := os.Getenv("GOOS")
+    if goos == ""{ goos = runtime.GOOS  }
+
+    if goos == "windows" {
         global.SetString("-test-bin", "gdtest.exe")
     } else {
         global.SetString("-test-bin", "gdtest")
     }
 
-    global.SetString("-backend", "gc")
+    global.SetString("-backend", runtime.Compiler)
     global.SetString("-I", "")
 
 }
@@ -177,15 +181,6 @@ func noTestFilesFilter(s string) bool {
 func allGoFilesFilter(s string) bool {
     return strings.HasSuffix(s, ".go") &&
         !strings.HasPrefix(filepath.Base(s), "_")
-}
-
-// ignore GOROOT for gccgo and express
-func gotRoot() {
-    if global.GetString("-backend") == "gc" {
-        if os.Getenv("GOROOT") == "" {
-            log.Fatal("[ERROR] missing GOROOT\n")
-        }
-    }
 }
 
 func reportTime() {
@@ -304,8 +299,6 @@ func main() {
         os.Exit(0)
     }
 
-    gotRoot() //? (only matters to gc, gccgo and express ignores it)
-
     // build &| update all external dependencies
     if global.GetBool("-external") {
         dgrph.External()
@@ -406,7 +399,7 @@ func main() {
     // link if ! up2date
     if global.GetString("-output") != "" {
         compiler.ForkLink(global.GetString("-output"), sorted, nil, up2date)
-    }else if global.GetBool("-all"){
+    } else if global.GetBool("-all") {
         compiler.ForkLinkAll(sorted, up2date)
     }
 
@@ -483,7 +476,7 @@ func printHelp() {
   --test.*             any valid gotest option
   -f --fmt             run gofmt on src and exit
   -r --rewrite         pass rewrite rule to gofmt
-  -T --tab             pass -tabindent=true to gofmt
+  -T --tab             pass -tabs=true to gofmt
   -w --tabwidth        pass -tabwidth to gofmt (default: 4)
   -e --external        goinstall all external dependencies
   -B --backend         [gc,gccgo,express] (default: gc)
@@ -493,7 +486,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.2 (r.60.3)")
+    fmt.Println("godag 0.3 (release-branch.go1)")
 }
 
 func printListing() {

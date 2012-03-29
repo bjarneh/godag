@@ -1,34 +1,36 @@
 
+------------------------------------------------------------
 About:
 ------------------------------------------------------------
+
 This program will hopefully make it easier to compile
 source code written in the go programming language.
+
 A dependency graph is constructed from imports, this
-is sorted with a topological sort to figure out a legal
-compile order. Testing, formatting and building reverse
-dependencies are also automated.
+is sorted with a topological sort to figure out if a legal
+compile order is possible (loop check). The dependency
+graph itself is used to compile packages, i.e. each
+packages sits in its own go-routine and waits for its
+dependencies to finish before it starts.
 
 
+
+------------------------------------------------------------
 Install:  [Linux/Unix/Mac/Windows]
 ------------------------------------------------------------
 
-Compile and link the makefile, you may want to substitute
-8g and 8l with 6g/5g and 6l/5l pending on your architecture
-
-
-1) 8g _gdmk.go
-2) 8l -o gdmk _gdmk.8   # on Windows gdmk.exe
-3) ./gdmk install       # on Windows gdmk.exe
-
+> go run mk.go install
 
 This will compile + link the binary (gd) and move it
 to $HOME/bin if it is present, if not it falls back to
-$GOBIN, which is required now.
+$GOBIN.
 
 
-./gdmk -help   to see all available targets/options
+> go run mk.go -help  to see all available targets/options
 
 
+
+------------------------------------------------------------
 Try it Out:
 ------------------------------------------------------------
 
@@ -42,9 +44,10 @@ $ gd -s src       # will print legal compile order
 $ gd src -test    # will run unit-tests
 $ gd src -fmt     # will format (gofmt) the source-code
 $ gd src -o gd    # will compile and link executable
-$ gd -e src       # will goinstall external dependencies
 
 
+
+------------------------------------------------------------
 Contributors
 ------------------------------------------------------------
 
@@ -52,8 +55,11 @@ Hans Stimer
 Markus Martin
 Robert Hencke
 Hunter Freyer
+Michael Henke
 
 
+
+------------------------------------------------------------
 Philosophy (Babble?)
 ------------------------------------------------------------
 
@@ -66,12 +72,17 @@ the Makefiles, but makes organisation far less intuitive than
 a directory-tree package-structure.
 
 
+
+------------------------------------------------------------
 Completion
 ------------------------------------------------------------
 
-Bash completion scripts for gd and gdmk are placed in util
+Bash completion script for gd is placed inside util/
 
 
+
+
+------------------------------------------------------------
 Logo
 ------------------------------------------------------------
 

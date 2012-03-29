@@ -48,69 +48,28 @@ func PathWalk(root string) (files []string) {
     return files
 }
 
-//////////////////////////////////TODO: fix the chan-walker
-/// type collect struct {
-/// 	files []string
-/// }
-/// 
-/// func newCollect() *collect {
-/// 	c := new(collect)
-/// 	c.files = make([]string, 0)
-/// 	return c
-/// }
-/// 
-/// func (c *collect) VisitDir(path string, d *os.FileInfo) bool {
-/// 	return IncludeDir(path)
-/// }
-/// 
-/// func (c *collect) VisitFile(path string, d *os.FileInfo) {
-/// 	if IncludeFile(path) {
-/// 		c.files = append(c.files, path)
-/// 	}
-/// }
+func helper(root string, ch chan string) {
 
-/// func PathWalk(root string) []string {
-/// 	c := newCollect()
-/// 	errs := make(chan error)
-/// 	filepath.Walk(root, c, errs)
-/// 	return c.files
-/// }
+    fn := func(p string, d os.FileInfo, e error) error {
 
-// ChanWalk is a type of PathWalk which returns immediately and
-// spits out path-names through a channel, it requires a new
-// type; this is it :-)
+        if d.IsDir() && !IncludeDir(p) {
+            return filepath.SkipDir
+        }
 
-/// type chanCollect struct {
-/// 	files chan string
-/// }
-/// 
-/// func newChanCollect() *chanCollect {
-/// 	c := new(chanCollect)
-/// 	c.files = make(chan string)
-/// 	return c
-/// }
-/// 
-/// func (c *chanCollect) VisitDir(path string, d *os.FileInfo) bool {
-/// 	return IncludeDir(path)
-/// }
-/// 
-/// func (c *chanCollect) VisitFile(path string, d *os.FileInfo) {
-/// 	if IncludeFile(path) {
-/// 		c.files <- path
-/// 	}
-/// }
-/// 
-/// func helper(root string, cc *chanCollect) {
-/// 	errs := make(chan error)
-/// 	filepath.Walk(root, cc, errs)
-/// 	close(cc.files)
-/// }
-/// 
-/// // Same as PathWalk part from returning path names in a channel,
-/// // note that this function returns immediatlely, most likely this is
-/// // what you want unless you need all path names at once..
-/// func ChanWalk(root string) chan string {
-/// 	cc := newChanCollect()
-/// 	go helper(root, cc)
-/// 	return cc.files
-/// }
+        if !d.IsDir() && IncludeFile(p) {
+            ch <-p
+        }
+
+        return e
+    }
+
+    filepath.Walk(root, fn)
+
+    close(ch)
+}
+
+func ChanWalk(root string) (files chan string) {
+    ch := make(chan string)
+    go helper(root, ch)
+    return ch
+}

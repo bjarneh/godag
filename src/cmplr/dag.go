@@ -370,7 +370,7 @@ func (d Dag) MakeMainTest(root string) ([]*Package, string, string) {
     sbTotal.Add("func main(){\n")
     sbTotal.Add("testing.Main(regexp.MatchString, tests, benchmarks, examples);\n}\n\n")
 
-    tmpstub = fmt.Sprintf("tmp%d", time.Now().UnixNano())
+    tmpstub = fmt.Sprintf("tmp%d", time.Now().Unix())
     tmpdir = filepath.Join(root, tmpstub)
     if global.GetString("-lib") != "" {
         tmplib = filepath.Join(global.GetString("-lib"), tmpstub)

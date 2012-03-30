@@ -1,4 +1,4 @@
-/* Built : 2012-03-29 02:11:00.816424 +0000 UTC */
+/* Built : 2012-03-30 08:56:12.798423 +0000 UTC */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -363,7 +363,7 @@ func testokDoFirst() {
     }
 
     from := filepath.Join(goroot, "src", "pkg")
-    to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().UnixNano())
+    to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().Unix())
 
     say.Printf("testable part of stdlib -> %s\n", to)
 
@@ -398,7 +398,7 @@ func stdlibDoFirst() {
     }
 
     from := filepath.Join(goroot, "src", "pkg")
-    to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().UnixNano())
+    to := fmt.Sprintf("tmp-pkgroot-%d", time.Now().Unix())
 
     say.Printf("pure go part of stdlib -> %s\n", to)
 
@@ -1082,10 +1082,10 @@ func (p *Package) compile() {
 
 var packages = []*Package{
     &Package{
-        name:   "global",
-        full:    "utilz/global",
-        output: "_obj/utilz/global",
-        files:  []string{"src/utilz/global.go"},
+        name:   "stringbuffer",
+        full:    "utilz/stringbuffer",
+        output: "_obj/utilz/stringbuffer",
+        files:  []string{"src/utilz/stringbuffer.go"},
     },
     &Package{
         name:   "walker",
@@ -1100,12 +1100,6 @@ var packages = []*Package{
         files:  []string{"src/utilz/stringset.go"},
     },
     &Package{
-        name:   "stringbuffer",
-        full:    "utilz/stringbuffer",
-        output: "_obj/utilz/stringbuffer",
-        files:  []string{"src/utilz/stringbuffer.go"},
-    },
-    &Package{
         name:   "timer",
         full:    "utilz/timer",
         output: "_obj/utilz/timer",
@@ -1118,16 +1112,22 @@ var packages = []*Package{
         files:  []string{"src/parse/gopt.go","src/parse/option.go"},
     },
     &Package{
-        name:   "say",
-        full:    "utilz/say",
-        output: "_obj/utilz/say",
-        files:  []string{"src/utilz/say.go"},
+        name:   "global",
+        full:    "utilz/global",
+        output: "_obj/utilz/global",
+        files:  []string{"src/utilz/global.go"},
     },
     &Package{
         name:   "handy",
         full:    "utilz/handy",
         output: "_obj/utilz/handy",
         files:  []string{"src/utilz/handy.go"},
+    },
+    &Package{
+        name:   "say",
+        full:    "utilz/say",
+        output: "_obj/utilz/say",
+        files:  []string{"src/utilz/say.go"},
     },
     &Package{
         name:   "dag",

@@ -57,7 +57,7 @@ func helper(root string, ch chan string) {
         }
 
         if !d.IsDir() && IncludeFile(p) {
-            ch <-p
+            ch <- p
         }
 
         return e

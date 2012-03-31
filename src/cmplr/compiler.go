@@ -23,7 +23,6 @@ import (
     "os/exec"
     "path/filepath"
     "regexp"
-    "runtime"
     "strings"
     "utilz/global"
     "utilz/handy"
@@ -96,10 +95,9 @@ func gc() {
 
     var err error
 
-    A = os.Getenv("GOARCH")
-    if A == "" {
-        A = runtime.GOARCH
-    }
+    A = handy.GOARCH()
+    R = handy.GOROOT()
+    O = handy.GOOS()
 
     switch A {
     case "arm":
@@ -116,16 +114,6 @@ func gc() {
         L = "8l"
     default:
         log.Fatalf("[ERROR] unknown architecture: %s\n", A)
-    }
-
-    R = os.Getenv("GOROOT")
-    if R == "" {
-        R = runtime.GOROOT()
-    }
-
-    O = os.Getenv("GOOS")
-    if O == "" {
-        O = runtime.GOOS
     }
 
     path_C := filepath.Join(R, "pkg", "tool", (O + "_" + A), C)

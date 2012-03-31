@@ -16,11 +16,15 @@
 package handy
 
 import (
+    "crypto/sha1"
+    "fmt"
+    "io"
     "io/ioutil"
     "log"
     "os"
     "os/exec"
     "regexp"
+    "runtime"
     "strings"
 )
 
@@ -79,13 +83,7 @@ func StdExecve(argv []string, stopOnTrouble bool) bool {
 // file and returns an array (ARGV)
 func ConfigToArgv(pathname string) (argv []string, ok bool) {
 
-    fileInfo, e := os.Stat(pathname)
-
-    if e != nil {
-        return nil, false
-    }
-
-    if !!fileInfo.IsDir() {
+    if !IsFile(pathname) {
         return nil, false
     }
 
@@ -117,12 +115,7 @@ func ConfigToArgv(pathname string) (argv []string, ok bool) {
 // Exit if pathname ! dir
 
 func DirOrExit(pathname string) {
-
-    fileInfo, err := os.Stat(pathname)
-
-    if err != nil {
-        log.Fatalf("[ERROR] %s\n", err)
-    } else if !fileInfo.IsDir() {
+    if !IsDir(pathname) {
         log.Fatalf("[ERROR] %s: is not a directory\n", pathname)
     }
 }
@@ -131,12 +124,10 @@ func DirOrExit(pathname string) {
 
 func DirOrMkdir(pathname string) bool {
 
-    fileInfo, err := os.Stat(pathname)
-
-    if err == nil && fileInfo.IsDir() {
+    if IsDir(pathname) {
         return true
     } else {
-        err = os.MkdirAll(pathname, 0777)
+        err := os.MkdirAll(pathname, 0777)
         if err != nil {
             log.Fatalf("[ERROR] %s\n", err)
         }
@@ -146,15 +137,15 @@ func DirOrMkdir(pathname string) bool {
 
 func IsDir(pathname string) bool {
     fileInfo, err := os.Stat(pathname)
-    if err != nil || !fileInfo.IsDir() {
-        return false
+    if err != nil && fileInfo.IsDir() {
+        return true
     }
-    return true
+    return false
 }
 
 func IsFile(pathname string) bool {
     fileInfo, err := os.Stat(pathname)
-    if err != nil || !!fileInfo.IsDir() {
+    if err != nil || fileInfo.Mode()&os.ModeType != 0 {
         return false
     }
     return true
@@ -217,4 +208,41 @@ func Touch(pathname string) error {
     e = fd.Truncate(size)
 
     return e
+}
+
+func GOOS() string {
+    goos := os.Getenv("GOOS")
+    if goos == "" {
+        goos = runtime.GOOS
+    }
+    return goos
+}
+
+func GOARCH() string {
+    goarch := os.Getenv("GOARCH")
+    if goarch == "" {
+        goarch = runtime.GOARCH
+    }
+    return goarch
+}
+
+func GOROOT() string {
+    goroot := os.Getenv("GOROOT")
+    if goroot == "" {
+        goroot = runtime.GOROOT()
+    }
+    return goroot
+}
+
+func Check(e error) {
+    if e != nil {
+        log.Fatalf("%s\n", e)
+    }
+}
+
+// sha1 hex as string
+func Sha1(s string) (hex string) {
+    h := sha1.New()
+    io.WriteString(h, s)
+    return fmt.Sprintf("%x", h.Sum(nil))
 }

@@ -16,16 +16,16 @@
 package main
 
 import (
-    "os"
-    "fmt"
-    "log"
-    "strings"
-    "runtime"
     "cmplr/compiler"
     "cmplr/dag"
     "cmplr/gdmake"
+    "fmt"
+    "log"
+    "os"
     "parse/gopt"
     "path/filepath"
+    "runtime"
+    "strings"
     "utilz/global"
     "utilz/handy"
     "utilz/say"
@@ -156,8 +156,7 @@ func init() {
     }
 
     // Testing on Windows requires .exe ending
-    goos := os.Getenv("GOOS")
-    if goos == ""{ goos = runtime.GOOS  }
+    goos := handy.GOOS()
 
     if goos == "windows" {
         global.SetString("-test-bin", "gdtest.exe")
@@ -195,7 +194,7 @@ func main() {
         ok, up2date bool
         e           error
         argv, args  []string
-        config      = make([]string, 4)
+        config      [4]string
     )
 
     timer.Start("everything")
@@ -246,7 +245,6 @@ func main() {
     // expand variables in -output
     global.SetString("-output", os.ExpandEnv(global.GetString("-output")))
 
-    // stuff that can be done without $GOROOT
     if global.GetBool("-list") {
         printListing()
         os.Exit(0)

@@ -81,6 +81,7 @@ var strs = []string{
     "-main",
     "-backend",
     "-gdmk",
+    "-mkcomplete",
     // add missing test options + alias
     "-test.bench",
     "-test.benchtime",
@@ -113,9 +114,10 @@ func init() {
     getopt.BoolOption("-T -tab --tab")
     getopt.BoolOption("-a -all --all")
     getopt.BoolOption("-e -external --external")
+    getopt.StringOption("-I -I=")
+    getopt.StringOption("-mkcomplete")
     getopt.StringOptionFancy("-D --dot")
     getopt.StringOptionFancy("-L --lib")
-    getopt.StringOption("-I -I=")
     getopt.StringOptionFancy("-g --gdmk")
     getopt.StringOptionFancy("-w --tabwidth")
     getopt.StringOptionFancy("-r --rewrite")
@@ -218,8 +220,33 @@ func main() {
         }
     }
 
+    // small gorun version if single go-file is given
+    if len(os.Args) > 1 && strings.HasSuffix(os.Args[1], ".go") {
+        say.Mute() // be silent unless error here
+        single, name := dag.ParseSingle(os.Args[1])
+        compiler.InitBackend()
+        compiler.CreateArgv(single)
+        up2date = compiler.Compile(single)
+        compiler.ForkLink(name, single, nil, up2date)
+        args = os.Args[1:]
+        args[0] = name
+        handy.StdExecve(args, true)
+        os.Exit(0)
+    }
+
+
     // command line arguments overrides/appends config
     args = parseArgv(os.Args[1:])
+
+    mkcomplete := global.GetString("-mkcomplete")
+    if mkcomplete != "" {
+        fmt.Println(mkcomplete)
+        targets := dag.GetMakeTargets(mkcomplete)
+        for _, t := range targets {
+            fmt.Println(t)
+        }
+        os.Exit(0)
+    }
 
     if len(args) > 0 {
         if len(args) > 1 {
@@ -469,14 +496,14 @@ func printHelp() {
   -t --test            run all unit-tests
   -m --match           regex to select unit-tests
   -b --bench           regex to select benchmarks
-  -V --verbose         verbose unit-test and goinstall
+  -V --verbose         verbose unit-test and go install
   --test-bin           name of test-binary (default: gdtest)
   --test.*             any valid gotest option
   -f --fmt             run gofmt on src and exit
   -r --rewrite         pass rewrite rule to gofmt
   -T --tab             pass -tabs=true to gofmt
   -w --tabwidth        pass -tabwidth to gofmt (default: 4)
-  -e --external        goinstall all external dependencies
+  -e --external        go install all external dependencies
   -B --backend         [gc,gccgo,express] (default: gc)
     `
 

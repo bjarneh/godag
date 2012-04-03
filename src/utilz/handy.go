@@ -137,7 +137,7 @@ func DirOrMkdir(pathname string) bool {
 
 func IsDir(pathname string) bool {
     fileInfo, err := os.Stat(pathname)
-    if err != nil && fileInfo.IsDir() {
+    if err == nil && fileInfo.IsDir() {
         return true
     }
     return false

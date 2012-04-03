@@ -373,7 +373,7 @@ func init() {
         fmt.Println("  -M --main         regex to match main package")
         fmt.Println("  -c --clean        delete object files")
         fmt.Println("  -q --quiet        quiet unless errors occur")
-        fmt.Println("  -e --external     goinstall external dependencies")
+        fmt.Println("  -e --external     go install external dependencies")
         fmt.Println("  -I                import package directory\n")
 
         if len(targets) > 0 {
@@ -640,13 +640,14 @@ func mainChoice(pkgs []*Package) *Package {
 
 func goinstall() {
 
-    argv := make([]string, 4)
-    argv[0] = "goinstall"
-    argv[1] = "-clean=true"
-    argv[2] = "-u=true"
+    argv := make([]string, 5)
+    argv[0] = "go"
+    argv[1] = "install"
+    argv[2] = "-clean=true"
+    argv[3] = "-u=true"
 
     for i := 0; i < len(alien); i++ {
-        say.Printf("goinstall: %s\n", alien[i])
+        say.Printf("go install: %s\n", alien[i])
         argv[3] = alien[i]
         run(argv)
     }

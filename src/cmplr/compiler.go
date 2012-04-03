@@ -49,6 +49,11 @@ func Init(srcdir string, include []string) {
         libroot = srcroot
     }
 
+    InitBackend()
+}
+
+func InitBackend(){
+
     switch global.GetString("-backend") {
     case "gcc", "gccgo":
         gcc()

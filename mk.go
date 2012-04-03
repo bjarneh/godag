@@ -67,8 +67,8 @@ var targets = map[string]*Target{
     },
     "install": &Target{
         desc:  "target:build + mv 'gd' $HOME/bin || $GOBIN",
-        first: buildDoFirst,
-        last:  installDoLast,
+        first: installDoFirst,
+        last:  nil,
     },
     "build": &Target{
         desc:  "compile and link 'gd' (alias for -o=gd)",
@@ -272,11 +272,15 @@ func buildDoFirst() {
 }
 
 // install target
-func installDoLast() {
+func installDoFirst() {
 
-    var tmp, name, home string
+    var tmp, name, home, gobin string
 
     home = os.Getenv("HOME")
+
+    if home == "" {
+        home = os.Getenv("USERDIR")
+    }
 
     if home != "" {
         tmp = filepath.Join(home, "bin")
@@ -286,17 +290,16 @@ func installDoLast() {
     }
 
     if name == "" {
-        name = filepath.Join(os.Getenv("GOBIN"), "gd")
+        gobin = os.Getenv("GOBIN")
+        if gobin == "" {
+            name = filepath.Join(runtime.GOROOT(),"bin","gd")
+        }else{
+            name = filepath.Join(gobin,"gd")
+        }
     }
 
-    // os.Rename does not work across partitions, i.e.
-    // it had to be replaced by a copy + rm gd
-    say.Printf("move gd  : %s\n", name)
-    copyGzip("gd", name, false)
-    e := os.Chmod(name, 0755)
-    quitter(e)
-    e = os.Remove("gd")
-    quitter(e)
+    output = name
+
 }
 
 // needed for stdlib, testok targets

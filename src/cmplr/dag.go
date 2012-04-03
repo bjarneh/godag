@@ -120,6 +120,7 @@ func (d Dag) Parse(root string, files []string) {
     }
 }
 
+
 func (d Dag) addEdge(from, to string) {
     fromNode := d[from]
     toNode := d[to]
@@ -174,14 +175,8 @@ func (d Dag) External() {
     set = d.Alien()
 
     argv = make([]string, 0)
-
-    tmp, err = exec.LookPath("goinstall")
-
-    if err != nil {
-        log.Fatalf("[ERROR] %s\n", err)
-    }
-
-    argv = append(argv, tmp)
+    argv = append(argv, "go")
+    argv = append(argv, "install")
 
     if global.GetBool("-verbose") {
         argv = append(argv, "-v=true")
@@ -198,7 +193,7 @@ func (d Dag) External() {
         if global.GetBool("-dryrun") {
             fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
         } else {
-            say.Printf("goinstall: %s\n", u)
+            say.Printf("go install: %s\n", u)
             handy.StdExecve(argv, true)
         }
     }
@@ -218,6 +213,8 @@ func seemsExternal(imprt string) bool {
     } else if strings.HasPrefix(imprt, "github.com/") {
         return true
     } else if strings.HasPrefix(imprt, "launchpad.net/") {
+        return true
+    } else if strings.HasPrefix(imprt, "code.google.com/") {
         return true
     }
 
@@ -716,6 +713,7 @@ func (p *Package) Visit(node ast.Node) (v ast.Visitor) {
 //TODO make this examples stuff work, if someone asks for it..
 //TODO check that types are ok as well..
 func (t *TestCollector) Visit(node ast.Node) (v ast.Visitor) {
+
     switch fn := node.(type) {
     case *ast.FuncDecl:
 
@@ -804,3 +802,51 @@ func oldPkgIsFound() {
     oldPkgFound = true
     locker.Unlock()
 }
+
+// gorun like stuff
+func ParseSingle(pathname string) (pkgs []*Package, name string) {
+
+    tree      := getSyntaxTreeOrDie(pathname, parser.ImportsOnly)
+    shortname := tree.Name.String()
+
+    if shortname != "main" {
+        log.Fatalf("[ERROR] running a single file requires 'main' package\n")
+    }
+
+    p              := newPackage()
+    p.ShortName     = shortname
+    absPath, e     := filepath.Abs(pathname)
+    handy.Check(e)
+    name            = filepath.Join(os.TempDir(), handy.Sha1(absPath))
+    p.Name          = name
+    p.Files         = append(p.Files, pathname)
+
+    pkgs = append(pkgs, p)
+
+    return
+}
+
+// parse mk.go
+func GetMakeTargets(pathname string) (targets []string) {
+    tree    := getSyntaxTreeOrDie(pathname, 0)
+    collect := &targetCollector{make([]string, 0)}
+    ast.Walk(collect, tree)
+    return
+}
+
+type targetCollector struct {
+    targets []string
+}
+
+func (t *targetCollector) Visit(node ast.Node) (v ast.Visitor) {
+
+    switch m_type := node.(type) {
+    case  *ast.MapType:
+        fmt.Printf("MapType{%v}\n", m_type)
+        fmt.Printf("Key: %v\n", m_type.Key)
+        fmt.Printf("Value: %v\n", m_type.Value)
+        //default: fmt.Printf("%v\n", m_type)
+    }
+    return t
+}
+

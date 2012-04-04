@@ -221,7 +221,7 @@ func main() {
     }
 
     // small gorun version if single go-file is given
-    if len(os.Args) > 1 && strings.HasSuffix(os.Args[1], ".go") {
+    if len(os.Args) > 1 && strings.HasSuffix(os.Args[1], ".go") && handy.IsFile(os.Args[1]) {
         say.Mute() // be silent unless error here
         single, name := dag.ParseSingle(os.Args[1])
         compiler.InitBackend()

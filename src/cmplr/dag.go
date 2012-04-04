@@ -22,7 +22,6 @@ import (
     "go/token"
     "log"
     "os"
-    "os/exec"
     "path/filepath"
     "regexp"
     "strings"
@@ -166,9 +165,7 @@ func (d Dag) Alien() (set *stringset.StringSet) {
 
 func (d Dag) External() {
 
-    var err error
     var argv []string
-    var tmp string
     var set *stringset.StringSet
     var i int = 0
 
@@ -817,7 +814,9 @@ func ParseSingle(pathname string) (pkgs []*Package, name string) {
     p.ShortName     = shortname
     absPath, e     := filepath.Abs(pathname)
     handy.Check(e)
-    name            = filepath.Join(os.TempDir(), handy.Sha1(absPath))
+    stub           := filepath.Join(os.TempDir(), "godag")
+    handy.DirOrMkdir(stub)
+    name            = filepath.Join(stub, handy.Sha1(absPath))
     p.Name          = name
     p.Files         = append(p.Files, pathname)
 

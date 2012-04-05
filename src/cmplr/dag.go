@@ -173,14 +173,14 @@ func (d Dag) External() {
 
     argv = make([]string, 0)
     argv = append(argv, "go")
-    argv = append(argv, "install")
+    argv = append(argv, "get")
 
     if global.GetBool("-verbose") {
-        argv = append(argv, "-v=true")
+        argv = append(argv, "-v")
     }
 
-    argv = append(argv, "-u=true")
-    argv = append(argv, "-clean=true")
+    argv = append(argv, "-u")
+    argv = append(argv, "-a")
 
     i = len(argv)
     argv = append(argv, "dummy")
@@ -190,7 +190,7 @@ func (d Dag) External() {
         if global.GetBool("-dryrun") {
             fmt.Printf("%s || exit 1\n", strings.Join(argv, " "))
         } else {
-            say.Printf("go install: %s\n", u)
+            say.Printf("go get: %s\n", u)
             handy.StdExecve(argv, true)
         }
     }

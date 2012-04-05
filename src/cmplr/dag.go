@@ -828,23 +828,27 @@ func ParseSingle(pathname string) (pkgs []*Package, name string) {
 // parse mk.go
 func GetMakeTargets(pathname string) (targets []string) {
     tree    := getSyntaxTreeOrDie(pathname, 0)
-    collect := &targetCollector{make([]string, 0)}
+    collect := &targetCollector{false, make([]string, 0)}
     ast.Walk(collect, tree)
     return
 }
 
 type targetCollector struct {
+    found   bool
     targets []string
 }
 
 func (t *targetCollector) Visit(node ast.Node) (v ast.Visitor) {
 
-    switch m_type := node.(type) {
-    case  *ast.MapType:
-        fmt.Printf("MapType{%v}\n", m_type)
-        fmt.Printf("Key: %v\n", m_type.Key)
-        fmt.Printf("Value: %v\n", m_type.Value)
-        //default: fmt.Printf("%v\n", m_type)
+    if ! t.found {
+        switch m_type := node.(type) {
+        case  *ast.MapType:
+            t.found = true
+            fmt.Printf("MapType{%v}\n", m_type)
+            fmt.Printf("Key: %v\n", m_type.Key)
+            fmt.Printf("Value: %v\n", m_type.Value)
+            //default: fmt.Printf("%v\n", m_type)
+        }
     }
     return t
 }

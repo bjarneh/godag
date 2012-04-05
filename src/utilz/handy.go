@@ -26,6 +26,7 @@ import (
     "regexp"
     "runtime"
     "strings"
+    "path/filepath"
 )
 
 // some utility functions
@@ -232,6 +233,40 @@ func GOROOT() string {
         goroot = runtime.GOROOT()
     }
     return goroot
+}
+
+func GOPATH() (p []string) {
+    gopath := os.Getenv("GOPATH")
+    if gopath != "" {
+        p = strings.Split(gopath, string(os.PathListSeparator))
+    }
+    return
+}
+
+// places we look for libraries pending on backend
+func GoPathImports(backend string) (paths []string) {
+
+    var(
+        stub    string
+        gopath  []string
+    )
+
+    gopath = GOPATH()
+
+    if len(gopath) > 0 {
+
+        if backend == "gc" {
+            stub = GOOS() + "_" + GOARCH()
+        }else{
+            stub = "gccgo"
+        }// should do something for express later perhaps
+
+        for _, gp := range gopath {
+            paths = append(paths, filepath.Join(gp, "pkg", stub))
+        }
+    }
+
+    return
 }
 
 func Check(e error) {

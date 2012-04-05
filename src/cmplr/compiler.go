@@ -173,6 +173,12 @@ func CreateArgv(pkgs []*dag.Package) {
             argv = append(argv, includes[y])
         }
 
+        golibs := handy.GoPathImports(global.GetString("-backend"))
+        for j := 0; j < len(golibs); j++ {
+            argv = append(argv, "-I")
+            argv = append(argv, golibs[j])
+        }
+
         switch global.GetString("-backend") {
         case "gcc", "gccgo":
             argv = append(argv, "-c")
@@ -344,6 +350,13 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date 
     case "gc", "express":
         argv = append(argv, "-L")
         argv = append(argv, libroot)
+        if global.GetString("-backend") == "gc" {
+            golibs := handy.GoPathImports("gc")
+            for j := 0; j < len(golibs); j++ {
+                argv = append(argv, "-L")
+                argv = append(argv, golibs[j])
+            }
+        }
     }
 
     argv = append(argv, "-o")

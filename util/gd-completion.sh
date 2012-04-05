@@ -1,12 +1,5 @@
 #!/bin/bash
 #
-# Bash command completion file for godag
-#
-# Add this file somewhere where it gets sourced.
-# If you have sudo power it can be dropped into
-# /etc/bash_completion.d/. If not it can be sourced
-# by one of your startup scripts (.bashrc .profile ...)
-#
 #  Copyright (C) 2009 bjarneh
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -21,7 +14,16 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+#
+# -----------------------------------------------------------------------
+#
+#  Bash command completion file for godag
+# 
+#  Add this file somewhere where it gets sourced.
+#  If you have sudo power it can be dropped into
+#  /etc/bash_completion.d/. If not it can be sourced
+#  by one of your startup scripts (.bashrc .profile ...)
+#
 
 _gd(){
 
@@ -52,12 +54,22 @@ _gd(){
         fi
         return 0
     fi
+
     if [[ "${cur}" == c* || "${cur}" == t* || "${cur}" == h* ]]; then
         COMPREPLY=( $(compgen -W "${gd_special}" -- "${cur}") )
     fi
+
+##     if [[ "${prev}" == "mk.go" ]]; then
+##         #COMPREPLY=( $(gd -mkcompletion mk.go) )
+##         if [ "${COMP_CWORD}" -eq 2 ]; then
+##             COMPREPLY=( "doit" )
+##             return 0
+##         fi
+##     fi
+
     if [[ "${prev}" == -* ]]; then
         case "${prev}" in
-            '-B' | '-B=' | '-backend' | '--backend' | '-backend=' | '--backend=')
+            '-B' |'-B=' | '-backend' |'--backend' |'-backend=' |'--backend=')
                 COMPREPLY=( $(compgen -W "gc gccgo express" -- "${cur}") )
                 return 0
                 ;;

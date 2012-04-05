@@ -56,7 +56,7 @@ type Target struct {
 
 var targets = map[string]*Target{
     "clean": &Target{
-        desc:  "rm -rf _obj/ _gdmk.[856o]",
+        desc:  "rm -rf _obj/",
         first: cleanDoFirst,
         last:  nil,
     },
@@ -185,12 +185,11 @@ func debianDoLast() {
 
     // copyGzip( from, to, gzipfile )
     copyGzip("util/gd-completion.sh", "debian/etc/bash_completion.d/gd", false)
-    copyGzip("util/gdmk-completion.sh", "debian/etc/bash_completion.d/gdmk", false)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/gd.1.gz", true)
     copyGzip("util/gd.1", "debian/usr/share/man/man1/godag.1.gz", true)
     copyGzipStringBuffer(debianCopyright, "debian/usr/share/doc/godag/copyright", false)
     copyGzipStringBuffer(debianChangelog, "debian/usr/share/doc/godag/changelog.Debian.gz", true)
-    copyGzipStringBuffer("/etc/bash_completion.d/gd\n/etc/bash_completion.d/gdmk\n", "debian/DEBIAN/conffiles", false)
+    copyGzipStringBuffer("/etc/bash_completion.d/gd\n", "debian/DEBIAN/conffiles", false)
 
     if isDir(".hg") {
         hglog, e := exec.Command("hg", "log").CombinedOutput()
@@ -223,7 +222,6 @@ func debianDoLast() {
         "debian/usr/bin/gd":                              0755,
         "debian/DEBIAN/conffiles":                        0644,
         "debian/etc/bash_completion.d/gd":                0755,
-        "debian/etc/bash_completion.d/gdmk":              0755,
         "debian/usr/share/man/man1/gd.1.gz":              0644,
         "debian/usr/share/man/man1/godag.1.gz":           0644,
         "debian/usr/share/doc/godag/copyright":           0644,

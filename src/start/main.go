@@ -65,6 +65,7 @@ var bools = []string{
     // add missing test options + alias
     "-test.short",
     "-test.v",
+    "-strip",
 }
 
 // keys for the string options
@@ -104,15 +105,16 @@ func init() {
     getopt.BoolOption("-S -static --static")
     getopt.BoolOption("-v -version --version version")
     getopt.BoolOption("-s -sort --sort sort")
-    getopt.BoolOption("-p -print --print")
-    getopt.BoolOption("-d -dryrun --dryrun")
+    getopt.BoolOption("-p -print --print print")
+    getopt.BoolOption("-d -dryrun --dryrun dryrun")
     getopt.BoolOption("-t -test --test test")
-    getopt.BoolOption("-l -list --list")
+    getopt.BoolOption("-l -list --list list")
     getopt.BoolOption("-q -quiet --quiet")
     getopt.BoolOption("-V -verbose --verbose")
-    getopt.BoolOption("-f -fmt --fmt")
+    getopt.BoolOption("-f -fmt --fmt fmt")
     getopt.BoolOption("-T -tab --tab")
     getopt.BoolOption("-a -all --all")
+    getopt.BoolOption("-y -strip --strip strip")
     getopt.BoolOption("-e -external --external")
     getopt.StringOption("-I -I=")
     getopt.StringOption("-mkcomplete")
@@ -227,6 +229,9 @@ func main() {
         compiler.InitBackend()
         compiler.CreateArgv(single)
         up2date = compiler.Compile(single)
+        if handy.GOOS() == "windows" {
+            name = name + ".exe"
+        }
         compiler.ForkLink(name, single, nil, up2date)
         args = os.Args[1:]
         args[0] = name
@@ -484,6 +489,7 @@ func printHelp() {
   -s --sort            print legal compile order
   -o --output          link main package -> output
   -S --static          statically link binary
+  -y --strip           strip symbols from executable
   -g --gdmk            create a go makefile for project
   -d --dryrun          print what gd would do (stdout)
   -c --clean           delete generated object code

@@ -1,4 +1,4 @@
-/* Built : 2012-03-30 08:56:12.798423 +0000 UTC */
+/* Built : 2012-04-06 04:35:31.87898 +0000 UTC */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -612,7 +612,7 @@ func init() {
         fmt.Println("  -M --main         regex to match main package")
         fmt.Println("  -c --clean        delete object files")
         fmt.Println("  -q --quiet        quiet unless errors occur")
-        fmt.Println("  -e --external     goinstall external dependencies")
+        fmt.Println("  -e --external     go install external dependencies")
         fmt.Println("  -I                import package directory\n")
 
         if len(targets) > 0 {
@@ -641,18 +641,9 @@ func initBackend() {
     }
 
     if backend == "gc" {
-        goroot := os.Getenv("GOROOT")
-        if goroot == "" {
-            goroot = runtime.GOROOT()
-        }
-        goos   := os.Getenv("GOOS")
-        if goos == "" {
-            goos = runtime.GOOS
-        }
-        goarch := os.Getenv("GOARCH")
-        if goarch == "" {
-            goarch = runtime.GOARCH
-        }
+        goroot  := GOROOT()
+        goos    := GOOS()
+        goarch  := GOARCH()
         stub    := goos + "_" + goarch
         compiler = filepath.Join(goroot,"pkg","tool", stub ,compiler)
         linker   = filepath.Join(goroot,"pkg","tool", stub ,linker)
@@ -806,6 +797,15 @@ func link(pkgs []*Package) {
             argv = append(argv, "-L")
             argv = append(argv, root)
         }
+
+        // GOPATH
+        gopathInc := gopathDirs()
+        if len(gopathInc) > 0 {
+            for i := 0; i < len(gopathInc); i++ {
+                argv = append(argv, "-L")
+                argv = append(argv, gopathInc[i])
+            }
+        }
     }
 
     argv = append(argv, "-o")
@@ -875,14 +875,15 @@ func mainChoice(pkgs []*Package) *Package {
 
 func goinstall() {
 
-    argv := make([]string, 4)
-    argv[0] = "goinstall"
-    argv[1] = "-clean=true"
-    argv[2] = "-u=true"
+    argv := make([]string, 5)
+    argv[0] = "go"
+    argv[1] = "get"
+    argv[2] = "-u"
+    argv[3] = "-a"
 
     for i := 0; i < len(alien); i++ {
-        say.Printf("goinstall: %s\n", alien[i])
-        argv[3] = alien[i]
+        say.Printf("go get: %s\n", alien[i])
+        argv[4] = alien[i]
         run(argv)
     }
 }
@@ -1026,6 +1027,64 @@ func listTargets() {
     }
 }
 
+func gopathDirs() (paths []string) {
+
+    var(
+        stub    string
+        gopath  []string
+    )
+
+    gopath = GOPATH()
+
+    if len(gopath) > 0 {
+
+        if backend == "gc" {
+            stub = GOOS() + "_" + GOARCH()
+        }else{
+            stub = "gccgo"
+        }// should do something for express later perhaps
+
+        for _, gp := range gopath {
+            paths = append(paths, filepath.Join(gp, "pkg", stub))
+        }
+    }
+
+    return
+}
+
+
+func GOPATH() (gp []string) {
+    p := os.Getenv("GOPATH")
+    if p != "" {
+        gp = strings.Split(p, string(os.PathListSeparator))
+    }
+    return
+}
+
+func GOROOT() (r string) {
+    r = os.Getenv("GOROOT")
+    if r == "" {
+        r = runtime.GOROOT()
+    }
+    return
+}
+
+func GOARCH() (a string) {
+    a = os.Getenv("GOARCH")
+    if a == "" {
+        a = runtime.GOARCH
+    }
+    return
+}
+
+func GOOS() (o string) {
+    o = os.Getenv("GOOS")
+    if o == "" {
+        o = runtime.GOOS
+    }
+    return
+}
+
 
 //-------------------------------------------------------------------
 // Package definition
@@ -1061,6 +1120,15 @@ func (p *Package) compile() {
     argv = append(argv, "-I")
     argv = append(argv, includeDir)
 
+    // GOPATH
+    gopathInc := gopathDirs()
+    if len(gopathInc) > 0 {
+        for i := 0; i < len(gopathInc); i++ {
+            argv = append(argv, "-I")
+            argv = append(argv, gopathInc[i])
+        }
+    }
+
     if root != "" {
         argv = append(argv, "-I")
         argv = append(argv, root)
@@ -1083,34 +1151,16 @@ func (p *Package) compile() {
 
 var packages = []*Package{
     &Package{
-        name:   "stringbuffer",
-        full:    "utilz/stringbuffer",
-        output: "_obj/utilz/stringbuffer",
-        files:  []string{"src/utilz/stringbuffer.go"},
-    },
-    &Package{
-        name:   "walker",
-        full:    "utilz/walker",
-        output: "_obj/utilz/walker",
-        files:  []string{"src/utilz/walker.go"},
-    },
-    &Package{
-        name:   "stringset",
-        full:    "utilz/stringset",
-        output: "_obj/utilz/stringset",
-        files:  []string{"src/utilz/stringset.go"},
+        name:   "gopt",
+        full:    "parse/gopt",
+        output: "_obj/parse/gopt",
+        files:  []string{"src/parse/gopt.go","src/parse/option.go"},
     },
     &Package{
         name:   "timer",
         full:    "utilz/timer",
         output: "_obj/utilz/timer",
         files:  []string{"src/utilz/timer.go"},
-    },
-    &Package{
-        name:   "gopt",
-        full:    "parse/gopt",
-        output: "_obj/parse/gopt",
-        files:  []string{"src/parse/gopt.go","src/parse/option.go"},
     },
     &Package{
         name:   "global",
@@ -1131,22 +1181,40 @@ var packages = []*Package{
         files:  []string{"src/utilz/say.go"},
     },
     &Package{
+        name:   "stringbuffer",
+        full:    "utilz/stringbuffer",
+        output: "_obj/utilz/stringbuffer",
+        files:  []string{"src/utilz/stringbuffer.go"},
+    },
+    &Package{
+        name:   "stringset",
+        full:    "utilz/stringset",
+        output: "_obj/utilz/stringset",
+        files:  []string{"src/utilz/stringset.go"},
+    },
+    &Package{
+        name:   "walker",
+        full:    "utilz/walker",
+        output: "_obj/utilz/walker",
+        files:  []string{"src/utilz/walker.go"},
+    },
+    &Package{
         name:   "dag",
         full:    "cmplr/dag",
         output: "_obj/cmplr/dag",
         files:  []string{"src/cmplr/dag.go"},
     },
     &Package{
-        name:   "compiler",
-        full:    "cmplr/compiler",
-        output: "_obj/cmplr/compiler",
-        files:  []string{"src/cmplr/compiler.go"},
-    },
-    &Package{
         name:   "gdmake",
         full:    "cmplr/gdmake",
         output: "_obj/cmplr/gdmake",
         files:  []string{"src/cmplr/gdmake.go"},
+    },
+    &Package{
+        name:   "compiler",
+        full:    "cmplr/compiler",
+        output: "_obj/cmplr/compiler",
+        files:  []string{"src/cmplr/compiler.go"},
     },
     &Package{
         name:   "main",

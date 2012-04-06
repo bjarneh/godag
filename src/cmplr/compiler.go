@@ -356,6 +356,9 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date 
                 argv = append(argv, "-L")
                 argv = append(argv, golibs[j])
             }
+            if global.GetBool("-strip") {
+                argv = append(argv, "-s")
+            }
         }
     }
 

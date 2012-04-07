@@ -826,30 +826,104 @@ func ParseSingle(pathname string) (pkgs []*Package, name string) {
 }
 
 // parse mk.go
-func GetMakeTargets(pathname string) (targets []string) {
+func GetMakeTargets(pathname string) []string {
     tree    := getSyntaxTreeOrDie(pathname, 0)
-    collect := &targetCollector{false, make([]string, 0)}
+    collect := &targetCollector{MAP_NOT_FOUND,"", make([]string, 0)}
     ast.Walk(collect, tree)
-    return
+    return collect.targets
 }
 
+// states targetCollector can be in while looking for targets in makefile
+const(
+    MAP_NOT_FOUND = iota
+    MAP_FOUND
+    KEY_VALUE_FOUND
+    KEY_FOUND
+    KEY_NIL_FOUND
+    KEY_NIL_UNARY_FOUND
+    KEY_NIL_UNARY_COMPOSITE_FOUND
+)
+
 type targetCollector struct {
-    found   bool
+    state   int
+    prev    string
     targets []string
 }
 
 func (t *targetCollector) Visit(node ast.Node) (v ast.Visitor) {
 
-    if ! t.found {
-        switch m_type := node.(type) {
-        case  *ast.MapType:
-            t.found = true
-            fmt.Printf("MapType{%v}\n", m_type)
-            fmt.Printf("Key: %v\n", m_type.Key)
-            fmt.Printf("Value: %v\n", m_type.Value)
-            //default: fmt.Printf("%v\n", m_type)
+    switch t.state{
+
+        case MAP_NOT_FOUND: {
+
+            map_t, ok := node.(*ast.MapType)
+
+            if ok {
+                iden, ok := map_t.Key.(*ast.Ident)
+                if ok && iden.Name == "string" {
+                    star, ok := map_t.Value.(*ast.StarExpr)
+                    if ok {
+                        starType, ok := star.X.(*ast.Ident)
+                        if ok && starType.Name == "Target" {
+                            t.state = MAP_FOUND
+                        }
+                    }
+                }
+            }
         }
+
+        case MAP_FOUND: {
+            _, ok := node.(*ast.KeyValueExpr)
+            if ok {
+                t.state = KEY_VALUE_FOUND
+            }
+
+        }
+
+        case KEY_VALUE_FOUND: {
+            bl, ok := node.(*ast.BasicLit)
+            if ok && bl.Kind == token.STRING {
+                t.state = KEY_FOUND
+                t.prev  = bl.Value
+            }
+        }
+
+        case KEY_FOUND: {
+            if node == nil {
+                t.state = KEY_NIL_FOUND
+            }else{
+                t.state = MAP_FOUND
+            }
+        }
+
+        case KEY_NIL_FOUND: {
+            _, ok := node.(*ast.UnaryExpr)
+            if ok {
+                t.state = KEY_NIL_UNARY_FOUND
+            }else{
+                t.state = MAP_FOUND
+            }
+        }
+
+        case KEY_NIL_UNARY_FOUND: {
+            _, ok := node.(*ast.CompositeLit)
+            if ok {
+                t.state = KEY_NIL_UNARY_COMPOSITE_FOUND
+            }else{
+                t.state = MAP_FOUND
+            }
+        }
+
+        case KEY_NIL_UNARY_COMPOSITE_FOUND: {
+            ident, ok := node.(*ast.Ident)
+            if ok && ident.Name == "Target" {
+                stripped := t.prev[1:len(t.prev)-1]
+                t.targets = append(t.targets, stripped)
+            }
+            t.state = MAP_FOUND
+        }
+
     }
+
     return t
 }
-

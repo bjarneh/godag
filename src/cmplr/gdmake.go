@@ -783,15 +783,6 @@ func copyGzipReader(fromReader io.Reader, to string, gzipFile bool) {
     quitter(err)
 }
 
-func listTargets() {
-    if list {
-        for k, _ := range targets {
-            fmt.Println(k)
-        }
-        os.Exit(0)
-    }
-}
-
 func gopathDirs() (paths []string) {
 
     var(
@@ -930,7 +921,6 @@ var MainTmpl = `
 func main() {
 
     flag.Parse()
-    listTargets() // for bash auto complete
     initBackend() // gc/gcc/express
 
     if quiet {

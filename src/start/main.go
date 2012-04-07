@@ -245,7 +245,6 @@ func main() {
 
     mkcomplete := global.GetString("-mkcomplete")
     if mkcomplete != "" {
-        fmt.Println(mkcomplete)
         targets := dag.GetMakeTargets(mkcomplete)
         for _, t := range targets {
             fmt.Println(t)

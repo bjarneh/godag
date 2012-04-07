@@ -59,13 +59,14 @@ _gd(){
         COMPREPLY=( $(compgen -W "${gd_special}" -- "${cur}") )
     fi
 
-##     if [[ "${prev}" == "mk.go" ]]; then
-##         #COMPREPLY=( $(gd -mkcompletion mk.go) )
-##         if [ "${COMP_CWORD}" -eq 2 ]; then
-##             COMPREPLY=( "doit" )
-##             return 0
-##         fi
-##     fi
+    # use godag to parse makefile and look for targets
+    if [[ "${prev}" == "mk.go" ]]; then
+        if [ "${COMP_CWORD}" -eq 2 ]; then
+            TARGETS=$(gd -mkcomplete mk.go)
+            COMPREPLY=( $(compgen -W "$TARGETS" -- "${cur}" ) )
+            return 0
+        fi
+    fi
 
     if [[ "${prev}" == -* ]]; then
         case "${prev}" in

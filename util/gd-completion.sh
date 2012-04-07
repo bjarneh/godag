@@ -29,13 +29,13 @@ _gd(){
 
     local cur prev opts gd_long_opts gd_short_opts gd_short_explain gd_special
     # long options
-    gd_long_opts="--help --version --list --print --sort --output --static --gdmk --dryrun --clean --quiet --lib --main --dot --test --bench --match --verbose --fmt --rewrite --tab --tabwidth --external --backend --test-bin --test.short --test.v --test.bench --test.benchtime --test.cpu --test.cpuprofile --test.memprofile --test.memprofilerate --test.timeout"
+    gd_long_opts="--help --version --list --print --sort --output --static --gdmk --dryrun --clean --quiet --lib --main --dot --test --bench --match --verbose --fmt --rewrite --tab --tabwidth --external --backend --test-bin --test.short --test.v --test.bench --test.benchtime --test.cpu --test.cpuprofile --test.memprofile --test.memprofilerate --test.timeout --strip"
     # short options + explain
-    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -g[--gdmk] -d[--dryrun] -c[--clean] -q[--quiet] -L[--lib] -M[--main] -D[--dot] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -r[--rewrite] -T[--tab] -w[--tabwidth] -e[--external] -B[--backend]"
+    gd_short_explain="-h[--help] -v[--version] -l[--list] -p[--print] -s[--sort] -o[--output] -S[--static] -g[--gdmk] -d[--dryrun] -c[--clean] -q[--quiet] -L[--lib] -M[--main] -D[--dot] -I -t[--test] -b[--bench] -m[--match] -V[--verbose] -f[--fmt] -r[--rewrite] -T[--tab] -w[--tabwidth] -e[--external] -B[--backend] -y[--strip]"
     # short options
-    gd_short_opts="-h -v -l -p -s -o -S -g -d -c -q -L -M -D -I -t -b -m -V -f -r -T -w -e -B"
+    gd_short_opts="-h -v -l -p -s -o -S -g -d -c -q -L -M -D -I -t -b -m -V -f -r -T -w -e -B -y"
 
-    gd_special="clean test help $(ls)"
+    gd_special="clean test help fmt strip print dryrun list"
 
     COMPREPLY=()
 
@@ -55,9 +55,14 @@ _gd(){
         return 0
     fi
 
-    if [[ "${cur}" == c* || "${cur}" == t* || "${cur}" == h* ]]; then
-        COMPREPLY=( $(compgen -W "${gd_special}" -- "${cur}") )
-    fi
+    case "${cur}" in
+        c* | t* | h* | f* | s* | p* | d* | l*)
+          COMPREPLY=( $(compgen -W "${gd_special}" -- "${cur}") )
+          if [ "${#COMPREPLY[@]}" -gt 1 ]; then
+              return 0
+          fi
+        ;;
+    esac
 
     # use godag to parse makefile and look for targets
     if [[ "${prev}" == "mk.go" ]]; then

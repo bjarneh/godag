@@ -1,4 +1,4 @@
-/* Built : 2012-04-06 04:35:31.87898 +0000 UTC */
+/* Built : 2012-04-07 18:06:02.276189 +0000 UTC */
 //-------------------------------------------------------------------
 // Auto generated code, but you are encouraged to modify it ☺
 // Manual: http://godag.googlecode.com
@@ -1018,15 +1018,6 @@ func copyGzipReader(fromReader io.Reader, to string, gzipFile bool) {
     quitter(err)
 }
 
-func listTargets() {
-    if list {
-        for k, _ := range targets {
-            fmt.Println(k)
-        }
-        os.Exit(0)
-    }
-}
-
 func gopathDirs() (paths []string) {
 
     var(
@@ -1151,16 +1142,22 @@ func (p *Package) compile() {
 
 var packages = []*Package{
     &Package{
-        name:   "gopt",
-        full:    "parse/gopt",
-        output: "_obj/parse/gopt",
-        files:  []string{"src/parse/gopt.go","src/parse/option.go"},
+        name:   "stringbuffer",
+        full:    "utilz/stringbuffer",
+        output: "_obj/utilz/stringbuffer",
+        files:  []string{"src/utilz/stringbuffer.go"},
     },
     &Package{
-        name:   "timer",
-        full:    "utilz/timer",
-        output: "_obj/utilz/timer",
-        files:  []string{"src/utilz/timer.go"},
+        name:   "walker",
+        full:    "utilz/walker",
+        output: "_obj/utilz/walker",
+        files:  []string{"src/utilz/walker.go"},
+    },
+    &Package{
+        name:   "stringset",
+        full:    "utilz/stringset",
+        output: "_obj/utilz/stringset",
+        files:  []string{"src/utilz/stringset.go"},
     },
     &Package{
         name:   "global",
@@ -1181,22 +1178,16 @@ var packages = []*Package{
         files:  []string{"src/utilz/say.go"},
     },
     &Package{
-        name:   "stringbuffer",
-        full:    "utilz/stringbuffer",
-        output: "_obj/utilz/stringbuffer",
-        files:  []string{"src/utilz/stringbuffer.go"},
+        name:   "timer",
+        full:    "utilz/timer",
+        output: "_obj/utilz/timer",
+        files:  []string{"src/utilz/timer.go"},
     },
     &Package{
-        name:   "stringset",
-        full:    "utilz/stringset",
-        output: "_obj/utilz/stringset",
-        files:  []string{"src/utilz/stringset.go"},
-    },
-    &Package{
-        name:   "walker",
-        full:    "utilz/walker",
-        output: "_obj/utilz/walker",
-        files:  []string{"src/utilz/walker.go"},
+        name:   "gopt",
+        full:    "parse/gopt",
+        output: "_obj/parse/gopt",
+        files:  []string{"src/parse/gopt.go","src/parse/option.go"},
     },
     &Package{
         name:   "dag",
@@ -1233,7 +1224,6 @@ var packages = []*Package{
 func main() {
 
     flag.Parse()
-    listTargets() // for bash auto complete
     initBackend() // gc/gcc/express
 
     if quiet {

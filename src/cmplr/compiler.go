@@ -366,10 +366,7 @@ func ForkLink(output string, pkgs []*dag.Package, extra []*dag.Package, up2date 
     argv = append(argv, output)
 
     // gcc get's this no matter what...
-    if global.GetString("-backend") == "gcc" ||
-        global.GetString("-backend") == "gccgo" {
-        argv = append(argv, "-static")
-    } else if global.GetBool("-static") {
+    if global.GetString("-backend") == "gc" ||
         argv = append(argv, "-d")
     }
 

@@ -151,18 +151,9 @@ func debianDoLast() {
     var debArch string
     var dirs []string
 
-    goarch := os.Getenv("GOARCH")
-    if goarch == "" {
-        goarch = runtime.GOARCH
-    }
-
-    switch goarch {
-    case "386":
-        debArch = "i386"
-    case "":
-        log.Fatalf("[ERROR] GOARCH == ''\n")
-    default:
-        debArch = os.Getenv("GOARCH")
+    debArch = os.Getenv("GOARCH")
+    if debArch == "" {
+        debArch = runtime.GOARCH
     }
 
     dirs = []string{"debian/DEBIAN",

@@ -120,7 +120,7 @@ On Debian systems, the complete text of the GNU General Public License
 version 3 can be found in '/usr/share/common-licenses/GPL-3'.
 `
 
-var debianChangelog = `godag (0.3.1) devel; urgency=low
+var debianChangelog = `godag (0.4.0) devel; urgency=low
 
     * The actual changelog can be found in changelog...
 
@@ -128,7 +128,7 @@ var debianChangelog = `godag (0.3.1) devel; urgency=low
 `
 
 var debianControl = `Package: godag
-Version: 0.3.1
+Version: 0.4.0
 Section: devel
 Priority: optional
 Architecture: %s
@@ -226,7 +226,7 @@ func debianDoLast() {
     }
 
     run([]string{"fakeroot", "dpkg-deb", "--build", "debian"})
-    e = os.Rename("debian.deb", "godag_0.3-1_"+debArch+".deb")
+    e = os.Rename("debian.deb", "godag_0.4-0_"+debArch+".deb")
     quitter(e)
 
     say.Println("debian   : rm -rf ./debian")

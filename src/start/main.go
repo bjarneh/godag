@@ -525,7 +525,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.3.1 (release-branch.go1.1)")
+    fmt.Println("godag 0.4.0 (release-branch.go1.1)")
 }
 
 func printListing() {

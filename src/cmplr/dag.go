@@ -163,7 +163,7 @@ func (d Dag) Alien() (set *stringset.StringSet) {
     return set
 }
 
-func (d Dag) External() {
+func (d Dag) External(update bool) {
 
     var argv []string
     var set *stringset.StringSet
@@ -179,7 +179,9 @@ func (d Dag) External() {
         argv = append(argv, "-v")
     }
 
-    argv = append(argv, "-u")
+    if update {
+       argv = append(argv, "-u")
+    }    
     argv = append(argv, "-a")
 
     i = len(argv)

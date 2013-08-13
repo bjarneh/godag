@@ -7,7 +7,7 @@
 .\"  Language: English
 .\"      Misc: I took this man page from git, and modified it
 .\"
-.TH "gd" "1" "03/29/2012" "godag 0\&.3\&.0" "godag manual"
+.TH "gd" "1" "14/08/2013" "godag 0\&.3\&.1" "godag manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -32,7 +32,7 @@ gd \- build tool for golang
 .SH "SYNOPSIS"
 .sp
 .nf
-gd [OPTIONS] src-directory
+gd [OPTIONS] src\-directory
 .fi
 .sp
 .SH "DESCRIPTION"
@@ -198,7 +198,13 @@ pass \-tabwidth to \fBgofmt\fR (default:4)
 .B
 \-e, \-\-external
 .RS 4
-\fBgoinstall\fR all external dependencies
+\fBgo install\fR all external dependencies
+.RE
+.PP
+.B
+\-u \-\-updatex
+.RS 4
+\fBgo install\fR \-u all external dependencies
 .RE
 .PP
 .B
@@ -347,7 +353,7 @@ bjarneh@ifi.uio.no
 .sp
 http://godag.googlecode.com
 .SH COPYRIGHT
-copyright \(co 2009, 2010, 2011 bjarneh@ifi\&.uio\&.no\&.
+copyright \(co 2009, 2010, 2011, 2012, 2013 bjarneh@ifi\&.uio\&.no\&.
 license GPLv3+: GNU GPL version 3 or later <http://gnu\&.org/licenses/gpl\&.html>\&.
 this is free software: you are free to change and redistribute it\&.
 there is NO WARRANTY, to the extent permitted by law\&.

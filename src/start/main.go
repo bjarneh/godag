@@ -62,6 +62,7 @@ var bools = []string{
     "-quiet",
     "-tab",
     "-external",
+    "-update-external",
     // add missing test options + alias
     "-test.short",
     "-test.v",
@@ -116,6 +117,8 @@ func init() {
     getopt.BoolOption("-a -all --all")
     getopt.BoolOption("-y -strip --strip strip")
     getopt.BoolOption("-e -external --external")
+    getopt.BoolOption("-u -updatex --updatex "+
+                      "-update-external --update-external")
     getopt.StringOption("-I -I=")
     getopt.StringOption("-mkcomplete")
     getopt.StringOptionFancy("-D --dot")
@@ -328,9 +331,14 @@ func main() {
         os.Exit(0)
     }
 
-    // build &| update all external dependencies
+    // build  all external dependencies
     if global.GetBool("-external") {
-        dgrph.External()
+       // update external dependencies
+       if global.GetBool("-update-external") {
+        dgrph.External(true)
+       } else {
+        dgrph.External(false)
+       }
         os.Exit(0)
     }
 
@@ -509,6 +517,7 @@ func printHelp() {
   -T --tab             pass -tabs=true to gofmt
   -w --tabwidth        pass -tabwidth to gofmt (default: 4)
   -e --external        go install all external dependencies
+  -u --updatex         go install -u all external dependencies
   -B --backend         [gc,gccgo,express] (default: gc)
     `
 
@@ -516,7 +525,7 @@ func printHelp() {
 }
 
 func printVersion() {
-    fmt.Println("godag 0.3 (release-branch.go1)")
+    fmt.Println("godag 0.3.1 (release-branch.go1.1)")
 }
 
 func printListing() {

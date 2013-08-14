@@ -131,7 +131,7 @@ var debianControl = `Package: godag
 Version: 0.4.0
 Section: devel
 Priority: optional
-Architecture: i%s
+Architecture: %s
 Depends:
 Suggests: gccgo,golang
 Conflicts:
@@ -154,6 +154,8 @@ func debianDoLast() {
     debArch = os.Getenv("GOARCH")
     if debArch == "" {
         debArch = runtime.GOARCH
+    }else if debArch == "386" {
+        debArch = "i" + debArch
     }
 
     dirs = []string{"debian/DEBIAN",
@@ -226,7 +228,7 @@ func debianDoLast() {
     }
 
     run([]string{"fakeroot", "dpkg-deb", "--build", "debian"})
-    e = os.Rename("debian.deb", "godag_0.4-0_i"+debArch+".deb")
+    e = os.Rename("debian.deb", "godag_0.4-0_"+debArch+".deb")
     quitter(e)
 
     say.Println("debian   : rm -rf ./debian")
